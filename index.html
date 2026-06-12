@@ -99,7 +99,18 @@ button:focus-visible{outline:2px solid var(--flood);outline-offset:2px}
 .duel .result{font-family:'Kanit';font-weight:800;font-size:1.3rem;margin-top:6px}
 .goal{color:var(--gold);text-shadow:0 0 14px rgba(232,181,58,.8);animation:flash .5s ease 3}
 @keyframes flash{50%{opacity:.4}}
-.clash{display:flex;align-items:center;justify-content:center;gap:6px;min-height:120px}
+.clash{display:flex;align-items:flex-start;justify-content:center;gap:6px;min-height:140px;position:relative}
+.fcol{display:flex;flex-direction:column;align-items:center;gap:4px}
+.frll{font-family:'Kanit';font-weight:800;font-size:1.1rem;color:var(--gold);min-height:26px}
+.ballanim{position:absolute;top:30%;left:14%;font-size:1.5rem;opacity:0;pointer-events:none;z-index:5}
+.fly-goal{animation:flyGoal 1s ease-in forwards}
+@keyframes flyGoal{0%{opacity:1;left:14%;transform:rotate(0)}70%{opacity:1;left:72%;transform:rotate(540deg)}100%{left:84%;transform:rotate(720deg) scale(1.8);opacity:0}}
+.fly-save{animation:flySave 1s ease-in forwards}
+@keyframes flySave{0%{opacity:1;left:14%}55%{opacity:1;left:64%;transform:rotate(420deg)}100%{left:40%;top:0%;transform:rotate(640deg);opacity:0}}
+.goalpulse{animation:gp .55s ease 2}
+@keyframes gp{50%{box-shadow:0 0 26px rgba(232,181,58,.9);transform:scale(1.07)}}
+.savepulse{animation:sp .55s ease 2}
+@keyframes sp{50%{box-shadow:0 0 26px rgba(61,123,217,.95);transform:scale(1.07)}}
 .fighter{width:96px;border-radius:10px;padding:8px;font-size:.72rem;line-height:1.4;background:linear-gradient(160deg,#15301f,#0a1f13);border:2px solid #2a5238}
 .fighter .fnm{font-family:'Kanit';font-weight:700;font-size:.78rem}
 .fighter.atk{border-color:var(--gold);animation:slamL .45s cubic-bezier(.6,-0.3,.7,1.4) forwards}
@@ -679,36 +690,58 @@ function duel(attacker,defender,youAtk){
   if(attacker.skill==='crit'&&Math.random()<.25){atkRoll=Math.round(atkRoll*1.5);notes.push('⭐ ซูเปอร์ช็อต!');}
   if(defender.skill==='wall'&&Math.random()<.25){defRoll+=999;notes.push('⭐ กำแพงเหล็ก!');}
   const goal=atkRoll>defRoll;
-  attacker.stamina=Math.max(20,attacker.stamina-(attacker.skill==='engine'?13:25));
-  defender.stamina=Math.max(20,defender.stamina-(defender.skill==='engine'?10:20));
+  attacker.stamina=Math.max(15,attacker.stamina-(attacker.skill==='engine'?19:38));
+  defender.stamina=Math.max(15,defender.stamina-(defender.skill==='engine'?15:30));
 
   const d=$('duel');d.className='duel show';
   const EA=ELEMS[attacker.elem],ED=ELEMS[defender.elem];
   d.innerHTML=`<div class="clash">
-      <div class="fighter atk"><div class="fnm">${EA.ico} ${attacker.name}</div>⚔ ${ea.atk}</div>
+      <div class="fcol">
+        <div class="fighter atk" id="fAtk"><div class="fnm">${EA.ico} ${attacker.name}</div>⚔ ${ea.atk}</div>
+        <div class="frll" id="rollA">&nbsp;</div>
+      </div>
       <div class="boom">⚡VS⚡</div>
-      <div class="fighter dfd"><div class="fnm">${ED.ico} ${defender.name}</div>🛡 ${ed.def}</div>
+      <div class="fcol">
+        <div class="fighter dfd" id="fDfd"><div class="fnm">${ED.ico} ${defender.name}</div>🛡 ${ed.def}</div>
+        <div class="frll" id="rollD">&nbsp;</div>
+      </div>
+      <div class="ballanim" id="ballAnim">⚽</div>
     </div>
-    <div class="roll" id="duelRoll" style="min-height:38px"></div>
-    <div class="result" id="duelResult" style="min-height:30px"></div>`;
+    <div class="roll" id="duelNotes" style="min-height:20px"></div>
+    <div class="result" id="duelResult" style="min-height:30px"></div>
+    <div class="actions" id="duelActions" style="margin:4px 0 0"></div>`;
   $('hand').innerHTML=deckPlayers().map(p=>cardHTML(p,false)).join('');
   $('actions').innerHTML='';$('incoming').className='incoming';
 
   const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const t1=reduced?0:700,t2=reduced?0:1500;
+  const t1=reduced?0:600,t2=reduced?0:2400,t3=reduced?0:3300;
+  const fA=atkRoll>999?'∞':atkRoll,fD=defRoll>999?'🧱':defRoll;
   setTimeout(()=>{
-    const rollEl=$('duelRoll');
-    const fA=atkRoll>999?'∞':atkRoll,fD=defRoll>999?'🧱':defRoll;
-    if(reduced){rollEl.innerHTML=`ทอยบุก <span class="rollnum">${fA}</span> — ทอยรับ <span class="rollnum">${fD}</span><br>${notes.join(' · ')}`;}
-    else{
+    if(reduced){
+      $('rollA').innerHTML=`ทอย ${fA}`;$('rollD').innerHTML=`ทอย ${fD}`;
+      $('duelNotes').innerHTML=notes.join(' · ');
+    }else{
       let i=0;const iv=setInterval(()=>{
         i++;
-        rollEl.innerHTML=`ทอยบุก <span class="rollnum">${atkRoll>999?'∞':rnd(atkRoll+1)}</span> — ทอยรับ <span class="rollnum">${defRoll>999?'🧱':rnd(defRoll+1)}</span>`;
-        if(i>=8){clearInterval(iv);
-          rollEl.innerHTML=`ทอยบุก <span class="rollnum">${fA}</span> — ทอยรับ <span class="rollnum">${fD}</span><br>${notes.join(' · ')}`;}
-      },70);
+        $('rollA').textContent='ทอย '+(atkRoll>999?'∞':rnd(atkRoll+1));
+        $('rollD').textContent='ทอย '+(defRoll>999?'🧱':rnd(defRoll+1));
+        if(i>=14){clearInterval(iv);
+          $('rollA').textContent='ทอย '+fA;$('rollD').textContent='ทอย '+fD;
+          $('duelNotes').innerHTML=notes.join(' · ');}
+      },115);
     }
   },t1);
+  // ball flight + card reaction
+  setTimeout(()=>{
+    if(reduced)return;
+    const b=$('ballAnim');
+    b.className='ballanim '+(goal?'fly-goal':'fly-save');
+    if(goal){
+      $('fAtk').classList.add('goalpulse');
+    }else{
+      setTimeout(()=>{$('fDfd').classList.add('savepulse');},550);
+    }
+  },t2);
   setTimeout(()=>{
     const resEl=$('duelResult');
     if(goal){
@@ -720,7 +753,7 @@ function duel(attacker,defender,youAtk){
       }
     }else{resEl.innerHTML=`<span class="savering">🧤</span> เซฟได้!`;}
     finishDuel(attacker,defender,goal,youAtk);
-  },t2);
+  },t3);
 }
 function throwConfetti(){
   const emo=['🎉','⚽','✨','🟡','🔵'];
@@ -742,14 +775,14 @@ function finishDuel(attacker,defender,goal,youAtk){
     else{log(`🧤 <span class="good">${defender.name} สกัดสำเร็จ! +12 XP</span>`);gainPXp(defender,12);gainCapXp(12);}
   }
   $('sYou').textContent=scoreYou;$('sAi').textContent=scoreAi;
-  $('actions').innerHTML=`<button onclick="nextTurn()">เทิร์นถัดไป ▶</button>`;
+  $('duelActions').innerHTML=`<button onclick="nextTurn()">เทิร์นถัดไป ▶</button>`;
 }
 function nextTurn(){
   $('duel').className='duel';turn++;
   if(fx.storm>0)fx.storm--;
   if(fx.rumor>0)fx.rumor--;
   if(turn>8){endMatch();return;}
-  [...deckPlayers(),...ai].forEach(p=>p.stamina=Math.min(100,p.stamina+8));
+  [...deckPlayers(),...ai].forEach(p=>p.stamina=Math.min(100,p.stamina+5));
   youAttacking=!youAttacking;$('turnNow').textContent=turn;
   setupTurn();
 }
