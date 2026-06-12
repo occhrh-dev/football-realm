@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Football Realm RPG v5 — 4 โหมด</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0d3b22">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<script>
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+}
+</script>
+<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;600;800&family=Sarabun:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --pitch:#0d3b22; --night:#071a10; --flood:#f5f7ee;
+  --gold:#e8b53a; --red:#d94f3d; --blue:#3d7bd9; --purple:#a06bf0; --legend:#ff7ad9;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{
+  font-family:'Sarabun',sans-serif;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(245,247,238,.10), transparent 60%),
+    repeating-linear-gradient(90deg, var(--pitch) 0 60px, #0f4226 60px 120px);
+  background-color:var(--night);
+  color:var(--flood); min-height:100vh;
+  display:flex;flex-direction:column;align-items:center;padding:12px;
+}
+h1,h2,h3,.kanit{font-family:'Kanit',sans-serif}
+.hud{width:100%;max-width:620px;background:#05130b;border:2px solid #1e3a29;border-radius:10px;padding:8px 12px;display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap;box-shadow:inset 0 0 30px rgba(0,0,0,.6)}
+.hud .lv{font-family:'Kanit';font-weight:800;color:var(--gold);font-size:1rem}
+.xpbar{flex:1;min-width:90px;height:10px;background:#0a1f13;border-radius:5px;overflow:hidden}
+.xpbar i{display:block;height:100%;background:linear-gradient(90deg,var(--purple),#d3a7ff);transition:width .4s}
+.hud .coin{font-family:'Kanit';color:var(--gold);font-size:.95rem}
+.scoreboard{width:100%;max-width:620px;background:#05130b;border:2px solid #1e3a29;border-radius:10px;padding:8px 14px;display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;box-shadow:0 0 24px rgba(232,181,58,.12),inset 0 0 30px rgba(0,0,0,.6)}
+.team{font-family:'Kanit';font-weight:600;font-size:.85rem;width:32%}
+.team.you{color:var(--blue)}.team.ai{color:var(--red);text-align:right}
+.score{font-family:'Kanit';font-weight:800;font-size:1.8rem;letter-spacing:4px;color:var(--gold);text-shadow:0 0 12px rgba(232,181,58,.7);text-align:center}
+.turncount{font-size:.72rem;color:#7fa78d;text-align:center}
+.log{width:100%;max-width:620px;height:70px;overflow-y:auto;background:rgba(5,19,11,.85);border:1px solid #1e3a29;border-radius:8px;padding:8px 12px;font-size:.82rem;line-height:1.5;margin-bottom:6px}
+.log .good{color:#7fd9a0}.log .bad{color:#f0907f}.log .gold{color:var(--gold)}.log .loot{color:var(--purple)}
+.phase{font-family:'Kanit';font-weight:600;font-size:.92rem;margin:2px 0 6px;text-align:center;min-height:24px}
+.phase .atk{color:var(--gold)}
+.synergy{font-size:.76rem;color:#7fd9a0;text-align:center;margin-bottom:4px;min-height:16px}
+.incoming{display:none;width:100%;max-width:620px;margin-bottom:6px;background:linear-gradient(90deg,rgba(217,79,61,.18),transparent);border:1px solid #5e2a22;border-radius:10px;padding:8px 12px;font-size:.85rem;text-align:center}
+.incoming.show{display:block;animation:pop .25s ease}
+.incoming b{font-family:'Kanit';color:var(--red)}
+.elem{font-size:.72rem;border-radius:4px;padding:1px 5px;display:inline-block;font-family:'Kanit';font-weight:600}
+.elem.fire{background:#3d1610;color:#ff9d7a}
+.elem.wind{background:#10303d;color:#7ad9ff}
+.elem.tech{background:#2c103d;color:#d9a0ff}
+.counterhint{font-size:.72rem;color:#7fa78d;text-align:center;margin-bottom:6px}
+.hand{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;width:100%;max-width:620px}
+.cardp{width:106px;border-radius:10px;background:linear-gradient(160deg,#15301f,#0a1f13);border:2px solid #2a5238;padding:7px 7px 8px;cursor:pointer;position:relative;transition:transform .12s,box-shadow .12s,border-color .12s;user-select:none}
+.cardp:hover{transform:translateY(-4px);border-color:var(--gold);box-shadow:0 6px 18px rgba(0,0,0,.5)}
+.cardp.disabled{opacity:.35;pointer-events:none}
+.cardp.rare{border-color:var(--gold);background:linear-gradient(160deg,#2e2410,#15110a)}
+.cardp.legend{border-color:var(--legend);background:linear-gradient(160deg,#3a1030,#170a14);box-shadow:0 0 12px rgba(255,122,217,.35)}
+.cardp.advantage{outline:3px solid #7fd9a0}
+.cardp .pos{font-family:'Kanit';font-weight:800;font-size:.64rem;background:#1e3a29;border-radius:4px;padding:1px 5px;display:inline-block;color:#9fd9b5}
+.cardp.rare .pos{background:#3d2f10;color:var(--gold)}
+.cardp.legend .pos{background:#4a1340;color:var(--legend)}
+.cardp .plv{position:absolute;top:5px;right:6px;font-family:'Kanit';font-weight:800;font-size:.64rem;color:var(--purple)}
+.cardp .nat{position:absolute;top:20px;right:6px;font-size:.7rem}
+.cardp .nm{font-family:'Kanit';font-weight:600;font-size:.78rem;margin:3px 0 2px;line-height:1.2;padding-right:14px}
+.cardp .st{font-size:.7rem;color:#a8c9b4;line-height:1.4}
+.cardp .st b{color:var(--flood)}
+.cardp .itm{font-size:.6rem;color:var(--purple);min-height:11px;margin-top:1px}
+.stam{height:5px;border-radius:3px;background:#0a1f13;margin-top:3px;overflow:hidden}
+.stam i{display:block;height:100%;background:linear-gradient(90deg,#3d7bd9,#7fd9a0);transition:width .3s}
+.cardp .skill{font-size:.6rem;color:var(--gold);margin-top:2px;min-height:11px}
+.cardp.indeck{outline:3px solid var(--blue)}
+.tactics{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;width:100%;max-width:620px;margin:6px 0}
+.tcard{width:128px;border-radius:10px;border:2px dashed var(--purple);background:rgba(30,18,56,.85);padding:8px;cursor:pointer;user-select:none;transition:transform .12s,border-color .12s;font-size:.7rem;color:#c9b8e8;line-height:1.35}
+.tcard:hover{transform:translateY(-3px);border-color:#d3a7ff}
+.tcard.used{opacity:.25;pointer-events:none;border-style:solid}
+.tcard .tnm{font-family:'Kanit';font-weight:700;color:var(--purple);font-size:.78rem;margin-bottom:2px}
+.tcard.debuff{border-color:var(--red);background:rgba(56,18,18,.85);color:#e8b8b0}
+.tcard.debuff .tnm{color:#ff9d7a}
+.tcard.debuff:hover{border-color:#ff9d7a}
+.actions{display:flex;gap:10px;margin:8px 0;flex-wrap:wrap;justify-content:center}
+button{font-family:'Kanit';font-weight:600;font-size:.92rem;background:var(--gold);color:#1a1408;border:none;border-radius:8px;padding:10px 20px;cursor:pointer;transition:filter .12s,transform .12s}
+button:hover{filter:brightness(1.1);transform:translateY(-1px)}
+button.ghost{background:transparent;color:var(--flood);border:1.5px solid #2a5238}
+button.pink{background:var(--legend);color:#fff}
+button.purple{background:var(--purple);color:#fff}
+button:disabled{opacity:.4;cursor:not-allowed;transform:none}
+button:focus-visible{outline:2px solid var(--flood);outline-offset:2px}
+.duel{display:none;width:100%;max-width:620px;margin:6px 0;background:rgba(5,19,11,.9);border:1px solid #1e3a29;border-radius:10px;padding:12px;text-align:center}
+.duel.show{display:block;animation:pop .25s ease}
+@keyframes pop{from{transform:scale(.95);opacity:0}to{transform:scale(1);opacity:1}}
+.duel .roll{font-size:.82rem;color:#a8c9b4}
+.duel .result{font-family:'Kanit';font-weight:800;font-size:1.3rem;margin-top:6px}
+.goal{color:var(--gold);text-shadow:0 0 14px rgba(232,181,58,.8);animation:flash .5s ease 3}
+@keyframes flash{50%{opacity:.4}}
+.clash{display:flex;align-items:center;justify-content:center;gap:6px;min-height:120px}
+.fighter{width:96px;border-radius:10px;padding:8px;font-size:.72rem;line-height:1.4;background:linear-gradient(160deg,#15301f,#0a1f13);border:2px solid #2a5238}
+.fighter .fnm{font-family:'Kanit';font-weight:700;font-size:.78rem}
+.fighter.atk{border-color:var(--gold);animation:slamL .45s cubic-bezier(.6,-0.3,.7,1.4) forwards}
+.fighter.dfd{border-color:var(--blue);animation:slamR .45s cubic-bezier(.6,-0.3,.7,1.4) forwards}
+@keyframes slamL{from{transform:translateX(-140px) rotate(-8deg);opacity:0}to{transform:translateX(0) rotate(0);opacity:1}}
+@keyframes slamR{from{transform:translateX(140px) rotate(8deg);opacity:0}to{transform:translateX(0) rotate(0);opacity:1}}
+.boom{font-size:1.6rem;font-family:'Kanit';font-weight:800;color:var(--flood);opacity:0;animation:boomIn .3s ease .4s forwards}
+@keyframes boomIn{from{transform:scale(3);opacity:0}to{transform:scale(1);opacity:1}}
+.shake{animation:shake .4s ease}
+@keyframes shake{10%,90%{transform:translateX(-3px)}20%,80%{transform:translateX(4px)}30%,70%{transform:translateX(-6px)}40%,60%{transform:translateX(6px)}50%{transform:translateX(-4px)}}
+.rollnum{font-family:'Kanit';font-weight:800;font-size:1.2rem;color:var(--gold)}
+.confetti{position:fixed;top:-10px;font-size:1.1rem;z-index:50;pointer-events:none;animation:fall linear forwards}
+@keyframes fall{to{transform:translateY(110vh) rotate(720deg);opacity:.6}}
+.savering{display:inline-block;animation:savep .5s ease}
+@keyframes savep{from{transform:scale(.3)}60%{transform:scale(1.3)}to{transform:scale(1)}}
+.overlay{position:fixed;inset:0;background:rgba(3,10,6,.94);display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:12px;z-index:10;text-align:center;padding:20px;overflow-y:auto}
+.overlay.center{justify-content:center}
+.overlay h1{font-size:1.6rem;color:var(--gold);text-shadow:0 0 20px rgba(232,181,58,.5)}
+.overlay p{max-width:480px;color:#a8c9b4;line-height:1.7;font-size:.9rem}
+.hidden{display:none!important}
+.lootbox{background:linear-gradient(160deg,#241640,#120a24);border:2px solid var(--purple);border-radius:12px;padding:14px 22px;animation:pop .3s ease;max-width:300px}
+.lootbox .ico{font-size:2rem}
+.lootbox .lnm{font-family:'Kanit';font-weight:800;color:var(--purple);font-size:1rem;margin:4px 0}
+.lootbox .ldesc{font-size:.83rem;color:#c9b8e8}
+.invwrap{max-width:460px;width:100%}
+.invitem{display:flex;align-items:center;gap:10px;background:rgba(20,12,40,.8);border:1px solid #3a2a60;border-radius:8px;padding:8px 12px;margin-bottom:8px;font-size:.85rem;text-align:left}
+.invitem .ico{font-size:1.3rem}
+.invitem .lnm{font-family:'Kanit';font-weight:600;color:var(--purple)}
+.invitem select{font-family:'Sarabun';background:#0a1f13;color:var(--flood);border:1px solid #2a5238;border-radius:6px;padding:4px 8px;margin-left:auto;max-width:150px}
+.lvup{position:fixed;top:40%;left:50%;transform:translate(-50%,-50%);background:linear-gradient(160deg,#3d2f10,#1a1408);border:2px solid var(--gold);border-radius:14px;padding:18px 30px;z-index:30;text-align:center;animation:pop .3s ease;box-shadow:0 0 40px rgba(232,181,58,.5)}
+.lvup h2{color:var(--gold);font-size:1.4rem}
+.gachareveal{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;min-height:170px;align-items:center}
+.packbtns{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+.pack{background:linear-gradient(160deg,#1c1430,#0d0a18);border:2px solid var(--purple);border-radius:12px;padding:14px 18px;width:160px;cursor:pointer;transition:transform .12s}
+.pack:hover{transform:translateY(-4px)}
+.pack .pnm{font-family:'Kanit';font-weight:800;color:var(--purple)}
+.pack .prate{font-size:.74rem;color:#c9b8e8;line-height:1.5;margin:6px 0}
+.pack .pcost{font-family:'Kanit';color:var(--gold)}
+.pack.premium{border-color:var(--legend)}
+.pack.premium .pnm{color:var(--legend)}
+.deckstat{font-family:'Kanit';font-size:.9rem;background:#05130b;border:1px solid #1e3a29;border-radius:8px;padding:8px 16px}
+.deckstat .ok{color:#7fd9a0}.deckstat .no{color:#f0907f}
+/* ===== Mode menu ===== */
+.modes{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:440px}
+.mode{
+  background:linear-gradient(160deg,#0f2a1a,#081b10);border:2px solid #2a5238;border-radius:12px;
+  padding:14px 10px;cursor:pointer;transition:transform .12s,border-color .12s;user-select:none;
+}
+.mode:hover{transform:translateY(-3px);border-color:var(--gold)}
+.mode .mico{font-size:1.7rem}
+.mode .mnm{font-family:'Kanit';font-weight:700;font-size:.95rem;margin:4px 0 2px}
+.mode .mdesc{font-size:.72rem;color:#7fa78d;line-height:1.4}
+/* ===== Adventure map ===== */
+.advmap{display:flex;flex-direction:column;gap:0;align-items:center;width:100%;max-width:380px}
+.advnode{
+  width:100%;display:flex;align-items:center;gap:12px;background:rgba(5,19,11,.85);
+  border:2px solid #2a5238;border-radius:12px;padding:10px 14px;text-align:left;
+  cursor:pointer;transition:border-color .12s,transform .12s;user-select:none;
+}
+.advnode:hover{border-color:var(--gold);transform:translateX(4px)}
+.advnode.done{border-color:#7fd9a0;opacity:.7;cursor:default}
+.advnode.locked{opacity:.35;pointer-events:none}
+.advnode .aico{font-size:1.6rem}
+.advnode .anm{font-family:'Kanit';font-weight:700;font-size:.92rem}
+.advnode .adesc{font-size:.74rem;color:#7fa78d;line-height:1.4}
+.advlink{width:3px;height:16px;background:#2a5238}
+/* ===== League table ===== */
+.lgtable{width:100%;max-width:420px;border-collapse:collapse;font-size:.85rem}
+.lgtable th{font-family:'Kanit';color:#7fa78d;font-weight:600;font-size:.74rem;padding:6px;border-bottom:1px solid #2a5238}
+.lgtable td{padding:7px 6px;border-bottom:1px solid #14301e;text-align:center}
+.lgtable td.tn{text-align:left;font-family:'Kanit';font-size:.83rem}
+.lgtable tr.me td{background:rgba(61,123,217,.12);color:var(--blue);font-weight:600}
+.lgtable td.pts{font-family:'Kanit';font-weight:800;color:var(--gold)}
+/* ===== Tower ===== */
+.towerfloor{font-family:'Kanit';font-weight:800;font-size:2.6rem;color:var(--gold);text-shadow:0 0 20px rgba(232,181,58,.5)}
+/* ===== PvP rank ===== */
+.rankbadge{
+  font-family:'Kanit';font-weight:800;font-size:1.3rem;padding:10px 26px;border-radius:12px;
+  background:linear-gradient(160deg,#1c1430,#0d0a18);border:2px solid var(--purple);color:var(--purple);
+}
+.rpbar{width:240px;height:10px;background:#0a1f13;border-radius:5px;overflow:hidden;margin:4px auto}
+.rpbar i{display:block;height:100%;background:linear-gradient(90deg,var(--purple),var(--legend));transition:width .4s}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+@media (max-width:480px){.cardp{width:90px}.cardp .nm{font-size:.72rem}.tcard{width:108px}}
+</style>
+</head>
+<body>
+
+<!-- ============ INTRO ============ -->
+<div class="overlay center" id="intro">
+  <h1>⚽ FOOTBALL REALM <span style="color:var(--legend)">v5</span></h1>
+  <h3 class="kanit">4 โหมดเกม</h3>
+  <p>🗺️ <b>ผจญภัย</b> — เดินแมพทำเควสต์ ปลายทางมีนักเตะตำนานรอ<br>
+  🏟️ <b>ลีกฤดูกาล</b> — 5 นัด เก็บแต้มชิงแชมป์ตาราง<br>
+  🗼 <b>หอคอยไร้ที่สิ้นสุด</b> — ไต่ชั้น ยากขึ้นเรื่อยๆ ไปได้ไกลแค่ไหน?<br>
+  ⚔️ <b>PvP จัดอันดับ</b> — ดวลเด็คคู่แข่ง สะสมแต้มแรงก์ Bronze → Legend<br>
+  <small>(PvP ในต้นแบบนี้เป็นการจำลองเด็คคู่แข่ง — เกมจริงจะเชื่อมผู้เล่นออนไลน์)</small></p>
+  <button onclick="goHome()">เข้าสโมสร 🏟️</button>
+</div>
+
+<!-- ============ HOME ============ -->
+<div class="overlay hidden" id="home" style="justify-content:center">
+  <h1>🏟️ สโมสรราชันสายฟ้า</h1>
+  <p id="homeInfo" style="margin-bottom:4px"></p>
+  <div class="modes">
+    <div class="mode" onclick="openAdv()" role="button" tabindex="0"><div class="mico">🗺️</div><div class="mnm">ผจญภัย</div><div class="mdesc" id="mAdv">เดินแมพ ตามหาตำนาน</div></div>
+    <div class="mode" onclick="openLeague()" role="button" tabindex="0"><div class="mico">🏟️</div><div class="mnm">ลีกฤดูกาล</div><div class="mdesc" id="mLg">5 นัดชิงแชมป์</div></div>
+    <div class="mode" onclick="openTower()" role="button" tabindex="0"><div class="mico">🗼</div><div class="mnm">หอคอย</div><div class="mdesc" id="mTw">ไต่ชั้นไม่จำกัด</div></div>
+    <div class="mode" onclick="openPvp()" role="button" tabindex="0"><div class="mico">⚔️</div><div class="mnm">PvP จัดอันดับ</div><div class="mdesc" id="mPvp">ชิงแรงก์</div></div>
+  </div>
+  <div class="actions">
+    <button onclick="openShop()">🎰 กาชา</button>
+    <button class="ghost" onclick="openDeck()">📋 จัดเด็ค</button>
+    <button class="ghost" onclick="openInv()">🎒 ไอเทม</button>
+  </div>
+</div>
+
+<!-- ============ ADVENTURE ============ -->
+<div class="overlay hidden" id="advScr">
+  <h1>🗺️ ผจญภัย: ตามหาราชันลูกหนัง</h1>
+  <p style="font-size:.84rem">ข่าวลือว่านักเตะตำนาน "ราชัน เลออน" ซ่อนตัวอยู่หลังภูเขามังกร...</p>
+  <div class="advmap" id="advMap"></div>
+  <button class="ghost" onclick="goHome()">กลับสโมสร</button>
+</div>
+
+<!-- ============ LEAGUE ============ -->
+<div class="overlay hidden" id="lgScr">
+  <h1>🏟️ ลีกฤดูกาล</h1>
+  <p style="font-size:.84rem" id="lgInfo"></p>
+  <table class="lgtable" id="lgTable"></table>
+  <div class="actions">
+    <button id="lgPlayBtn" onclick="playLeague()">เตะนัดถัดไป ⚽</button>
+    <button class="ghost" onclick="goHome()">กลับสโมสร</button>
+  </div>
+</div>
+
+<!-- ============ TOWER ============ -->
+<div class="overlay center hidden" id="twScr">
+  <h1>🗼 หอคอยไร้ที่สิ้นสุด</h1>
+  <div class="towerfloor">ชั้น <span id="twFloor">1</span></div>
+  <p id="twInfo" style="font-size:.86rem"></p>
+  <div class="actions">
+    <button onclick="playTower()">ท้าชั้นนี้ ⚔️</button>
+    <button class="ghost" onclick="goHome()">กลับสโมสร</button>
+  </div>
+</div>
+
+<!-- ============ PVP ============ -->
+<div class="overlay center hidden" id="pvpScr">
+  <h1>⚔️ PvP จัดอันดับ</h1>
+  <div class="rankbadge" id="rankBadge"></div>
+  <div class="rpbar"><i id="rpFill"></i></div>
+  <p id="pvpInfo" style="font-size:.86rem"></p>
+  <div class="actions">
+    <button class="purple" onclick="playPvp()">ค้นหาคู่ดวล 🔍</button>
+    <button class="ghost" onclick="goHome()">กลับสโมสร</button>
+  </div>
+</div>
+
+<!-- ============ SHOP / DECK / INV / END ============ -->
+<div class="overlay hidden" id="shop">
+  <h1>🎰 ร้านกาชา</h1>
+  <p>เหรียญ: 🪙 <b id="shopCoins" style="color:var(--gold)"></b></p>
+  <div class="packbtns">
+    <div class="pack" onclick="pull(50,false)" role="button" tabindex="0"><div class="pnm">📦 ซองธรรมดา</div><div class="prate">ธรรมดา 75% · แรร์ ⭐ 22%<br>ตำนาน 🌟 3%</div><div class="pcost">🪙 50</div></div>
+    <div class="pack premium" onclick="pull(120,true)" role="button" tabindex="0"><div class="pnm">💎 ซองพรีเมียม</div><div class="prate">ธรรมดา 40% · แรร์ ⭐ 48%<br>ตำนาน 🌟 12%</div><div class="pcost">🪙 120</div></div>
+  </div>
+  <div class="gachareveal" id="gachaOut"></div>
+  <button class="ghost" onclick="goHome()">กลับสโมสร</button>
+</div>
+
+<div class="overlay hidden" id="deckScr">
+  <h1>📋 จัดเด็ค</h1>
+  <div class="deckstat" id="deckStat"></div>
+  <div class="synergy" id="deckSyn"></div>
+  <p style="font-size:.82rem">แตะการ์ดเพื่อเลือกเข้า/ออกเด็ค (ขอบฟ้า = อยู่ในเด็ค)</p>
+  <div class="hand" id="collection"></div>
+  <div class="actions"><button id="deckOk" onclick="goHome()">บันทึกเด็ค ✔</button></div>
+</div>
+
+<div class="overlay center hidden" id="matchEnd">
+  <h1 id="meTitle"></h1><p id="meDesc"></p><div id="lootArea"></div>
+  <button id="meBtn" onclick="afterMatch()">ตกลง</button>
+</div>
+
+<div class="overlay hidden" id="invScr">
+  <h1>🎒 กระเป๋าไอเทม</h1><div class="invwrap" id="invList"></div>
+  <button onclick="goHome()">กลับสโมสร</button>
+</div>
+
+<div class="lvup hidden" id="lvupPop"></div>
+
+<!-- ============ MATCH UI ============ -->
+<div id="matchUI" class="hidden" style="width:100%;display:flex;flex-direction:column;align-items:center">
+<div class="hud">
+  <span class="lv">👑 Lv.<span id="capLv">1</span></span>
+  <div class="xpbar"><i id="capXp" style="width:0%"></i></div>
+  <span class="coin">🪙 <span id="coins">150</span></span>
+</div>
+<div class="scoreboard">
+  <div class="team you">⚡ ราชันสายฟ้า</div>
+  <div>
+    <div class="score"><span id="sYou">0</span> : <span id="sAi">0</span></div>
+    <div class="turncount"><span id="modeLabel"></span> · เทิร์น <span id="turnNow">1</span>/8</div>
+  </div>
+  <div class="team ai" id="aiName">🔥</div>
+</div>
+<div class="synergy" id="matchSyn"></div>
+<div class="log" id="log"></div>
+<div class="incoming" id="incoming"></div>
+<div class="phase" id="phase"></div>
+<div class="counterhint">⚖️ 🔥ชนะ🎯 · 💨ชนะ🔥 · 🎯ชนะ💨 (ข่มธาตุ = ทอย +15)</div>
+<div class="duel" id="duel"></div>
+<div class="hand" id="hand"></div>
+<div class="tactics" id="tacticBar"></div>
+<div class="actions" id="actions"></div>
+</div>
+
+<script>
+const rnd=n=>Math.floor(Math.random()*n);
+const $=id=>document.getElementById(id);
+const NATIONS=['🇹🇭','🇧🇷','🇯🇵','🇩🇪'];
+const ELEMS={fire:{ico:'🔥',nm:'พลัง',beats:'tech',cls:'fire'},
+             wind:{ico:'💨',nm:'เร็ว',beats:'fire',cls:'wind'},
+             tech:{ico:'🎯',nm:'เทคนิค',beats:'wind',cls:'tech'}};
+const ELEMKEYS=['fire','wind','tech'];
+
+/* ============ CARD FACTORY ============ */
+let uid=0;
+function P(name,pos,atk,def,nat,elem,opts={}){
+  return {name,pos,atk,def,nat,elem,lv:1,xp:0,stamina:100,item:null,
+    rare:opts.r==='rare',legend:opts.r==='legend',
+    skill:opts.skill||null,skillTxt:opts.skillTxt||'',id:'p'+(uid++)};
+}
+let collection=[
+  P('ธันเดอร์ ชัย','ST',84,30,'🇹🇭','fire',{r:'rare',skill:'crit',skillTxt:'⭐ 25% ยิงแรง x1.5'}),
+  P('ฟ้าผ่า วิน','WG',76,40,'🇹🇭','wind'),
+  P('สายลม ต้น','MF',66,58,'🇹🇭','wind'),
+  P('กำแพง เพชร','DF',34,82,'🇹🇭','fire',{r:'rare',skill:'wall',skillTxt:'⭐ 25% บล็อกสนิท'}),
+  P('หินผา กล้า','DF',30,74,'🇯🇵','tech'),
+  P('เงา ภูมิ','DF',42,66,'🇧🇷','tech'),
+];
+let deck=collection.map(p=>p.id);
+
+const FIRST=['เพชฌฆาต','พายุ','ราชสีห์','เหยี่ยว','ภูเขา','อินทรี','มีดโกน','จรวด','ผี','เสือ'];
+const LAST=['โอตะ','ซิลวา','มุลเลอร์','สมชาย','คาวาอิ','ซานโตส','ชไนเดอร์','บุญมา','เรียว','คากะ'];
+const SKILLS=[
+  {skill:'crit',skillTxt:'⭐ 25% ยิงแรง x1.5'},
+  {skill:'wall',skillTxt:'⭐ 25% บล็อกสนิท'},
+  {skill:'engine',skillTxt:'⭐ สตามิน่าลดช้าครึ่งนึง'},
+];
+function rollCard(premium){
+  const r=Math.random();
+  let tier=premium?(r<.12?'legend':r<.6?'rare':'common'):(r<.03?'legend':r<.25?'rare':'common');
+  const pos=['ST','WG','MF','DF'][rnd(4)];
+  const isAtk=pos==='ST'||pos==='WG';
+  let base=(tier==='legend'?88:tier==='rare'?76:62)+rnd(8);
+  const atk=isAtk?base:(pos==='MF'?base-6:Math.round(base*.45));
+  const def=isAtk?Math.round(base*.45):(pos==='MF'?base-6:base);
+  const sk=tier!=='common'?SKILLS[rnd(SKILLS.length)]:{};
+  return P(FIRST[rnd(FIRST.length)]+' '+LAST[rnd(LAST.length)],pos,atk,def,
+    NATIONS[rnd(NATIONS.length)],ELEMKEYS[rnd(3)],{r:tier==='common'?null:tier,...sk});
+}
+function genTeam(mult,natBias){
+  const mk=(nm,pos,a,d,r)=>P(nm,pos,Math.round(a*mult),Math.round(d*mult),
+    natBias||NATIONS[rnd(NATIONS.length)],ELEMKEYS[rnd(3)],r?{r:'rare'}:{});
+  return [mk('สไตรเกอร์','ST',82,32,true),mk('ปีกจรวด','WG',74,38),
+    mk('มิดฟิลด์','MF',64,56),mk('เซ็นเตอร์','DF',30,80,true),
+    mk('แบ็กซ้าย','DF',28,72),mk('แบ็กขวา','DF',38,64)];
+}
+
+/* ============ TACTICS ============ */
+const TACTICS=[
+  {id:'rally',ico:'📣',nm:'ปลุกใจฮาล์ฟไทม์',type:'buff',desc:'ทั้งทีมฟื้นสตามิน่า +35',
+   use(){deckPlayers().forEach(p=>p.stamina=Math.min(100,p.stamina+35));log('📣 <span class="good">ทั้งทีมฟื้นสตามิน่า +35</span>');}},
+  {id:'ice',ico:'🧊',nm:'น้ำแข็งประคบ',type:'buff',desc:'คนที่เหนื่อยสุด ฟื้นสตามิน่าเต็ม',
+   use(){const t=[...deckPlayers()].sort((a,b)=>a.stamina-b.stamina)[0];t.stamina=100;log(`🧊 <span class="good">${t.name} สตามิน่าเต็ม!</span>`);}},
+  {id:'storm',ico:'🌧️',nm:'ฝนกระหน่ำสนาม',type:'buff',desc:'2 เทิร์น: สาย 🔥 +12 / สาย 🎯 -5',
+   use(){fx.storm=2;log('🌧️ <span class="good">ฝนตก! สายพลังได้เปรียบ 2 เทิร์น</span>');}},
+  {id:'press',ico:'🥶',nm:'กดดันจุดโทษ',type:'debuff',desc:'ดวลถัดไป คู่แข่งทอยได้แค่ +20',
+   use(){fx.press=true;log('🥶 <span class="bad">ดวงคู่แข่งหดในดวลถัดไป</span>');}},
+  {id:'rumor',ico:'📰',nm:'ข่าวลือย้ายทีม',type:'debuff',desc:'2 เทิร์น: ⭐/🌟 คู่แข่ง -12',
+   use(){fx.rumor=2;log('📰 <span class="bad">ตัวท็อปคู่แข่งเสียสมาธิ 2 เทิร์น</span>');}},
+  {id:'card',ico:'🟨',nm:'ยั่วให้ใบเหลือง',type:'debuff',desc:'กองหลังเก่งสุดคู่แข่ง รับ -15 ทั้งแมตช์',
+   use(){const t=[...ai].sort((a,b)=>b.def-a.def)[0];t.def=Math.max(10,t.def-15);log(`🟨 <span class="bad">${t.name} โดนใบเหลือง! รับ -15</span>`);}},
+];
+let matchTactics=[],fx={};
+
+/* ============ GLOBAL STATE ============ */
+let capLv=1,capXp=0,coins=150,inventory=[];
+let ai=[],scoreYou=0,scoreAi=0,turn=1,youAttacking=true,incomingAttacker=null;
+let mode=null; // 'adv' | 'league' | 'tower' | 'pvp'
+let pendingCtx={};
+const ITEMS=[
+  {ico:'👟',name:'รองเท้าสายฟ้า',atk:8,def:0,desc:'บุก +8'},
+  {ico:'🧤',name:'ถุงมือไททัน',atk:0,def:8,desc:'รับ +8'},
+  {ico:'🎽',name:'เสื้อกัปตันเก่า',atk:4,def:4,desc:'บุก +4 / รับ +4'},
+  {ico:'🔮',name:'เครื่องรางอสูร',atk:12,def:-3,desc:'บุก +12 / รับ -3'},
+  {ico:'🛡️',name:'สนับแข้งมังกร',atk:-2,def:12,desc:'รับ +12 / บุก -2'},
+];
+
+/* mode states */
+let advProgress=0; // nodes cleared
+const ADV_NODES=[
+  {ico:'🏘️',nm:'หมู่บ้านลูกหนัง',desc:'ทีมเด็กหมู่บ้านขอท้าดวล (ง่าย)',mult:.85},
+  {ico:'🌲',nm:'ป่าทมิฬ',desc:'โจรลูกหนังดักปล้นนักเดินทาง',mult:1.0},
+  {ico:'🏜️',nm:'ทะเลทรายแผดเผา',desc:'ทีมเร่ร่อนแกร่งจากแดดทราย',mult:1.12},
+  {ico:'⛰️',nm:'ภูเขามังกร',desc:'ผู้พิทักษ์หุบเขาขวางทางอยู่',mult:1.25},
+  {ico:'👑',nm:'วิหารราชัน',desc:'บอส: ราชัน เลออน — ชนะแล้วเขาจะร่วมทีม!',mult:1.45},
+];
+let lgRound=0,lgPts={};
+const LG_TEAMS=['อสูรแดง 🔥','หมาป่าเทา 🐺','อินทรีดำ 🦅','ฉลามคลั่ง 🦈','ราชามังกร 🐉'];
+let twFloor=1;
+let rp=0; // rank points
+const RANKS=[{nm:'Bronze',min:0,c:'#c08552'},{nm:'Silver',min:100,c:'#b8c4cc'},{nm:'Gold',min:220,c:'#e8b53a'},{nm:'Diamond',min:380,c:'#7ad9ff'},{nm:'Legend',min:600,c:'#ff7ad9'}];
+const PVP_NAMES=['เด็คสายเร็วของ "ลมกรด99"','เด็คป้อมปราการของ "กำแพงเมืองจีน"','เด็คตำนานล้วนของ "เจ้าพ่อกาชา"','เด็คเคมีบราซิลของ "แซมบ้าคิง"','เด็คสมดุลของ "โค้ชหมู"'];
+
+/* ============ SYNERGY / EFF ============ */
+function deckPlayers(){return deck.map(id=>collection.find(p=>p.id===id));}
+function synergyBonus(){
+  const cnt={};deckPlayers().forEach(p=>cnt[p.nat]=(cnt[p.nat]||0)+1);
+  const hit=Object.entries(cnt).filter(([k,v])=>v>=3);
+  return hit.length?{bonus:5,nats:hit.map(h=>h[0])}:{bonus:0,nats:[]};
+}
+function synText(){
+  const s=synergyBonus();
+  return s.bonus?`🧪 เคมีทีม! ${s.nats.join(' ')} ×3 — ทั้งทีม +${s.bonus}`:`🧪 ยังไม่มีเคมีทีม (ชาติเดียวกัน ≥3)`;
+}
+function eff(p,isMine=true){
+  const f=.5+.5*(p.stamina/100);
+  const ia=p.item?p.item.atk:0,idf=p.item?p.item.def:0;
+  let bonus=isMine&&deck.includes(p.id)?synergyBonus().bonus:0;
+  if(isMine&&fx.storm>0){if(p.elem==='fire')bonus+=12;if(p.elem==='tech')bonus-=5;}
+  if(!isMine&&fx.rumor>0&&(p.rare||p.legend))bonus-=12;
+  return {atk:Math.max(1,Math.round((p.atk+ia+bonus)*f)),
+          def:Math.max(1,Math.round((p.def+idf+bonus)*f))};
+}
+
+/* ============ XP ============ */
+function capXpNeed(){return capLv*60}
+function pXpNeed(p){return p.lv*40}
+function log(msg,cls=''){const d=document.createElement('div');if(cls)d.className=cls;d.innerHTML=msg;$('log').prepend(d);}
+function popup(html){const p=$('lvupPop');p.innerHTML=html;p.classList.remove('hidden');setTimeout(()=>p.classList.add('hidden'),1700);}
+function gainCapXp(n){
+  capXp+=n;
+  while(capXp>=capXpNeed()){capXp-=capXpNeed();capLv++;
+    popup(`<h2>👑 LEVEL UP!</h2><p class="kanit">กัปตัน Lv.${capLv} — ทั้งทีม +1</p>`);
+    collection.forEach(p=>{p.atk++;p.def++;});}
+  $('capLv').textContent=capLv;$('capXp').style.width=(capXp/capXpNeed()*100)+'%';
+}
+function gainPXp(p,n){
+  p.xp+=n;
+  while(p.xp>=pXpNeed(p)){p.xp-=pXpNeed(p);p.lv++;p.atk+=3;p.def+=2;
+    log(`📈 <span class="loot">${p.name} Lv.${p.lv}! บุก+3 รับ+2</span>`);}
+}
+
+/* ============ NAV ============ */
+const SCREENS=['intro','home','advScr','lgScr','twScr','pvpScr','shop','deckScr','matchEnd','invScr','matchUI'];
+function hideAll(){SCREENS.forEach(i=>$(i).classList.add('hidden'));}
+function goHome(){
+  hideAll();$('home').classList.remove('hidden');
+  $('homeInfo').innerHTML=`👑 Lv.${capLv} · 🪙 ${coins} · การ์ด ${collection.length} ใบ · เด็ค ${deck.length}/6<br>${synText()}`;
+  $('mAdv').textContent=advProgress>=ADV_NODES.length?'✅ พิชิตครบแล้ว':`ด่าน ${advProgress+1}/${ADV_NODES.length}`;
+  $('mLg').textContent=lgRound>=5?'✅ จบฤดูกาล':`นัดที่ ${lgRound+1}/5`;
+  $('mTw').textContent=`สถิติสูงสุด: ชั้น ${twFloor}`;
+  $('mPvp').textContent=rankOf(rp).nm+` (${rp} RP)`;
+}
+
+/* ============ ADVENTURE ============ */
+function openAdv(){
+  hideAll();$('advScr').classList.remove('hidden');
+  $('advMap').innerHTML=ADV_NODES.map((n,i)=>{
+    const st=i<advProgress?'done':i===advProgress?'':'locked';
+    return (i?'<div class="advlink"></div>':'')+
+    `<div class="advnode ${st}" ${st===''?`onclick="playAdv(${i})" role="button" tabindex="0"`:''}>
+      <span class="aico">${i<advProgress?'✅':n.ico}</span>
+      <span><div class="anm">${n.nm}</div><div class="adesc">${n.desc}</div></span>
+    </div>`;
+  }).join('');
+}
+function playAdv(i){
+  const n=ADV_NODES[i];
+  mode='adv';pendingCtx={node:i};
+  startMatch(genTeam(n.mult),n.ico+' '+n.nm,'🗺️ ผจญภัย');
+}
+
+/* ============ LEAGUE ============ */
+function initLg(){if(Object.keys(lgPts).length)return;
+  lgPts['คุณ']=0;LG_TEAMS.forEach(t=>lgPts[t]=0);}
+function openLeague(){
+  initLg();hideAll();$('lgScr').classList.remove('hidden');
+  renderLg();
+}
+function renderLg(){
+  const rows=Object.entries(lgPts).sort((a,b)=>b[1]-a[1]);
+  $('lgTable').innerHTML=`<tr><th>#</th><th style="text-align:left">ทีม</th><th>แต้ม</th></tr>`+
+    rows.map(([t,p],i)=>`<tr class="${t==='คุณ'?'me':''}"><td>${i+1}</td><td class="tn">${t==='คุณ'?'⚡ ราชันสายฟ้า (คุณ)':t}</td><td class="pts">${p}</td></tr>`).join('');
+  if(lgRound>=5){
+    const champ=rows[0][0];
+    $('lgInfo').innerHTML=champ==='คุณ'?'🏆 <b style="color:var(--gold)">คุณคือแชมป์ฤดูกาล!</b>':'จบฤดูกาล — แชมป์คือ '+champ;
+    $('lgPlayBtn').disabled=true;$('lgPlayBtn').textContent='จบฤดูกาลแล้ว';
+  }else{
+    $('lgInfo').textContent=`นัดที่ ${lgRound+1}/5 — พบ ${LG_TEAMS[lgRound]} (ชนะ 3 แต้ม / เสมอ 1)`;
+    $('lgPlayBtn').disabled=false;$('lgPlayBtn').textContent='เตะนัดถัดไป ⚽';
+  }
+}
+function playLeague(){
+  mode='league';pendingCtx={opp:LG_TEAMS[lgRound]};
+  startMatch(genTeam(1+lgRound*.09),LG_TEAMS[lgRound],`🏟️ ลีก นัด ${lgRound+1}/5`);
+}
+
+/* ============ TOWER ============ */
+function openTower(){
+  hideAll();$('twScr').classList.remove('hidden');
+  $('twFloor').textContent=twFloor;
+  $('twInfo').innerHTML=`ความแกร่งศัตรู: ×${(1+twFloor*.08).toFixed(2)}<br>รางวัลชั้นนี้: 🪙 ${40+twFloor*15} · แพ้ = ตกกลับชั้น 1<br><b style="color:var(--gold)">ทุก 3 ชั้น มีไอเทมดรอปแน่นอน!</b>`;
+}
+function playTower(){
+  mode='tower';pendingCtx={};
+  startMatch(genTeam(1+twFloor*.08),`ผู้พิทักษ์ชั้น ${twFloor} 🗿`,`🗼 หอคอย ชั้น ${twFloor}`);
+}
+
+/* ============ PVP ============ */
+function rankOf(p){let r=RANKS[0];RANKS.forEach(x=>{if(p>=x.min)r=x;});return r;}
+function openPvp(){
+  hideAll();$('pvpScr').classList.remove('hidden');
+  const r=rankOf(rp);
+  const next=RANKS[RANKS.indexOf(r)+1];
+  $('rankBadge').textContent=`🏅 ${r.nm} · ${rp} RP`;
+  $('rankBadge').style.borderColor=r.c;$('rankBadge').style.color=r.c;
+  $('rpFill').style.width=next?((rp-r.min)/(next.min-r.min)*100)+'%':'100%';
+  $('pvpInfo').innerHTML=(next?`อีก ${next.min-rp} RP ถึงแรงก์ ${next.nm}`:'🌟 แรงก์สูงสุดแล้ว!')+
+    `<br>ชนะ +25 RP · แพ้ -10 RP · คู่แข่งแกร่งตามแรงก์`;
+}
+function playPvp(){
+  mode='pvp';
+  const oppName=PVP_NAMES[rnd(PVP_NAMES.length)];
+  pendingCtx={opp:oppName};
+  startMatch(genTeam(1+rp*.0012+Math.random()*.1),oppName,'⚔️ PvP '+rankOf(rp).nm);
+}
+
+/* ============ GACHA / DECK / INV ============ */
+function openShop(){hideAll();$('shop').classList.remove('hidden');$('shopCoins').textContent=coins;$('gachaOut').innerHTML='';}
+function pull(cost,premium){
+  if(coins<cost){$('gachaOut').innerHTML=`<p style="color:#f0907f">เหรียญไม่พอ!</p>`;return;}
+  coins-=cost;$('coins').textContent=coins;$('shopCoins').textContent=coins;
+  const c=rollCard(premium);collection.push(c);saveGame();
+  const tier=c.legend?'🌟 ตำนาน!':c.rare?'⭐ แรร์!':'ธรรมดา';
+  $('gachaOut').innerHTML=`<div><div class="kanit" style="color:${c.legend?'var(--legend)':c.rare?'var(--gold)':'#a8c9b4'};font-weight:800;margin-bottom:8px">✨ ${tier} ✨</div>${cardHTML(c,false)}</div>`;
+}
+function deckValid(){
+  const ps=deckPlayers();
+  const atk=ps.filter(p=>p.atk>=50).length,df=ps.filter(p=>p.def>=50).length;
+  return {ok:ps.length===6&&atk>=2&&df>=2,size:ps.length,atk,def:df};
+}
+function openDeck(){hideAll();$('deckScr').classList.remove('hidden');renderDeck();}
+function renderDeck(){
+  $('collection').innerHTML=collection.map(p=>{
+    const inD=deck.includes(p.id);
+    return cardHTML(p,false).replace(' disabled ',' ')
+      .replace('class="cardp',`onclick="toggleDeck('${p.id}')" onkeydown="if(event.key==='Enter')toggleDeck('${p.id}')" style="cursor:pointer" class="cardp ${inD?'indeck':''}`);
+  }).join('');
+  const v=deckValid();
+  $('deckStat').innerHTML=`เด็ค <span class="${v.size===6?'ok':'no'}">${v.size}/6</span> · บุก(⚔≥50) <span class="${v.atk>=2?'ok':'no'}">${v.atk}/2+</span> · รับ(🛡≥50) <span class="${v.def>=2?'ok':'no'}">${v.def}/2+</span>`;
+  $('deckSyn').textContent=synText();
+  $('deckOk').disabled=!v.ok;
+}
+function toggleDeck(id){
+  if(deck.includes(id))deck=deck.filter(d=>d!==id);
+  else if(deck.length<6)deck.push(id);
+  saveGame();
+  renderDeck();
+}
+function openInv(){
+  hideAll();$('invScr').classList.remove('hidden');
+  const list=$('invList');
+  if(!inventory.length){list.innerHTML=`<p style="color:#7fa78d">กระเป๋าว่าง — ชนะแมตช์เพื่อลุ้นดรอป!</p>`;}
+  else{
+    list.innerHTML=inventory.map((it,i)=>`
+      <div class="invitem"><span class="ico">${it.ico}</span>
+        <span><span class="lnm">${it.name}</span><br><small>${it.desc}</small></span>
+        <select onchange="equip(${i},this.value)">
+          <option value="">— สวมให้ใคร —</option>
+          ${collection.map(p=>`<option value="${p.id}" ${p.item===it?'selected':''}>${p.name}${p.item===it?' (สวมอยู่)':''}</option>`).join('')}
+        </select>
+      </div>`).join('');
+  }
+}
+function equip(itemIdx,pid){
+  const it=inventory[itemIdx];
+  collection.forEach(p=>{if(p.item===it)p.item=null;});
+  if(pid){const p=collection.find(x=>x.id===pid);p.item=it;}
+  saveGame();
+  openInv();
+}
+
+/* ============ MATCH ENGINE (shared) ============ */
+function elemChip(e){const E=ELEMS[e];return `<span class="elem ${E.cls}">${E.ico} ${E.nm}</span>`;}
+function cardHTML(p,clickable,advantage=false){
+  const e=eff(p,collection.includes(p));
+  return `<div class="cardp ${p.legend?'legend':p.rare?'rare':''} ${clickable?'':'disabled'} ${advantage?'advantage':''}"
+    ${clickable?`onclick="pick('${p.id}')" onkeydown="if(event.key==='Enter')pick('${p.id}')"`:''} role="button" tabindex="0">
+    <span class="pos">${p.pos}</span><span class="plv">Lv.${p.lv}</span><span class="nat">${p.nat}</span>
+    <div class="nm">${p.name}</div>
+    ${elemChip(p.elem)}
+    <div class="st">⚔ <b>${e.atk}</b> · 🛡 <b>${e.def}</b></div>
+    <div class="itm">${p.item?p.item.ico+' '+p.item.name:''}</div>
+    <div class="stam"><i style="width:${p.stamina}%"></i></div>
+    <div class="skill">${p.skillTxt}</div>
+  </div>`;
+}
+function startMatch(opponent,oppName,modeLabel){
+  if(!deckValid().ok){openDeck();return;}
+  hideAll();$('matchUI').classList.remove('hidden');
+  ai=opponent;scoreYou=0;scoreAi=0;turn=1;youAttacking=true;fx={};
+  deckPlayers().forEach(p=>p.stamina=100);
+  matchTactics=[...TACTICS].sort(()=>Math.random()-.5).slice(0,3).map(t=>({...t,used:false}));
+  $('sYou').textContent=0;$('sAi').textContent=0;
+  $('modeLabel').textContent=modeLabel;$('turnNow').textContent=1;
+  $('aiName').textContent=oppName;
+  $('matchSyn').textContent=synergyBonus().bonus?synText():'';
+  $('log').innerHTML='';
+  log(`🏟️ <span class="gold">${modeLabel}: พบ ${oppName}</span>`);
+  setupTurn();
+}
+function renderTactics(){
+  $('tacticBar').innerHTML=matchTactics.map((t,i)=>`
+    <div class="tcard ${t.type==='debuff'?'debuff':''} ${t.used?'used':''}" onclick="useTactic(${i})" role="button" tabindex="0" onkeydown="if(event.key==='Enter')useTactic(${i})">
+      <div class="tnm">${t.ico} ${t.nm}</div>${t.desc}</div>`).join('');
+}
+function useTactic(i){
+  const t=matchTactics[i];if(t.used)return;
+  t.used=true;TACTICS.find(x=>x.id===t.id).use();
+  renderTactics();setupTurnDisplay();
+}
+function setupTurn(){
+  if(!youAttacking){
+    const atks=ai.filter(p=>p.atk>=50);
+    incomingAttacker=atks[rnd(atks.length)];
+    const weak=ELEMKEYS.find(k=>ELEMS[k].beats===incomingAttacker.elem);
+    $('incoming').className='incoming show';
+    $('incoming').innerHTML=`⚠️ <b>${incomingAttacker.name}</b> ${elemChip(incomingAttacker.elem)} ⚔${eff(incomingAttacker,false).atk} กำลังบุกมา! — สกัดด้วยสาย ${ELEMS[weak].ico}${ELEMS[weak].nm} ได้เปรียบ +15`;
+  }else{
+    incomingAttacker=null;$('incoming').className='incoming';
+  }
+  setupTurnDisplay();
+}
+function setupTurnDisplay(){
+  $('phase').innerHTML=youAttacking
+    ?`<span class="atk">🔵 เทิร์นบุก</span> — เลือกนักเตะไปยิง!`
+    :`🔴 เลือกกองหลังไปสกัด!`;
+  $('hand').innerHTML=deckPlayers().map(p=>{
+    const usable=youAttacking?p.atk>=50:p.def>=50;
+    const adv=!youAttacking&&incomingAttacker&&ELEMS[p.elem].beats===incomingAttacker.elem;
+    return cardHTML(p,usable,adv);
+  }).join('');
+  renderTactics();$('actions').innerHTML='';
+}
+function pick(id){
+  const mine=deckPlayers().find(p=>p.id===id);
+  if(youAttacking){
+    const defs=ai.filter(p=>p.def>=50).sort((a,b)=>b.def-a.def);
+    duel(mine,defs[rnd(Math.min(2,defs.length))],true);
+  }else{
+    duel(incomingAttacker,mine,false);
+  }
+}
+function duel(attacker,defender,youAtk){
+  const ea=eff(attacker,youAtk),ed=eff(defender,!youAtk);
+  let atkBonus=0,defBonus=0,notes=[];
+  if(ELEMS[attacker.elem].beats===defender.elem){atkBonus=15;notes.push(`${ELEMS[attacker.elem].ico}ข่ม${ELEMS[defender.elem].ico} บุก+15`);}
+  if(ELEMS[defender.elem].beats===attacker.elem){defBonus=15;notes.push(`${ELEMS[defender.elem].ico}ข่ม${ELEMS[attacker.elem].ico} รับ+15`);}
+  const enemyRollMax=fx.press?20:40;
+  let atkRoll=ea.atk+atkBonus+(youAtk?rnd(40):rnd(enemyRollMax));
+  let defRoll=ed.def+defBonus+(youAtk?rnd(enemyRollMax):rnd(40));
+  if(fx.press){notes.push('🥶 กดดัน!');fx.press=false;}
+  if(attacker.skill==='crit'&&Math.random()<.25){atkRoll=Math.round(atkRoll*1.5);notes.push('⭐ ซูเปอร์ช็อต!');}
+  if(defender.skill==='wall'&&Math.random()<.25){defRoll+=999;notes.push('⭐ กำแพงเหล็ก!');}
+  const goal=atkRoll>defRoll;
+  attacker.stamina=Math.max(20,attacker.stamina-(attacker.skill==='engine'?13:25));
+  defender.stamina=Math.max(20,defender.stamina-(defender.skill==='engine'?10:20));
+
+  const d=$('duel');d.className='duel show';
+  const EA=ELEMS[attacker.elem],ED=ELEMS[defender.elem];
+  d.innerHTML=`<div class="clash">
+      <div class="fighter atk"><div class="fnm">${EA.ico} ${attacker.name}</div>⚔ ${ea.atk}</div>
+      <div class="boom">⚡VS⚡</div>
+      <div class="fighter dfd"><div class="fnm">${ED.ico} ${defender.name}</div>🛡 ${ed.def}</div>
+    </div>
+    <div class="roll" id="duelRoll" style="min-height:38px"></div>
+    <div class="result" id="duelResult" style="min-height:30px"></div>`;
+  $('hand').innerHTML=deckPlayers().map(p=>cardHTML(p,false)).join('');
+  $('actions').innerHTML='';$('incoming').className='incoming';
+
+  const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const t1=reduced?0:700,t2=reduced?0:1500;
+  setTimeout(()=>{
+    const rollEl=$('duelRoll');
+    const fA=atkRoll>999?'∞':atkRoll,fD=defRoll>999?'🧱':defRoll;
+    if(reduced){rollEl.innerHTML=`ทอยบุก <span class="rollnum">${fA}</span> — ทอยรับ <span class="rollnum">${fD}</span><br>${notes.join(' · ')}`;}
+    else{
+      let i=0;const iv=setInterval(()=>{
+        i++;
+        rollEl.innerHTML=`ทอยบุก <span class="rollnum">${atkRoll>999?'∞':rnd(atkRoll+1)}</span> — ทอยรับ <span class="rollnum">${defRoll>999?'🧱':rnd(defRoll+1)}</span>`;
+        if(i>=8){clearInterval(iv);
+          rollEl.innerHTML=`ทอยบุก <span class="rollnum">${fA}</span> — ทอยรับ <span class="rollnum">${fD}</span><br>${notes.join(' · ')}`;}
+      },70);
+    }
+  },t1);
+  setTimeout(()=>{
+    const resEl=$('duelResult');
+    if(goal){
+      resEl.innerHTML=`<span class="goal">⚽ GOOOAL!</span>`;
+      if(!reduced){
+        document.body.classList.add('shake');
+        setTimeout(()=>document.body.classList.remove('shake'),450);
+        if(youAtk)throwConfetti();
+      }
+    }else{resEl.innerHTML=`<span class="savering">🧤</span> เซฟได้!`;}
+    finishDuel(attacker,defender,goal,youAtk);
+  },t2);
+}
+function throwConfetti(){
+  const emo=['🎉','⚽','✨','🟡','🔵'];
+  for(let i=0;i<18;i++){
+    const c=document.createElement('div');
+    c.className='confetti';c.textContent=emo[rnd(emo.length)];
+    c.style.left=rnd(100)+'vw';
+    c.style.animationDuration=(1.2+Math.random()*1.2)+'s';
+    document.body.appendChild(c);
+    setTimeout(()=>c.remove(),2600);
+  }
+}
+function finishDuel(attacker,defender,goal,youAtk){
+  if(goal){
+    if(youAtk){scoreYou++;log(`⚽ <span class="good">${attacker.name} ยิงเข้า! +15 XP</span>`);gainPXp(attacker,15);gainCapXp(15);}
+    else{scoreAi++;log(`⚽ <span class="bad">${attacker.name} ยิงเข้า...</span>`);}
+  }else{
+    if(youAtk){log(`🧤 <span class="bad">โดนสกัด... +5 XP</span>`);gainPXp(attacker,5);gainCapXp(5);}
+    else{log(`🧤 <span class="good">${defender.name} สกัดสำเร็จ! +12 XP</span>`);gainPXp(defender,12);gainCapXp(12);}
+  }
+  $('sYou').textContent=scoreYou;$('sAi').textContent=scoreAi;
+  $('actions').innerHTML=`<button onclick="nextTurn()">เทิร์นถัดไป ▶</button>`;
+}
+function nextTurn(){
+  $('duel').className='duel';turn++;
+  if(fx.storm>0)fx.storm--;
+  if(fx.rumor>0)fx.rumor--;
+  if(turn>8){endMatch();return;}
+  [...deckPlayers(),...ai].forEach(p=>p.stamina=Math.min(100,p.stamina+8));
+  youAttacking=!youAttacking;$('turnNow').textContent=turn;
+  setupTurn();
+}
+
+/* ============ MATCH END — per mode ============ */
+function endMatch(){
+  const win=scoreYou>scoreAi,draw=scoreYou===scoreAi;
+  let title=win?`🏆 ชนะ ${scoreYou}:${scoreAi}`:draw?`🤝 เสมอ ${scoreYou}:${scoreAi}`:`💔 แพ้ ${scoreYou}:${scoreAi}`;
+  let desc='',lootChance=win?.6:draw?.35:.15,coinGain=0,xpGain=win?50:draw?25:15;
+
+  if(mode==='adv'){
+    coinGain=win?100:30;
+    if(win){
+      advProgress=Math.max(advProgress,pendingCtx.node+1);
+      if(pendingCtx.node===ADV_NODES.length-1){
+        const leon=P('ราชัน เลออน','ST',95,45,'🇧🇷','tech',{r:'legend',skill:'crit',skillTxt:'⭐ 25% ยิงแรง x1.5'});
+        collection.push(leon);
+        desc=`👑 <b style="color:var(--legend)">ราชัน เลออน เข้าร่วมทีม!</b> (ST ตำนาน 🌟 ⚔95) เปิดหน้าจัดเด็คเพื่อใส่เขาลงทีม!`;
+        title='🌟 พิชิตวิหารราชัน!';
+      } else desc=`ผ่านด่าน ${ADV_NODES[pendingCtx.node].nm}! เดินทางต่อได้`;
+    } else desc='พ่ายแพ้... พักฟื้นแล้วลองใหม่';
+  }
+  else if(mode==='league'){
+    coinGain=win?110:draw?50:25;
+    initLg();
+    lgPts['คุณ']+=win?3:draw?1:0;
+    // sim other fixtures
+    const others=LG_TEAMS.filter(t=>t!==pendingCtx.opp);
+    for(let i=0;i<others.length-1;i+=2){
+      const r=rnd(3);
+      if(r===0)lgPts[others[i]]+=3;else if(r===1)lgPts[others[i+1]]+=3;
+      else{lgPts[others[i]]++;lgPts[others[i+1]]++;}
+    }
+    lgPts[pendingCtx.opp]+=win?0:draw?1:3;
+    lgRound++;
+    desc=`เก็บ ${win?3:draw?1:0} แต้ม! ดูตารางคะแนนได้เลย`;
+    if(lgRound>=5&&Object.entries(lgPts).sort((a,b)=>b[1]-a[1])[0][0]==='คุณ'){
+      coinGain+=300;desc+=`<br>🏆 <b style="color:var(--gold)">แชมป์ฤดูกาล! โบนัส +300 🪙</b>`;
+    }
+  }
+  else if(mode==='tower'){
+    if(win){
+      coinGain=40+twFloor*15;
+      if(twFloor%3===0)lootChance=1;
+      desc=`พิชิตชั้น ${twFloor}! ขึ้นชั้น ${twFloor+1}`;
+      twFloor++;
+    }else{
+      coinGain=10;desc=`ร่วงจากชั้น ${twFloor}... กลับไปเริ่มชั้น 1 (ความท้าทายของหอคอย!)`;
+      twFloor=1;
+    }
+  }
+  else if(mode==='pvp'){
+    coinGain=win?90:draw?40:20;
+    const before=rankOf(rp).nm;
+    rp=Math.max(0,rp+(win?25:draw?5:-10));
+    const after=rankOf(rp).nm;
+    desc=`${win?'+25':draw?'+5':'-10'} RP → ${rp} RP (${after})`;
+    if(after!==before&&win)desc+=`<br>🎉 <b style="color:var(--legend)">เลื่อนแรงก์เป็น ${after}!</b>`;
+  }
+
+  coins+=coinGain;$('coins').textContent=coins;gainCapXp(xpGain);
+  $('meTitle').textContent=title;
+  $('meDesc').innerHTML=desc+`<br>ได้รับ 🪙 ${coinGain} + 👑 ${xpGain} XP`;
+  $('lootArea').innerHTML='';
+  if(Math.random()<lootChance){
+    const it={...ITEMS[rnd(ITEMS.length)]};inventory.push(it);
+    $('lootArea').innerHTML=`<div class="lootbox"><div class="ico">📦✨</div>
+      <div class="lnm">${it.ico} ${it.name}</div><div class="ldesc">${it.desc}</div></div>`;
+  }
+  hideAll();$('matchEnd').classList.remove('hidden');
+  saveGame();
+}
+function afterMatch(){
+  saveGame();
+  if(mode==='adv')openAdv();
+  else if(mode==='league')openLeague();
+  else if(mode==='tower')openTower();
+  else if(mode==='pvp')openPvp();
+  else goHome();
+}
+
+/* ============ SAVE SYSTEM ============ */
+const SAVE_KEY='footballRealmSave_v5';
+function saveGame(){
+  try{
+    const data={
+      capLv,capXp,coins,advProgress,lgRound,lgPts,twFloor,rp,uid,
+      inventory,
+      deck,
+      collection:collection.map(p=>({...p,item:p.item?inventory.indexOf(p.item):-1})),
+    };
+    localStorage.setItem(SAVE_KEY,JSON.stringify(data));
+  }catch(e){}
+}
+function loadGame(){
+  try{
+    const raw=localStorage.getItem(SAVE_KEY);
+    if(!raw)return false;
+    const d=JSON.parse(raw);
+    capLv=d.capLv;capXp=d.capXp;coins=d.coins;
+    advProgress=d.advProgress;lgRound=d.lgRound;lgPts=d.lgPts||{};
+    twFloor=d.twFloor;rp=d.rp;uid=d.uid||uid;
+    inventory=d.inventory||[];
+    collection=d.collection.map(p=>({...p,stamina:100,
+      item:(p.item>=0&&inventory[p.item])?inventory[p.item]:null}));
+    deck=(d.deck||[]).filter(id=>collection.some(p=>p.id===id));
+    if(deck.length===0)deck=collection.slice(0,6).map(p=>p.id);
+    $('capLv').textContent=capLv;
+    $('capXp').style.width=(capXp/capXpNeed()*100)+'%';
+    $('coins').textContent=coins;
+    return true;
+  }catch(e){return false;}
+}
+function resetSave(){
+  if(confirm('ล้างเซฟทั้งหมด? เลเวล การ์ด และแรงก์จะหายหมดนะ!')){
+    localStorage.removeItem(SAVE_KEY);
+    location.reload();
+  }
+}
+// load on start: skip intro if a save exists
+if(loadGame()){
+  document.addEventListener('DOMContentLoaded',()=>{
+    $('intro').querySelector('button').textContent='เล่นต่อจากเซฟเดิม ▶';
+    const r=document.createElement('button');
+    r.className='ghost';r.textContent='🗑️ เริ่มใหม่ (ล้างเซฟ)';
+    r.onclick=resetSave;
+    $('intro').appendChild(r);
+  });
+}
+</script>
+</body>
+</html>
