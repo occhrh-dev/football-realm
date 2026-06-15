@@ -2773,18 +2773,84 @@ async function cloudLogin(){
   await sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:location.href}});
 }
 async function cloudLogout(){
+  if(!confirm('ออกจากระบบ? ข้อมูลจะยังอยู่ใน Cloud แต่เครื่องนี้จะ clear local cache')) return;
   if(_sb) await _sb.auth.signOut();
   _sbUser=null;
+  /* clear local cache */
+  [SAVE_KEY,'frForm','frCards2','frShop2','frQuest','frProfile'].forEach(k=>localStorage.removeItem(k));
   updateLoginUI();
+  location.reload();
 }
-async function cloudSave(data){
+/* ===== SUPABASE FULL SAVE/LOAD ===== */
+function buildSavePayload(){
+  return {
+    user_id: _sbUser.id,
+    coins, cap_lv:capLv, cap_xp:capXp, rp, tw_floor:twFloor,
+    adv_ep:advEP, adv_stage:advStage, adv_progress:advProgress,
+    lg_round:lgRound, lg_season:lgSeason, lg_pts:lgPts,
+    collection: collection.map(p=>({...p,item:null,shirt:null,shoe:null,pants:null})),
+    support_collection: supportCollection,
+    captain_collection: captainCollection,
+    item_inventory: itemInventory,
+    consumables,
+    deck, 
+    support_deck: supportDeck.map(c=>c?c.id:null),
+    captain_id: captainCard?.id||null,
+    team_formation: teamFormation||'4-4-2',
+    player_name: playerProfile.name||'',
+    avatar_seed: playerProfile.avatarSeed||'coach1',
+    quest_state: questState,
+    ach_unlocked: [..._unlocked],
+    wins: _achStats.wins,
+    daily_date: dailyDate,
+    updated_at: new Date().toISOString(),
+  };
+}
+async function cloudSave(){
   if(!_sbUser||!_sb) return;
-  await _sb.from('saves').upsert({user_id:_sbUser.id,save_data:data,updated_at:new Date().toISOString()},{onConflict:'user_id'});
+  try{
+    const payload=buildSavePayload();
+    await _sb.from('game_saves').upsert(payload,{onConflict:'user_id'});
+  }catch(e){console.warn('cloudSave error',e);}
 }
 async function cloudLoad(){
   if(!_sbUser||!_sb) return null;
-  const {data}=await _sb.from('saves').select('save_data').eq('user_id',_sbUser.id).single();
-  return data?.save_data||null;
+  try{
+    const {data,error}=await _sb.from('game_saves').select('*').eq('user_id',_sbUser.id).single();
+    if(error||!data) return null;
+    return data;
+  }catch(e){return null;}
+}
+function applyCloudData(d){
+  if(!d) return false;
+  try{
+    coins=d.coins??150; capLv=d.cap_lv??1; capXp=d.cap_xp??0;
+    rp=d.rp??0; twFloor=d.tw_floor??1;
+    advEP=d.adv_ep??1; advStage=d.adv_stage??0; advProgress=d.adv_progress??0;
+    lgRound=d.lg_round??0; lgSeason=d.lg_season??1; lgPts=d.lg_pts??{};
+    collection=(d.collection||[]).map(p=>({...p,stamina:100,item:null,shirt:null,shoe:null,pants:null}));
+    supportCollection=d.support_collection||[];
+    captainCollection=d.captain_collection||[];
+    itemInventory=d.item_inventory||[];
+    consumables={...consumables,...(d.consumables||{})};
+    deck=(d.deck||[]).filter(id=>collection.some(p=>p.id===id));
+    if(deck.length===0&&collection.length) deck=collection.slice(0,6).map(p=>p.id);
+    if(d.support_deck) supportDeck=d.support_deck.map(id=>id?supportCollection.find(c=>c.id===id)||null:null).filter(Boolean);
+    captainCard=d.captain_id?captainCollection.find(c=>c.id===d.captain_id)||null:null;
+    teamFormation=d.team_formation||'4-4-2';
+    if(d.player_name) playerProfile.name=d.player_name;
+    if(d.avatar_seed) playerProfile.avatarSeed=d.avatar_seed;
+    if(d.quest_state) questState=d.quest_state;
+    if(d.ach_unlocked) d.ach_unlocked.forEach(id=>_unlocked.add(id));
+    if(d.wins) _achStats.wins=d.wins;
+    if(d.daily_date) dailyDate=d.daily_date;
+    /* update UI */
+    $('capLv').textContent=capLv;
+    $('capXp').style.width=(capXp/capXpNeed()*100)+'%';
+    $('coins').textContent=coins;
+    localStorage.setItem('frForm',teamFormation);
+    return true;
+  }catch(e){console.warn('applyCloudData error',e);return false;}
 }
 /* ===== PLAYER PROFILE ===== */
 let playerProfile={name:'',avatarSeed:'',avatarIdx:0};
@@ -2796,6 +2862,7 @@ function loadProfile(){
 }
 function saveProfileData(){
   localStorage.setItem('frProfile',JSON.stringify(playerProfile));
+  if(_sbUser&&_sb) cloudSave(); // sync profile ขึ้น cloud ด้วย
 }
 function getAvatarURL(seed){
   return `https://api.dicebear.com/7.x/lorelei/svg?seed=${encodeURIComponent(seed)}&backgroundColor=0a2e16`;
@@ -2886,93 +2953,137 @@ function updateHomeProfile(){
   }
 }
 loadProfile();
-/* check session on load */
-(async()=>{
+/* ===== BOOT SEQUENCE ===== */
+async function bootGame(){
+  /* แสดง loading */
+  showLoadingScreen('🔄 กำลังโหลด...');
+  /* โหลดจาก localStorage ก่อน (เร็ว) */
+  const hasLocal=loadGame();
+  /* เชื่อม Supabase */
   try{
     const sb=await initSupabase();
     if(sb){
       const {data:{user}}=await sb.auth.getUser();
       _sbUser=user;
-      updateLoginUI();
       if(user){
-        /* try load cloud save */
+        showLoadingScreen('☁️ ซิงค์ข้อมูลจาก Cloud...');
         const cloud=await cloudLoad();
-        if(cloud&&!localStorage.getItem(SAVE_KEY)){
-          localStorage.setItem(SAVE_KEY,JSON.stringify(cloud));
-          loadGame();
+        if(cloud){
+          /* cloud มีข้อมูล — เอา cloud เป็น source of truth */
+          const cloudOk=applyCloudData(cloud);
+          if(cloudOk){
+            /* อัปเดต localStorage ให้ตรงกัน */
+            localStorage.setItem(SAVE_KEY,JSON.stringify(buildLocalSnap()));
+          }
+        } else if(hasLocal){
+          /* cloud ว่าง แต่มี local — upload ขึ้น cloud */
+          showLoadingScreen('☁️ อัปโหลดเซฟขึ้น Cloud...');
+          await cloudSave();
         }
-        /* prompt profile setup if new user */
         loadProfile();
-        if(!playerProfile.name){
-          setTimeout(()=>openProfileSetup(),800);
-        }
+        updateLoginUI();
+        if(!playerProfile.name) setTimeout(()=>openProfileSetup(),600);
+      } else {
+        /* ไม่ได้ login — ใช้ local */
+        updateLoginUI();
       }
     }
-  }catch(e){}
-})();
+  }catch(e){console.warn('boot error',e);}
+  hideLoadingScreen();
+  /* เข้าหน้าหลัก */
+  if(hasLocal||_sbUser){
+    goHome();
+  } else {
+    hideAll();$('intro').classList.remove('hidden');
+  }
+}
+
+function showLoadingScreen(msg){
+  let el=$('loadingScr');
+  if(!el){
+    el=document.createElement('div');
+    el.id='loadingScr';
+    el.style.cssText='position:fixed;inset:0;background:#030f07;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;font-family:Kanit;color:#7fd9a0;gap:12px';
+    el.innerHTML='<div style="font-size:2rem">⚽</div><div id="loadingMsg" style="font-size:.9rem"></div><div style="width:120px;height:4px;background:#1e3a29;border-radius:2px;overflow:hidden"><div id="loadingBar" style="height:100%;background:var(--gold);width:0%;transition:width 1s"></div></div>';
+    document.body.appendChild(el);
+  }
+  $('loadingMsg').textContent=msg;
+  setTimeout(()=>{const b=$('loadingBar');if(b)b.style.width='80%';},100);
+}
+function hideLoadingScreen(){
+  const el=$('loadingScr');
+  if(el){el.style.opacity='0';el.style.transition='opacity .3s';setTimeout(()=>el.remove(),300);}
+}
+
+/* เรียก boot เมื่อ page load */
+window.addEventListener('DOMContentLoaded',()=>bootGame());
+/* debounced cloud save — ไม่ให้ save ถี่เกิน */
+let _saveTimer=null;
 function saveGame(){
+  /* local cache เสมอ — fallback ถ้าออฟไลน์ */
   try{
-    const data={
-      capLv,capXp,coins,advProgress,advEP,advStage,lgRound,lgSeason,lgPts,twFloor,rp,uid,
-      inventory,
-      deck,
-      collection:collection.map(p=>({...p,item:p.item?inventory.indexOf(p.item):-1})),
-    };
-    localStorage.setItem(SAVE_KEY,JSON.stringify(data));
-    localStorage.setItem('frQuest',JSON.stringify({questState,questDate,achUnlocked:[..._unlocked],wins:_achStats.wins}));
-    localStorage.setItem('frCards2',JSON.stringify({
-      supportCollection,captainCollection,
-      supportDeckIds:supportDeck.map(c=>c?c.id:null),
-      captainId:captainCard?captainCard.id:null,
-    }));
-    localStorage.setItem('frShop2',JSON.stringify({
-      consumables,itemInventory,dailyDeals,dailyDate,
-    }));
+    const snap=buildLocalSnap();
+    localStorage.setItem(SAVE_KEY,JSON.stringify(snap));
   }catch(e){}
+  /* cloud save debounced 2s */
+  if(_sbUser&&_sb){
+    clearTimeout(_saveTimer);
+    _saveTimer=setTimeout(()=>cloudSave(),2000);
+  }
+}
+function buildLocalSnap(){
+  return {
+    capLv,capXp,coins,advProgress,advEP,advStage,
+    lgRound,lgSeason,lgPts,twFloor,rp,uid,
+    deck,
+    collection:collection.map(p=>({...p,item:null,shirt:null,shoe:null,pants:null})),
+    supportCollection,captainCollection,
+    supportDeckIds:supportDeck.map(c=>c?c.id:null),
+    captainId:captainCard?.id||null,
+    teamFormation,
+    consumables,itemInventory,dailyDeals,dailyDate,
+    questState,questDate,
+    achUnlocked:[..._unlocked],wins:_achStats.wins,
+    playerName:playerProfile.name,avatarSeed:playerProfile.avatarSeed,
+  };
 }
 function loadGame(){
+  /* load จาก localStorage ก่อน (fast, offline fallback) */
   try{
     const raw=localStorage.getItem(SAVE_KEY);
-    if(!raw)return false;
+    if(!raw) return false;
     const d=JSON.parse(raw);
-    capLv=d.capLv;capXp=d.capXp;coins=d.coins;
-    advProgress=d.advProgress;lgRound=d.lgRound;lgPts=d.lgPts||{};
-    twFloor=d.twFloor;rp=d.rp;uid=d.uid||uid;
-    inventory=d.inventory||[];
-    collection=d.collection.map(p=>({...p,stamina:100,
-      item:(p.item>=0&&inventory[p.item])?inventory[p.item]:null}));
+    capLv=d.capLv??1; capXp=d.capXp??0; coins=d.coins??150;
+    advProgress=d.advProgress??0; advEP=d.advEP??1; advStage=d.advStage??0;
+    lgRound=d.lgRound??0; lgSeason=d.lgSeason??1; lgPts=d.lgPts??{};
+    twFloor=d.twFloor??1; rp=d.rp??0; uid=d.uid??uid;
+    collection=(d.collection||[]).map(p=>({...p,stamina:100,item:null,shirt:null,shoe:null,pants:null}));
     deck=(d.deck||[]).filter(id=>collection.some(p=>p.id===id));
-    if(deck.length===0)deck=collection.slice(0,6).map(p=>p.id);
+    if(deck.length===0&&collection.length) deck=collection.slice(0,6).map(p=>p.id);
+    supportCollection=d.supportCollection||[];
+    captainCollection=d.captainCollection||[];
+    if(d.supportDeckIds) supportDeck=d.supportDeckIds.map(id=>id?supportCollection.find(c=>c.id===id)||null:null).filter(Boolean);
+    captainCard=d.captainId?captainCollection.find(c=>c.id===d.captainId)||null:null;
+    teamFormation=d.teamFormation||localStorage.getItem('frForm')||'4-4-2';
+    consumables={...consumables,...(d.consumables||{})};
+    itemInventory=d.itemInventory||[];
+    dailyDeals=d.dailyDeals||[]; dailyDate=d.dailyDate||'';
+    if(d.questState){questState=d.questState;questDate=d.questDate||'';}
+    if(d.achUnlocked) d.achUnlocked.forEach(id=>_unlocked.add(id));
+    if(d.wins) _achStats.wins=d.wins;
+    if(d.playerName) playerProfile.name=d.playerName;
+    if(d.avatarSeed) playerProfile.avatarSeed=d.avatarSeed;
     $('capLv').textContent=capLv;
     $('capXp').style.width=(capXp/capXpNeed()*100)+'%';
     $('coins').textContent=coins;
-    try{
-      const q=JSON.parse(localStorage.getItem('frQuest')||'{}');
-      if(q.questState){questState=q.questState;questDate=q.questDate||'';}
-      if(q.achUnlocked) q.achUnlocked.forEach(id=>_unlocked.add(id));
-      if(q.wins) _achStats.wins=q.wins;
-    }catch(e){}
-    try{
-      const fc=JSON.parse(localStorage.getItem('frCards2')||'{}');
-      if(fc.supportCollection) supportCollection=fc.supportCollection;
-      if(fc.captainCollection) captainCollection=fc.captainCollection;
-      if(fc.supportDeckIds) supportDeck=fc.supportDeckIds.map(id=>id?supportCollection.find(c=>c.id===id)||null:null).filter(Boolean);
-      if(fc.captainId) captainCard=captainCollection.find(c=>c.id===fc.captainId)||null;
-    }catch(e){}
-    try{
-      const fs=JSON.parse(localStorage.getItem('frShop2')||'{}');
-      if(fs.consumables) consumables={...consumables,...fs.consumables};
-      if(fs.itemInventory) itemInventory=fs.itemInventory;
-      if(fs.dailyDeals) dailyDeals=fs.dailyDeals;
-      if(fs.dailyDate) dailyDate=fs.dailyDate;
-    }catch(e){}
     return true;
   }catch(e){return false;}
 }
 function resetSave(){
   if(confirm('ล้างเซฟทั้งหมด? เลเวล การ์ด และแรงก์จะหายหมดนะ!')){
-    localStorage.removeItem(SAVE_KEY);
-    location.reload();
+    [SAVE_KEY,'frForm','frCards2','frShop2','frQuest','frProfile'].forEach(k=>localStorage.removeItem(k));
+    if(_sbUser&&_sb) _sb.from('game_saves').delete().eq('user_id',_sbUser.id).then(()=>location.reload());
+    else location.reload();
   }
 }
 
