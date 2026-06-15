@@ -85,7 +85,9 @@ h1,h2,h3,.kanit{font-family:'Kanit',sans-serif}
 .cardp.rare{border-color:var(--gold);background:linear-gradient(170deg,#2a1e08,#150f04);box-shadow:0 0 8px rgba(232,181,58,.2)}
 .cardp.legend{border-color:var(--legend);background:linear-gradient(170deg,#2d0b22,#160512);box-shadow:0 0 14px rgba(255,122,217,.4)}
 .cardp.advantage{outline:2px solid #7fd9a0;outline-offset:2px}
-.cardp.indeck{outline:2px solid var(--blue);outline-offset:2px}
+.cardp.indeck{box-shadow:0 0 0 3px var(--blue),0 0 12px rgba(61,123,217,.5);border-color:var(--blue)!important}
+.cardp.indeck .card-header::after{content:'✔ ในเด็ค';position:absolute;top:0;left:0;right:0;background:var(--blue);color:#fff;font-family:'Kanit';font-size:.52rem;font-weight:700;text-align:center;padding:1px 0;letter-spacing:.5px}
+.cardp.indeck .card-header{position:relative;padding-top:14px}
 /* card header bar */
 .cardp .card-header{display:flex;align-items:center;justify-content:space-between;padding:4px 5px 3px;background:rgba(0,0,0,.3)}
 .cardp .pos-badge{font-family:'Kanit';font-weight:800;font-size:.6rem;border-radius:3px;padding:1px 4px;color:#9fd9b5;background:#1a3d22}
@@ -108,11 +110,21 @@ h1,h2,h3,.kanit{font-family:'Kanit',sans-serif}
 .cardp .stam i{display:block;height:100%;background:linear-gradient(90deg,#d94f3d,#7fd9a0);transition:width .3s}
 .cardp .skill{font-size:.55rem;color:var(--gold);line-height:1.3;min-height:10px}
 .cardp .itm{font-size:.55rem;color:var(--purple);min-height:10px}
-/* affinity pips */
-.cardp .affinity-row{display:flex;gap:2px;flex-wrap:wrap;margin-top:2px}
-.af-pip{font-size:.5rem;border-radius:3px;padding:1px 3px;background:rgba(0,0,0,.4);color:#7fa78d;line-height:1.2}
-.af-pip.high{background:rgba(232,181,58,.15);color:var(--gold)}
-.af-pip.active{background:rgba(232,181,58,.3);color:var(--gold);font-weight:700;box-shadow:0 0 4px rgba(232,181,58,.4)}
+/* affinity stars (FM-style) */
+.cardp .affinity-row{display:flex;flex-direction:column;gap:2px;margin-top:3px}
+.af-row{display:flex;align-items:center;gap:3px}
+.af-label{font-family:'Kanit';font-size:.5rem;color:#7fa78d;min-width:36px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.af-label.active{color:var(--gold);font-weight:700}
+.af-stars{display:flex;gap:1px;align-items:center}
+.af-star{font-size:.55rem;line-height:1;transition:filter .15s}
+.af-star.filled{filter:drop-shadow(0 0 2px rgba(232,181,58,.6))}
+.af-star.filled-common{color:#a8c9b4}
+.af-star.filled-rare{color:var(--gold)}
+.af-star.filled-legend{color:var(--legend)}
+.af-star.empty{color:#1e3a29}
+.af-row.active-row .af-label{color:var(--gold)}
+.af-row.active-row .af-stars .af-star.filled{filter:drop-shadow(0 0 3px rgba(232,181,58,.9))}
+.af-bonus{font-family:'Kanit';font-size:.48rem;color:var(--gold);margin-left:2px}
 /* formation picker */
 .form-picker{width:100%;max-width:620px;background:#05130b;border:1px solid #1e3a29;border-radius:10px;padding:8px 10px;margin-bottom:6px}
 .form-picker-title{font-family:'Kanit';font-size:.78rem;color:#7fa78d;margin-bottom:6px;text-align:center}
@@ -498,25 +510,45 @@ const FORMATIONS={
 const FORMATION_KEYS=Object.keys(FORMATIONS);
 
 /* affinity generator by tier */
+/* ===== STAR RATING SYSTEM (FM-style) =====
+ * 1★ = 20%  | 2★ = 40%  | 3★ = 60%  | 4★ = 80%  | 5★ = 100%
+ * common  : 1-2 แผน, ดาว 1-3 (max 3★)
+ * rare    : 2-3 แผน, ดาว 2-4 (min 2★, max 4★)   ← เสมอสูงกว่า common
+ * legend  : 3   แผน, ดาว 3-5 (min 3★, max 5★)   ← เสมอสูงกว่า rare
+ * หลักการ: slot แรก = ดาวสูงสุดของการ์ดนั้น, slot 2-3 ลดลงตาม tier
+ */
 function genAffinity(tier){
-  const maxSlots=tier==='legend'?3:tier==='rare'?3:2;
-  /* common: 50% 1แผน 50% 2แผน | rare: 30% 2แผน 70% 3แผน | legend: 100% 3แผน */
+  /* --- slots per tier --- */
   let slots;
-  if(tier==='legend') slots=3;
-  else if(tier==='rare') slots=Math.random()<.7?3:2;
-  else slots=Math.random()<.5?2:1;
-  slots=Math.min(slots,maxSlots);
+  if(tier==='legend')      slots=3;
+  else if(tier==='rare')   slots=Math.random()<.7?3:2;
+  else                     slots=Math.random()<.5?2:1;
+
+  /* --- star ranges per tier (slot index 0,1,2) --- */
+  const starRange={
+    legend: [[4,5],[3,4],[2,3]],   // 4-5★ / 3-4★ / 2-3★
+    rare:   [[3,4],[2,3],[1,2]],   // 3-4★ / 2-3★ / 1-2★
+    common: [[2,3],[1,2],[1,1]],   // 2-3★ / 1-2★ / 1★ (max 3 slots but only 1-2 used)
+  };
+  const ranges=starRange[tier]||starRange.common;
+
   const picked=[];
   const pool=[...FORMATION_KEYS];
   for(let i=0;i<slots;i++){
     const idx=rnd(pool.length);
     const f=pool.splice(idx,1)[0];
-    /* pct: 1st slot 70-95%, 2nd 45-70%, 3rd 30-55% */
-    const base=i===0?70:i===1?45:30;
-    const pct=base+rnd(26);
-    picked.push({f,pct});
+    const [lo,hi]=ranges[i]||[1,1];
+    const stars=lo+rnd(hi-lo+1);  // inclusive random
+    picked.push({f,stars});
   }
-  return picked.sort((a,b)=>b.pct-a.pct);
+  /* sort by stars desc */
+  return picked.sort((a,b)=>b.stars-a.stars);
+}
+
+/* Convert stars → ATK/DEF bonus for eff() */
+function starsToBonus(stars){
+  /* 1★→+2, 2★→+4, 3★→+7, 4★→+11, 5★→+16 */
+  return [0,2,4,7,11,16][stars]||0;
 }
 
 function P(name,pos,atk,def,nat,elem,opts={}){
@@ -594,31 +626,30 @@ const SKILLS=[
   {skill:'hatrick',   skillTxt:'⚽ ยิง 2 ติด: ฟรี 1 เทิร์น'},
   {skill:'penalty',   skillTxt:'🟢 จุดโทษ: +30 ATK (เสี่ยง)'},
   /* ===== SUPPORT skills (require formation affinity ≥60%) ===== */
-  {skill:'tactician',  skillTxt:'📐 [แผน] ทีม +5 ATK/DEF ถ้าอยู่ใน formation ≥60%'},
-  {skill:'conductor',  skillTxt:'🎼 [แผน] ทุกเทิร์น: formation bonus ×2 ให้ทุกคน'},
-  {skill:'shield_wall',skillTxt:'🔰 [แผน] ถ้าอยู่ใน formation ≥75%: DEF +20 เมื่อรับ'},
-  {skill:'pressing',   skillTxt:'🏃 [แผน] formation ≥60%: ลด ATK ศัตรู -8'},
-  {skill:'overload',   skillTxt:'⚡ [แผน] formation ≥80%: ATK +15 ถ้าทีมมี≥3คนใน formation'},
-  {skill:'anchor',     skillTxt:'⚓ [แผน] formation ≥70%: สตามิน่าไม่ลด ขณะรับ'},
-  {skill:'orchestrate',skillTxt:'🎻 [แผน] ก่อนดวล: เพื่อนทุกคน +3 ATK/DEF ต่อเทิร์น'},
-  {skill:'high_press', skillTxt:'😤 [แผน] formation ≥65%: 20% บังคับศัตรูใช้นักเตะอ่อน'},
+  {skill:'tactician',  skillTxt:'📐 [แผน≥3★] ทีม +5 ATK/DEF'},
+  {skill:'conductor',  skillTxt:'🎼 [แผน≥3★] formation bonus ×2 ให้ทุกคน'},
+  {skill:'shield_wall',skillTxt:'🔰 [แผน≥4★] DEF +20 เมื่อรับ'},
+  {skill:'pressing',   skillTxt:'🏃 [แผน≥3★] DEF ศัตรู -8'},
+  {skill:'overload',   skillTxt:'⚡ [แผน≥4★] ATK +15 ถ้าทีม≥3คนใน formation'},
+  {skill:'anchor',     skillTxt:'⚓ [แผน≥3★] สตามิน่าไม่ลด ขณะรับ'},
+  {skill:'orchestrate',skillTxt:'🎻 [แผน] ก่อนดวล: เพื่อน +3 ATK/DEF'},
+  {skill:'high_press', skillTxt:'😤 [แผน≥3★] 20% บังคับศัตรูใช้นักเตะอ่อน'},
 ];
 
 function applySkillEffect(p,isAtk,atkR,defR,notes,fx2){
   const s=p.skill;if(!s)return;
   const e=eff(p,isAtk);
-  /* formation affinity helpers */
-  const afEntry=p.affinity?p.affinity.find(a=>a.f===teamFormation):null;
-  const afPct=afEntry?afEntry.pct:0;
-  const teammatesInForm=deckPlayers().filter(q=>q.affinity&&q.affinity.some(a=>a.f===teamFormation&&a.pct>=60)).length;
-  /* support skills */
-  if(s==='tactician'&&afPct>=60){isAtk?atkR.v+=5:defR.v+=5;notes.push('📐 Tactician!');}
-  if(s==='shield_wall'&&afPct>=75&&!isAtk){defR.v+=20;notes.push('🔰 Shield Wall!');}
-  if(s==='pressing'&&afPct>=60&&isAtk){fx2.pressing=8;notes.push('🏃 Pressing! -8 DEF');}
-  if(s==='overload'&&afPct>=80&&isAtk&&teammatesInForm>=3){atkR.v+=15;notes.push('⚡ Overload!');}
-  if(s==='anchor'&&afPct>=70&&!isAtk){p._noStam=true;notes.push('⚓ Anchor!');}
-  if(s==='high_press'&&afPct>=65&&Math.random()<.2){fx2.highPress=true;notes.push('😤 High Press!');}
-  if(s==='conductor'&&afPct>=60){deckPlayers().forEach(q=>{const b=formationAffinityBonus(q);q.atk=Math.min(q.atk+b,999);q.def=Math.min(q.def+b,999);});notes.push('🎼 Conductor!');}
+  /* formation affinity helpers — use stars (1-5) */
+  const afStar=afStars(p);
+  const teammatesInForm=deckPlayers().filter(q=>afStars(q)>=3).length;
+  /* support skills: threshold in stars (3★=old 60%, 4★=old 80%) */
+  if(s==='tactician'&&afStar>=3){isAtk?atkR.v+=5:defR.v+=5;notes.push('📐 Tactician!');}
+  if(s==='shield_wall'&&afStar>=4&&!isAtk){defR.v+=20;notes.push('🔰 Shield Wall!');}
+  if(s==='pressing'&&afStar>=3&&isAtk){fx2.pressing=8;notes.push('🏃 Pressing! -8 DEF');}
+  if(s==='overload'&&afStar>=4&&isAtk&&teammatesInForm>=3){atkR.v+=15;notes.push('⚡ Overload!');}
+  if(s==='anchor'&&afStar>=3&&!isAtk){p._noStam=true;notes.push('⚓ Anchor!');}
+  if(s==='high_press'&&afStar>=3&&Math.random()<.2){fx2.highPress=true;notes.push('😤 High Press!');}
+  if(s==='conductor'&&afStar>=3){deckPlayers().forEach(q=>{const b=formationAffinityBonus(q);q.atk=Math.min(q.atk+b,999);q.def=Math.min(q.def+b,999);});notes.push('🎼 Conductor!');}
   if(s==='orchestrate'){deckPlayers().filter(q=>q.id!==p.id).forEach(q=>{q.atk+=3;q.def+=3;});notes.push('🎻 Orchestrate!');}
   if(isAtk){
     if(s==='crit'&&Math.random()<.25){atkR.v=Math.round(atkR.v*1.5);notes.push('💥 Crit!');}
@@ -758,12 +789,20 @@ function formationAffinityBonus(p){
   if(!p.affinity) return 0;
   const entry=p.affinity.find(a=>a.f===teamFormation);
   if(!entry) return 0;
-  /* pct 95→+12, 80→+8, 65→+5, 50→+3, 30→+1 */
+  /* backward compat: old saves use pct, new use stars */
+  if(entry.stars!=null) return starsToBonus(entry.stars);
+  /* legacy pct fallback */
   if(entry.pct>=90) return 12;
   if(entry.pct>=75) return 8;
   if(entry.pct>=60) return 5;
   if(entry.pct>=45) return 3;
   return 1;
+}
+function afStars(p){
+  if(!p.affinity) return 0;
+  const e=p.affinity.find(a=>a.f===teamFormation);
+  if(!e) return 0;
+  return e.stars||(e.pct>=90?5:e.pct>=75?4:e.pct>=60?3:e.pct>=45?2:1);
 }
 
 function eff(p,isMine=true){
@@ -976,19 +1015,41 @@ function portraitURL(p){
   const bg=p.legend?'b6009e':p.rare?'3d2a10':'0a1f13';
   return `https://api.dicebear.com/7.x/${style}/svg?seed=${seed}&backgroundColor=${bg}`;
 }
+function starsHTML(stars,tier,isActive){
+  /* tier for color: common=gray-green, rare=gold, legend=pink */
+  const filledCls=tier==='legend'?'filled-legend':tier==='rare'?'filled-rare':'filled-common';
+  let h='';
+  for(let i=1;i<=5;i++){
+    h+=`<span class="af-star ${i<=stars?'filled '+filledCls:'empty'}">★</span>`;
+  }
+  return h;
+}
 function affinityHTML(p){
   if(!p.affinity||!p.affinity.length) return '';
-  return '<div class="affinity-row">'+p.affinity.map(a=>{
+  const tier=p.legend?'legend':p.rare?'rare':'common';
+  let html='<div class="affinity-row">';
+  p.affinity.forEach(a=>{
+    const stars=a.stars||(a.pct>=90?5:a.pct>=75?4:a.pct>=60?3:a.pct>=45?2:1);
     const isActive=a.f===teamFormation;
-    const cls=isActive?'af-pip active':a.pct>=70?'af-pip high':'af-pip';
-    return `<span class="${cls}">${a.f} ${a.pct}%</span>`;
-  }).join('')+'</div>';
+    const bonus=isActive?formationAffinityBonus(p):0;
+    html+=`<div class="af-row ${isActive?'active-row':''}">
+      <span class="af-label ${isActive?'active':''}">${a.f}</span>
+      <span class="af-stars">${starsHTML(stars,tier,isActive)}</span>
+      ${isActive&&bonus>0?`<span class="af-bonus">+${bonus}</span>`:''}
+    </div>`;
+  });
+  html+='</div>';
+  return html;
 }
 function cardHTML(p,clickable,advantage=false,miniMode=false){
   const e=eff(p,collection.includes(p));
   const tierCls=p.legend?'legend':p.rare?'rare':'';
   const afb=formationAffinityBonus(p);
-  const afBonusTxt=afb>0?`<span style="color:var(--gold);font-size:.5rem"> +${afb}⚡</span>`:'';
+  const afs=afStars(p);
+  const tier=p.legend?'legend':p.rare?'rare':'common';
+  const afBonusTxt=afb>0
+    ?`<span style="font-size:.5rem">${starsHTML(afs,tier,true)}</span><span style="color:var(--gold);font-size:.5rem"> +${afb}</span>`
+    :'';
   return `<div class="cardp ${tierCls} ${clickable?'':'disabled'} ${advantage?'advantage':''}"
     ${clickable?`onclick="pick('${p.id}')" onkeydown="if(event.key==='Enter')pick('${p.id}')"`:''} role="button" tabindex="0">
     <div class="card-header">
@@ -1087,11 +1148,16 @@ function renderFormPicker(){
   if(!$('formBtns')) return;
   $('formBtns').innerHTML=FORMATION_KEYS.map(f=>{
     const active=f===teamFormation;
-    return `<button class="form-btn ${active?'active':''}" onclick="pickFormation('${f}')">${f}</button>`;
+    /* count players with ≥3★ in this formation */
+    const cnt=deckPlayers().filter(p=>p.affinity&&p.affinity.some(a=>a.f===f&&(a.stars>=3||(a.pct>=60)))).length;
+    return `<button class="form-btn ${active?'active':''}" onclick="pickFormation('${f}')">${f}${cnt>0?` <span style="font-size:.6rem">(${cnt})</span>`:''}</button>`;
   }).join('');
   const fData=FORMATIONS[teamFormation];
-  const matching=deckPlayers().filter(p=>p.affinity&&p.affinity.some(a=>a.f===teamFormation&&a.pct>=60)).length;
-  $('formInfo').innerHTML=`${fData.ico} ${fData.desc} · <span style="color:var(--gold)">${matching}/6</span> คนถนัดแผนนี้`;
+  const players=deckPlayers();
+  const stars3=players.filter(p=>afStars(p)>=3).length;
+  const stars4=players.filter(p=>afStars(p)>=4).length;
+  const avgBonus=players.length?Math.round(players.reduce((s,p)=>s+formationAffinityBonus(p),0)/players.length):0;
+  $('formInfo').innerHTML=`${fData.ico} ${fData.desc} · ≥3★: <span style="color:var(--gold)">${stars3}</span> คน · ≥4★: <span style="color:var(--legend)">${stars4}</span> คน · avg +${avgBonus}⚡`;
 }
 function pickFormation(f){
   teamFormation=f;
@@ -1590,7 +1656,7 @@ function filteredCollection(){
     if(deckFilter==='rare') return p.rare&&!p.legend;
     if(deckFilter==='legend') return p.legend;
     if(deckFilter==='indeck') return deck.includes(p.id);
-    if(deckFilter==='formation') return p.affinity&&p.affinity.some(a=>a.f===teamFormation&&a.pct>=60);
+    if(deckFilter==='formation') return afStars(p)>=3;
     if(['ST','WG','MF','DF'].includes(deckFilter)) return p.pos===deckFilter;
     if(['fire','wind','tech'].includes(deckFilter)) return p.elem===deckFilter;
     return true;
