@@ -560,7 +560,7 @@ button:focus-visible{outline:2px solid var(--flood);outline-offset:2px}
   <div style="display:flex;align-items:center;gap:10px;margin-top:10px;background:#05130b;border:1px solid #1e3a29;border-radius:8px;padding:8px 14px">
     <span style="font-size:.8rem;color:#7fa78d">🔊 เสียง</span>
     <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
-      <input type="checkbox" id="soundToggle" onchange="toggleSound(this.checked)" style="width:16px;height:16px;cursor:pointer">
+      <input type="checkbox" id="soundToggle" checked onchange="toggleSound(this.checked)" style="width:16px;height:16px;cursor:pointer">
       <span id="soundLabel" style="font-family:Kanit;font-size:.75rem;color:var(--flood)">เปิด</span>
     </label>
     <input type="range" id="volumeSlider" min="0" max="100" value="70"
@@ -4115,62 +4115,55 @@ function closeTutorial(){
 
 /* ===== BOOT SEQUENCE ===== */
 async function bootGame(){
+  let hasLocalData=false;
   showLoadingScreen('🔄 กำลังโหลด...');
-
-  /* เชื่อม Supabase ก่อนเลย */
   try{
-    const sb=await initSupabase();
+    /* เชื่อม Supabase */
+    const sb=await Promise.race([
+      initSupabase(),
+      new Promise(r=>setTimeout(()=>r(null),5000)) // timeout 5s
+    ]);
     if(sb){
       const {data:{user}}=await sb.auth.getUser();
       _sbUser=user;
-
       if(user){
-        /* LOGIN แล้ว — Cloud คือ source of truth เสมอ */
         showLoadingScreen('☁️ โหลดข้อมูลจาก Cloud...');
-        const cloud=await cloudLoad();
-
+        const cloud=await Promise.race([
+          cloudLoad(),
+          new Promise(r=>setTimeout(()=>r(null),5000))
+        ]);
         if(cloud){
-          /* ได้ข้อมูล cloud → apply ทันที ไม่สนใจ local */
           applyCloudData(cloud);
-          /* sync local ให้ตรงกับ cloud */
           localStorage.setItem(SAVE_KEY,JSON.stringify(buildLocalSnap()));
+          hasLocalData=true;
         } else {
-          /* cloud ว่าง (user ใหม่) → ใช้ local ถ้ามี แล้ว upload */
-          const hasLocal=loadGame();
-          if(hasLocal){
+          hasLocalData=loadGame();
+          if(hasLocalData){
             showLoadingScreen('☁️ อัปโหลดเซฟขึ้น Cloud...');
-            await cloudSave();
+            cloudSave().catch(()=>{});
           }
         }
         loadProfile();
         updateLoginUI();
         if(!playerProfile.name) setTimeout(()=>openProfileSetup(),600);
-        /* subscribe PvP matches realtime */
         subscribeMyMatches();
-
       } else {
-        /* ยังไม่ login → ใช้ local */
-        loadGame();
+        hasLocalData=loadGame();
         updateLoginUI();
       }
     } else {
-      /* Supabase ไม่ตอบ → fallback local */
-      loadGame();
+      hasLocalData=loadGame();
     }
   }catch(e){
     console.warn('boot error',e);
-    loadGame(); // fallback
+    try{hasLocalData=loadGame();}catch(e2){}
+  } finally {
+    /* ซ่อน loading ทุกกรณี */
+    hideLoadingScreen();
+    if(hasLocalData||_sbUser) goHome();
+    else{hideAll();$('intro').classList.remove('hidden');}
+    setTimeout(()=>showTutorial(),800);
   }
-
-  hideLoadingScreen();
-  /* เข้าหน้าหลัก */
-  if(hasLocal||_sbUser){
-    goHome();
-  } else {
-    hideAll();$('intro').classList.remove('hidden');
-  }
-  /* แสดง tutorial ถ้าผู้เล่นใหม่ */
-  setTimeout(()=>showTutorial(),800);
 }
 
 function showLoadingScreen(msg){
@@ -4270,10 +4263,12 @@ function resetSave(){
 /* ============ WEB AUDIO ============ */
 /* ===== SOUND SETTINGS ===== */
 let soundEnabled=true;
-let soundVolume=0.7; // 0-1
+let soundVolume=0.7;
 try{
-  soundEnabled=localStorage.getItem('frSound')!=='off';
+  const _sv=localStorage.getItem('frSound');
+  soundEnabled=_sv===null||_sv==='on'; // default ON if never set
   soundVolume=parseFloat(localStorage.getItem('frVolume')||'0.7');
+  if(isNaN(soundVolume)) soundVolume=0.7;
 }catch(e){}
 
 let _ac=null;
@@ -4566,13 +4561,13 @@ function questInit(){
 }
 function questProgress(type,n=1){
   questInit();
-/* init sound toggle UI */
-(function(){
+/* init sound toggle UI — run after DOM ready */
+document.addEventListener('DOMContentLoaded',()=>{
   const tog=$('soundToggle');
   const vol=$('volumeSlider');
   if(tog){tog.checked=soundEnabled;$('soundLabel').textContent=soundEnabled?'เปิด':'ปิด';}
   if(vol){vol.value=Math.round(soundVolume*100);$('volumeLabel').textContent=Math.round(soundVolume*100)+'%';}
-})();
+});
   QUESTS_DEF.forEach(q=>{
     if(q.type!==type) return;
     const s=questState[q.id];
