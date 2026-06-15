@@ -495,6 +495,7 @@ button:focus-visible{outline:2px solid var(--flood);outline-offset:2px}
   </div>
   <button onclick="goHome()" style="margin-top:6px">เข้าสโมสร 🏟️</button>
   <button class="ghost" id="introLogout" onclick="cloudLogout()" style="font-size:.75rem;display:none">ออกจากระบบ</button>
+  <button onclick="resetSave()" style="font-size:.68rem;background:transparent;border:none;color:#3a5240;cursor:pointer;margin-top:8px;text-decoration:underline">🗑️ ลบข้อมูลและเริ่มใหม่</button>
 </div>
 
 <!-- ============ PROFILE SETUP ============ -->
@@ -3118,10 +3119,14 @@ function loadGame(){
   }catch(e){return false;}
 }
 function resetSave(){
-  if(confirm('ล้างเซฟทั้งหมด? เลเวล การ์ด และแรงก์จะหายหมดนะ!')){
-    [SAVE_KEY,'frForm','frCards2','frShop2','frQuest','frProfile'].forEach(k=>localStorage.removeItem(k));
-    if(_sbUser&&_sb) _sb.from('game_saves').delete().eq('user_id',_sbUser.id).then(()=>location.reload());
-    else location.reload();
+  if(!confirm('⚠️ ลบข้อมูลทั้งหมด?\nการ์ด เหรียญ เลเวล และแรงก์จะหายหมด')) return;
+  if(!confirm('ยืนยันอีกครั้ง — ข้อมูลจะถูกลบถาวรจาก Cloud ด้วย\nกด OK เพื่อเริ่มใหม่')) return;
+  [SAVE_KEY,'frForm','frCards2','frShop2','frQuest','frProfile'].forEach(k=>localStorage.removeItem(k));
+  if(_sbUser&&_sb){
+    _sb.from('game_saves').delete().eq('user_id',_sbUser.id)
+      .then(()=>{alert('ลบข้อมูลเรียบร้อย!');location.reload();});
+  } else {
+    alert('ลบข้อมูลเรียบร้อย!');location.reload();
   }
 }
 
