@@ -4116,54 +4116,51 @@ function closeTutorial(){
 /* ===== BOOT SEQUENCE ===== */
 async function bootGame(){
   let hasLocalData=false;
-  showLoadingScreen('🔄 กำลังโหลด...');
   try{
-    /* เชื่อม Supabase */
-    const sb=await Promise.race([
-      initSupabase(),
-      new Promise(r=>setTimeout(()=>r(null),5000)) // timeout 5s
-    ]);
-    if(sb){
-      const {data:{user}}=await sb.auth.getUser();
-      _sbUser=user;
-      if(user){
-        showLoadingScreen('☁️ โหลดข้อมูลจาก Cloud...');
-        const cloud=await Promise.race([
-          cloudLoad(),
-          new Promise(r=>setTimeout(()=>r(null),5000))
+    /* โหลด local ก่อนเสมอ — เร็วและปลอดภัย */
+    hasLocalData=loadGame();
+    /* พยายามเชื่อม Supabase แบบ best-effort */
+    try{
+      const sb=await Promise.race([
+        initSupabase(),
+        new Promise(r=>setTimeout(()=>r(null),3000))
+      ]);
+      if(sb){
+        const authRes=await Promise.race([
+          sb.auth.getUser(),
+          new Promise(r=>setTimeout(()=>r({data:{user:null}}),3000))
         ]);
-        if(cloud){
-          applyCloudData(cloud);
-          localStorage.setItem(SAVE_KEY,JSON.stringify(buildLocalSnap()));
-          hasLocalData=true;
+        _sbUser=authRes?.data?.user||null;
+        if(_sbUser){
+          updateLoginUI();
+          /* sync cloud แบบ background ไม่บล็อก UI */
+          cloudLoad().then(cloud=>{
+            if(cloud){
+              applyCloudData(cloud);
+              localStorage.setItem(SAVE_KEY,JSON.stringify(buildLocalSnap()));
+              if(!hasLocalData) goHome();
+            } else if(hasLocalData){
+              cloudSave().catch(()=>{});
+            }
+          }).catch(()=>{});
+          loadProfile();
+          if(!playerProfile.name) setTimeout(()=>openProfileSetup(),800);
+          subscribeMyMatches();
         } else {
-          hasLocalData=loadGame();
-          if(hasLocalData){
-            showLoadingScreen('☁️ อัปโหลดเซฟขึ้น Cloud...');
-            cloudSave().catch(()=>{});
-          }
+          updateLoginUI();
         }
-        loadProfile();
-        updateLoginUI();
-        if(!playerProfile.name) setTimeout(()=>openProfileSetup(),600);
-        subscribeMyMatches();
-      } else {
-        hasLocalData=loadGame();
-        updateLoginUI();
       }
-    } else {
-      hasLocalData=loadGame();
+    }catch(sbErr){
+      console.warn('Supabase optional error:',sbErr);
     }
   }catch(e){
-    console.warn('boot error',e);
-    try{hasLocalData=loadGame();}catch(e2){}
-  } finally {
-    /* ซ่อน loading ทุกกรณี */
-    hideLoadingScreen();
-    if(hasLocalData||_sbUser) goHome();
-    else{hideAll();$('intro').classList.remove('hidden');}
-    setTimeout(()=>showTutorial(),800);
+    console.warn('boot error:',e);
   }
+  /* แสดง UI ทันที ไม่รอ cloud */
+  hideLoadingScreen();
+  if(hasLocalData||_sbUser) goHome();
+  else{hideAll();$('intro').classList.remove('hidden');}
+  setTimeout(()=>showTutorial(),600);
 }
 
 function showLoadingScreen(msg){
@@ -4184,7 +4181,18 @@ function hideLoadingScreen(){
 }
 
 /* เรียก boot เมื่อ page load */
-window.addEventListener('DOMContentLoaded',()=>bootGame());
+window.addEventListener('DOMContentLoaded',()=>{
+  /* Emergency timeout — ถ้า 4 วินาทียังค้างอยู่ให้ force show */
+  const emergencyTimer=setTimeout(()=>{
+    console.warn('Boot timeout — forcing UI');
+    hideLoadingScreen();
+    const hasLocal=loadGame();
+    if(hasLocal) goHome();
+    else{hideAll();$('intro').classList.remove('hidden');}
+  },4000);
+
+  bootGame().finally(()=>clearTimeout(emergencyTimer));
+});
 /* debounced cloud save — ไม่ให้ save ถี่เกิน */
 let _saveTimer=null;
 function saveGame(){
