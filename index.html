@@ -668,7 +668,11 @@ button:focus-visible{outline:2px solid var(--flood);outline-offset:2px}
     <p style="font-size:.75rem;color:#7fa78d;margin-bottom:4px">การ์ดที่มี:</p>
     <div class="hand" id="captainCollection" style="flex-wrap:wrap"></div>
   </div>
-  <div class="actions"><button id="deckOk" onclick="goHome()">บันทึกเด็ค ✔</button></div>
+  <div class="actions" style="flex-wrap:wrap;gap:8px">
+    <button id="deckOk" onclick="goHome()">บันทึกเด็ค ✔</button>
+    <button class="ghost" onclick="autoDeck()" style="font-size:.8rem">⚡ จัดเด็คอัตโนมัติ</button>
+    <button class="ghost" onclick="clearDeck()" style="font-size:.8rem;color:#f0907f">🗑️ ล้างทั้งหมด</button>
+  </div>
 </div>
 
 <div class="overlay center hidden" id="matchEnd">
@@ -1673,6 +1677,56 @@ function selectCaptain(idx){
   captainCard={...captainCollection[idx]};saveGame();renderCaptainDeck();sfxRare();
 }
 function removeCaptain(){captainCard=null;saveGame();renderCaptainDeck();sfxClick();}
+function autoDeck(){
+  /* score การ์ดแต่ละใบ: stat + formation stars bonus */
+  const scored = collection.map(p => {
+    const e = eff(p, true);
+    const starBonus = afStars(p) * 8; // ดาว formation ที่เลือกอยู่
+    const tierBonus = p.legend ? 30 : p.rare ? 15 : 0;
+    const skillBonus = p.skill ? 10 : 0;
+    const score = e.atk + e.def + starBonus + tierBonus + skillBonus;
+    return { p, score };
+  }).sort((a, b) => b.score - a.score);
+
+  /* เลือก 6 ใบ โดยพยายามให้มีทุก position */
+  const needed = { ST: 1, WG: 1, MF: 2, DF: 2 };
+  const chosen = [];
+  const used = new Set();
+
+  /* รอบ 1: เติม position ที่ขาด */
+  for (const { p } of scored) {
+    if (chosen.length >= 6) break;
+    const pos = p.pos;
+    if (needed[pos] > 0) {
+      chosen.push(p);
+      used.add(p.id);
+      needed[pos]--;
+    }
+  }
+  /* รอบ 2: เติม slot ที่เหลือด้วยการ์ดดีสุด */
+  for (const { p } of scored) {
+    if (chosen.length >= 6) break;
+    if (!used.has(p.id)) {
+      chosen.push(p);
+      used.add(p.id);
+    }
+  }
+
+  deck = chosen.map(p => p.id);
+  saveGame();
+  renderDeck();
+  sfxLvUp();
+  showMomPop('⚡ จัดเด็คอัตโนมัติแล้ว!');
+}
+
+function clearDeck(){
+  if(!confirm('ล้างเด็คทั้งหมด?')) return;
+  deck = [];
+  saveGame();
+  renderDeck();
+  sfxClick();
+}
+
 function renderDeck(){
   const visible=filteredCollection();
   $('collection').innerHTML=visible.length===0
