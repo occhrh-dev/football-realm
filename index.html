@@ -513,6 +513,7 @@ button:focus-visible{outline:2px solid var(--flood);outline-offset:2px}
 <div class="overlay hidden" id="home" style="justify-content:center">
   <h1>🏟️ สโมสรราชันสายฟ้า</h1>
   <div id="homeUserBadge" style="display:none;align-items:center;margin-bottom:4px"></div>
+  <div id="homeTPBar" style="font-family:Kanit;font-size:.8rem;margin-bottom:4px"></div>
   <p id="homeInfo" style="margin-bottom:4px"></p>
   <div class="modes">
     <div class="mode" onclick="openAdv()" role="button" tabindex="0"><div class="mico">🗺️</div><div class="mnm">ผจญภัย</div><div class="mdesc" id="mAdv">เดินแมพ ตามหาตำนาน</div></div>
@@ -633,6 +634,7 @@ button:focus-visible{outline:2px solid var(--flood);outline-offset:2px}
     <button class="dtab" onclick="switchDeckTab('captain',this)">👑 Captain</button>
   </div>
   <!-- Player deck summary -->
+  <div id="deckTPBar" style="width:100%;max-width:620px;background:#05130b;border:1px solid #1e3a29;border-radius:8px;padding:7px 12px;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between"></div>
   <div id="deckPlayerPanel">
     <div class="deckstat" id="deckStat"></div>
     <div class="synergy" id="deckSyn"></div>
@@ -1198,32 +1200,128 @@ function genDailyDeals(){
 }
 
 /* mode states */
-let advProgress=0,advChapter=1; // nodes cleared
-const ADV_CHAPTERS=[
-  {title:'ตามหาราชันลูกหนัง',nodes:[
-    {ico:'🏘️',nm:'หมู่บ้านลูกหนัง',desc:'ทีมเด็กหมู่บ้านขอท้าดวล (ง่าย)',mult:.85},
-    {ico:'🌲',nm:'ป่าทมิฬ',desc:'โจรลูกหนังดักปล้นนักเดินทาง',mult:1.0},
-    {ico:'🏜️',nm:'ทะเลทรายแผดเผา',desc:'ทีมเร่ร่อนแกร่งจากแดดทราย',mult:1.12},
-    {ico:'⛰️',nm:'ภูเขามังกร',desc:'ผู้พิทักษ์หุบเขาขวางทางอยู่',mult:1.25},
-    {ico:'👑',nm:'วิหารราชัน',desc:'บอส: ราชัน เลออน!',mult:1.45,boss:'leon'},
+let advProgress=0,advEP=1,advStage=0; // EP and stage progress
+
+/* ===== EP SYSTEM ===== */
+const STAGE_RULES={
+  ban_fire:   {tag:'🚫 ห้ามธาตุ 🔥', check:(deck)=>!deck.some(p=>p.elem==='fire'),   msg:'ห้ามใช้การ์ดธาตุไฟ'},
+  ban_wind:   {tag:'🚫 ห้ามธาตุ 💨', check:(deck)=>!deck.some(p=>p.elem==='wind'),   msg:'ห้ามใช้การ์ดธาตุลม'},
+  ban_tech:   {tag:'🚫 ห้ามธาตุ 🎯', check:(deck)=>!deck.some(p=>p.elem==='tech'),   msg:'ห้ามใช้การ์ดธาตุเทค'},
+  ban_ST:     {tag:'🚫 ห้ามใช้ ST',   check:(deck)=>!deck.some(p=>p.pos==='ST'),     msg:'ห้ามใช้ตำแหน่ง ST'},
+  ban_legend: {tag:'🚫 ห้าม Legend',  check:(deck)=>!deck.some(p=>p.legend),         msg:'ห้ามใช้การ์ดตำนาน'},
+  ban_common: {tag:'🚫 ห้าม Common',  check:(deck)=>!deck.some(p=>!p.rare&&!p.legend),msg:'ต้องใช้ Rare+ ทั้งหมด'},
+  max_legend1:{tag:'👑 Legend ≤ 1',   check:(deck)=>deck.filter(p=>p.legend).length<=1,msg:'ใช้ Legend ได้สูงสุด 1 ใบ'},
+  need_mf2:   {tag:'🔢 MF ≥ 2',       check:(deck)=>deck.filter(p=>p.pos==='MF').length>=2,msg:'ต้องมีกองกลาง ≥ 2 ใบ'},
+  need_mf3:   {tag:'🔢 MF ≥ 3',       check:(deck)=>deck.filter(p=>p.pos==='MF').length>=3,msg:'ต้องมีกองกลาง ≥ 3 ใบ'},
+  need_th3:   {tag:'🌍 🇹🇭 ≥ 3',      check:(deck)=>deck.filter(p=>p.nat==='🇹🇭').length>=3,msg:'ต้องมีนักเตะไทย ≥ 3 คน'},
+  need_asean4:{tag:'🌏 อาเซียน ≥ 4',  check:(deck)=>deck.filter(p=>['🇹🇭','🇻🇳','🇮🇩','🇲🇾','🇸🇬'].includes(p.nat)).length>=4,msg:'ต้องมีนักเตะอาเซียน ≥ 4 คน'},
+};
+
+const EP_DATA=[
+  {ep:1, title:'ตามหาราชัน',      tpReq:0,    epRule:null, theme:'🏘️',
+   stages:[
+    {ico:'🏘️',nm:'หมู่บ้านลูกหนัง', desc:'ทีมเด็กหมู่บ้าน',       mult:.8,  rules:[]},
+    {ico:'🌾',nm:'ทุ่งนาแห่งศักดิ์', desc:'ชาวนาสายฟ้า',           mult:.85, rules:[]},
+    {ico:'🛖',nm:'ค่ายนักล่า',        desc:'พรานป่าสายลม',          mult:.9,  rules:[]},
+    {ico:'🌉',nm:'สะพานโบราณ',       desc:'ทีมพ่อค้าเร่',           mult:.95, rules:[]},
+    {ico:'🌲',nm:'ป่าทมิฬ',          desc:'โจรลูกหนัง',            mult:1.0, rules:[]},
+    {ico:'🏔️',nm:'ไหล่เขาหนาว',     desc:'นักรบภูเขา',            mult:1.05,rules:[]},
+    {ico:'⛩️',nm:'วัดศักดิ์สิทธิ์',  desc:'ผู้พิทักษ์วัด',         mult:1.1, rules:[]},
+    {ico:'🏟️',nm:'สนามกลางเมือง',   desc:'ศึกก่อน Boss',          mult:1.2, rules:[], bonus:'coin2'},
+    {ico:'👑',nm:'วิหารราชัน (Boss)', desc:'ราชัน เลออน รอท้าทาน!', mult:1.45,rules:[], boss:'leon', isBoss:true},
   ]},
-  {title:'ศึกแชมป์ทวีป',nodes:[
-    {ico:'🗾',nm:'คัดเลือกโซน A',desc:'ทีมตัวแทนเอเชียตะวันออก',mult:1.5},
-    {ico:'🌍',nm:'คัดเลือกโซน B',desc:'ทีมจากแอฟริกาแกร่งมาก',mult:1.65},
-    {ico:'🏟️',nm:'รอบ 8 ทีม',desc:'ทัวร์นาเมนต์นานาชาติ',mult:1.8},
-    {ico:'🥈',nm:'รอบรองชนะเลิศ',desc:'แค่หนึ่งก้าวจากแชมป์',mult:2.0},
-    {ico:'🏆',nm:'รอบชิงแชมป์ทวีป',desc:'บอส: กัปตันยุโรป — ตำนานแห่งยุค!',mult:2.3,boss:'euro'},
+  {ep:2, title:'ศึกทะเลทราย',     tpReq:500,  epRule:'ban_wind', theme:'🏜️',
+   stages:[
+    {ico:'🏜️',nm:'ทรายพิษ',          desc:'ลมหอบทราย💨 อ่อนลง',   mult:1.1, rules:['ban_wind']},
+    {ico:'🦂',nm:'โอเอซิสแห่งอาฆาต', desc:'แก็งค์ทะเลทราย',        mult:1.15,rules:[]},
+    {ico:'🌵',nm:'หุบเขาหินแดง',      desc:'ศัตรู ATK แรง',         mult:1.2, rules:[], enemyBuff:'atk13'},
+    {ico:'🕌',nm:'เมืองทราย',         desc:'ต้องการ MF มาคุม',      mult:1.25,rules:['need_mf2']},
+    {ico:'🏺',nm:'วิหารฝังทราย',      desc:'ห้ามธาตุลม',            mult:1.3, rules:['ban_wind']},
+    {ico:'🌅',nm:'พระอาทิตย์ตก',     desc:'ด่านเหรียญ ×2',         mult:1.35,rules:[], bonus:'coin2'},
+    {ico:'⚔️',nm:'สมรภูมิทราย',      desc:'ศัตรูรับดีมาก',         mult:1.4, rules:[], enemyBuff:'def14'},
+    {ico:'🌪️',nm:'พายุทราย',         desc:'stam ลด -8/เทิร์น',     mult:1.45,rules:[], enemyBuff:'stampoison'},
+    {ico:'🐫',nm:'ราชาทะเลทราย (Boss)',desc:'มีธาตุไฟเป็นอาวุธ!',  mult:1.7, rules:['ban_wind'], boss:'desert_king', isBoss:true},
   ]},
-  {title:'ลีกซูเปอร์อาเซียน',nodes:[
-    {ico:'🇹🇭',nm:'ไทยลีกดิวิชั่น 1',desc:'เปิดตัวในลีกระดับประเทศ',mult:2.4},
-    {ico:'🇻🇳',nm:'เวียดนาม ซุปเปอร์ลีก',desc:'คู่แข่งอาเซียนระดับแนวหน้า',mult:2.6},
-    {ico:'🇯🇵',nm:'เจลีก',desc:'สไตล์ญี่ปุ่น: เทคนิคสูง',mult:2.8},
-    {ico:'🇰🇷',nm:'เค-ลีก',desc:'เร็วและฟิตสุดๆ',mult:3.0},
-    {ico:'🌏',nm:'ซูเปอร์คัพอาเซียน',desc:'บอส: สิงห์อาเซียน — ชนะได้ตำนานพิเศษ!',mult:3.3,boss:'asean'},
+  {ep:3, title:'ป่ามืดมังกร',     tpReq:900,  epRule:'max_legend1', theme:'🌲',
+   stages:[
+    {ico:'🌲',nm:'ขอบป่า',            desc:'Legend ≤ 1 ใบ',          mult:1.5, rules:['max_legend1']},
+    {ico:'🦅',nm:'ยอดไม้',            desc:'ห้ามใช้ ST',              mult:1.55,rules:['ban_ST']},
+    {ico:'🕸️',nm:'ถ้ำใยแมงมุม',     desc:'stam ลด -5/เทิร์น',      mult:1.6, rules:[], enemyBuff:'stampoison'},
+    {ico:'🐉',nm:'ชานถ้ำมังกร',      desc:'ศัตรู ATK ×1.3',          mult:1.65,rules:[], enemyBuff:'atk13'},
+    {ico:'🌋',nm:'ปากภูเขาไฟ',       desc:'ห้ามธาตุลม',              mult:1.7, rules:['ban_wind']},
+    {ico:'🧊',nm:'ถ้ำน้ำแข็ง',       desc:'drop Legend 30%',         mult:1.75,rules:[], bonus:'drop_legend'},
+    {ico:'🌑',nm:'ป่ามืดสนิท',       desc:'Legend ≤ 1 + MF ≥ 2',    mult:1.8, rules:['max_legend1','need_mf2']},
+    {ico:'⛰️',nm:'ยอดเขามังกร',     desc:'เหรียญ ×2',               mult:1.9, rules:[], bonus:'coin2'},
+    {ico:'🐲',nm:'มังกรราชา (Boss)',  desc:'Boss มี Legend 3 ใบ!',    mult:2.1, rules:['max_legend1'], boss:'dragon_king', isBoss:true},
+  ]},
+  {ep:4, title:'ลีกแชมป์ทวีป',   tpReq:1400, epRule:'need_mf2', theme:'🏆',
+   stages:[
+    {ico:'🇯🇵',nm:'เจลีก',           desc:'เทคนิคสูง MF ≥ 2',        mult:2.0, rules:['need_mf2']},
+    {ico:'🇰🇷',nm:'เค-ลีก',          desc:'เร็วและฟิต',               mult:2.05,rules:[]},
+    {ico:'🇨🇳',nm:'ซูเปอร์ลีกจีน',   desc:'ศัตรู ATK ×1.3',           mult:2.1, rules:[], enemyBuff:'atk13'},
+    {ico:'🇦🇺',nm:'A-ลีก',           desc:'ต้องการ MF ≥ 3',           mult:2.15,rules:['need_mf3']},
+    {ico:'🌍',nm:'รอบ 16 ทีม',       desc:'ห้าม Common',              mult:2.2, rules:['ban_common']},
+    {ico:'🏅',nm:'รอบ 8 ทีม',        desc:'เหรียญ ×2',               mult:2.3, rules:[], bonus:'coin2'},
+    {ico:'🥈',nm:'รองชนะเลิศ',       desc:'ศัตรู DEF ×1.4',           mult:2.45,rules:[], enemyBuff:'def14'},
+    {ico:'🏆',nm:'รอบชิงชนะเลิศ',    desc:'drop XP Potion L',         mult:2.6, rules:[], bonus:'xp_l'},
+    {ico:'👑',nm:'แชมป์โลก (Boss)',   desc:'กัปตันยุโรป ตำนานแห่งยุค', mult:2.8, rules:[], boss:'euro', isBoss:true},
+  ]},
+  {ep:5, title:'สงครามธาตุ',      tpReq:2000, epRule:'ban_common', theme:'⚡',
+   stages:[
+    {ico:'🔥',nm:'อาณาจักรไฟ',       desc:'ห้าม Common',              mult:2.6, rules:['ban_common']},
+    {ico:'💨',nm:'อาณาจักรลม',       desc:'ห้ามธาตุไฟ',              mult:2.65,rules:['ban_fire']},
+    {ico:'🎯',nm:'อาณาจักรเทค',      desc:'ห้ามธาตุลม',              mult:2.7, rules:['ban_wind']},
+    {ico:'⚗️',nm:'สงครามธาตุ 3 ทาง', desc:'Legend ≤ 1',              mult:2.8, rules:['max_legend1']},
+    {ico:'🌊',nm:'น้ำวนธาตุ',        desc:'ห้าม ST ห้าม Common',     mult:2.9, rules:['ban_ST','ban_common']},
+    {ico:'💥',nm:'ระเบิดธาตุ',       desc:'stam ลด -10/เทิร์น',      mult:3.0, rules:[], enemyBuff:'stampoison'},
+    {ico:'🌀',nm:'พายุธาตุ',         desc:'เหรียญ ×2',               mult:3.1, rules:[], bonus:'coin2'},
+    {ico:'⚡',nm:'ฟ้าผ่าธาตุ',       desc:'drop Legend',              mult:3.2, rules:[], bonus:'drop_legend'},
+    {ico:'🌌',nm:'ราชาธาตุ (Boss)',   desc:'ใช้ทั้ง 3 ธาตุพร้อมกัน!', mult:3.5, rules:[], boss:'elem_king', isBoss:true},
+  ]},
+  {ep:6, title:'หอคอยแห่งโชค',   tpReq:2800, epRule:null, theme:'🗼',
+   stages:[
+    {ico:'🗼',nm:'ชั้น 1',  desc:'random กฎ',  mult:3.0, rules:['random']},
+    {ico:'🗼',nm:'ชั้น 2',  desc:'random กฎ',  mult:3.1, rules:['random']},
+    {ico:'🗼',nm:'ชั้น 3',  desc:'random กฎ',  mult:3.2, rules:['random'], bonus:'coin2'},
+    {ico:'🗼',nm:'ชั้น 4',  desc:'random กฎ',  mult:3.3, rules:['random']},
+    {ico:'🗼',nm:'ชั้น 5',  desc:'random กฎ',  mult:3.4, rules:['random']},
+    {ico:'🗼',nm:'ชั้น 6',  desc:'random กฎ',  mult:3.5, rules:['random'], bonus:'drop_legend'},
+    {ico:'🗼',nm:'ชั้น 7',  desc:'random กฎ',  mult:3.6, rules:['random']},
+    {ico:'🗼',nm:'ชั้น 8',  desc:'random กฎ',  mult:3.7, rules:['random'], bonus:'coin2'},
+    {ico:'👹',nm:'ผีโชคร้าย (Boss)',desc:'2 กฎ random!', mult:4.0, rules:['random','random'], boss:'luck_demon', isBoss:true},
+  ]},
+  {ep:7, title:'ซูเปอร์อาเซียน', tpReq:3500, epRule:'need_asean4', theme:'🌏',
+   stages:[
+    {ico:'🇹🇭',nm:'ไทย vs เวียดนาม',   desc:'อาเซียน ≥ 4 คน',  mult:3.5, rules:['need_asean4']},
+    {ico:'🇻🇳',nm:'เวียดนาม Classic',   desc:'MF ≥ 2',          mult:3.6, rules:['need_mf2']},
+    {ico:'🇮🇩',nm:'อินโดนีเซีย Derby',  desc:'ห้าม Legend',     mult:3.7, rules:['ban_legend']},
+    {ico:'🇲🇾',nm:'Malaysia Cup',        desc:'อาเซียน ≥ 4',     mult:3.8, rules:['need_asean4']},
+    {ico:'🇸🇬',nm:'Singapore Final',     desc:'เหรียญ ×2',       mult:3.9, rules:[], bonus:'coin2'},
+    {ico:'🌏',nm:'ASEAN Championship',   desc:'ศัตรู ATK ×1.3',  mult:4.0, rules:[], enemyBuff:'atk13'},
+    {ico:'🏆',nm:'รอบรองฯ อาเซียน',     desc:'drop Legend',     mult:4.1, rules:[], bonus:'drop_legend'},
+    {ico:'⚡',nm:'รอบชิงฯ อาเซียน',     desc:'ห้าม Common',     mult:4.2, rules:['ban_common']},
+    {ico:'🦁',nm:'สิงห์อาเซียน (Boss)', desc:'บอสสุดแกร่งอาเซียน', mult:4.5, rules:['need_asean4'], boss:'asean', isBoss:true},
+  ]},
+  {ep:8, title:'ราชันสูงสุด',     tpReq:4500, epRule:'ban_support', theme:'👑',
+   stages:[
+    {ico:'🌑',nm:'ประตูมืด',          desc:'ห้าม Support card',  mult:4.5, rules:[]},
+    {ico:'💀',nm:'สุสานตำนาน',        desc:'Legend ≤ 1',         mult:4.7, rules:['max_legend1']},
+    {ico:'🔥',nm:'ทะเลเพลิง',         desc:'ห้ามธาตุไฟ',        mult:4.9, rules:['ban_fire']},
+    {ico:'⛓️',nm:'โซ่ตรวน',          desc:'stam ลด -12/เทิร์น', mult:5.0, rules:[], enemyBuff:'stampoison'},
+    {ico:'🌀',nm:'มิติที่ 5',          desc:'ห้าม ST + ห้าม WG',  mult:5.2, rules:['ban_ST']},
+    {ico:'👁️',nm:'ตาพระเจ้า',         desc:'ศัตรู ATK+DEF ×1.5', mult:5.4, rules:[], enemyBuff:'atk15'},
+    {ico:'⚔️',nm:'สงครามสุดท้าย',    desc:'drop Legend การันตี', mult:5.6, rules:[], bonus:'drop_legend'},
+    {ico:'🌟',nm:'ประตูราชัน',         desc:'เหรียญ ×3',         mult:5.8, rules:[], bonus:'coin3'},
+    {ico:'👑',nm:'ราชันสูงสุด (Boss)', desc:'FINAL BOSS — แกร่งที่สุด!', mult:6.5, rules:[], boss:'supreme_king', isBoss:true},
   ]},
 ];
-function currentChapterNodes(){return ADV_CHAPTERS[advChapter-1]?.nodes||ADV_CHAPTERS[0].nodes;}
-const ADV_NODES=ADV_CHAPTERS[0].nodes; // backward compat
+
+function currentEP(){return EP_DATA[advEP-1]||EP_DATA[0];}
+function currentStages(){return currentEP().stages;}
+/* backward compat */
+const ADV_CHAPTERS=EP_DATA.map(ep=>({title:ep.title,nodes:ep.stages}));
+function currentChapterNodes(){return currentStages();}
+const ADV_NODES=EP_DATA[0].stages;
 
 let lgRound=0,lgSeason=1,lgPts={};
 const LG_TEAMS=['อสูรแดง 🔥','หมาป่าเทา 🐺','อินทรีดำ 🦅','ฉลามคลั่ง 🦈','ราชามังกร 🐉'];
@@ -1443,44 +1541,122 @@ function hideAll(){SCREENS.forEach(i=>$(i).classList.add('hidden'));}
 function goHome(){
   hideAll();$('home').classList.remove('hidden');
   updateHomeProfile();
+  const _homeTP=$('homeTPBar');
+  if(_homeTP){
+    const tp=calcTeamTP();
+    const c=tpColor(tp);
+    _homeTP.innerHTML=`<span style="color:${c}">⚡ พลังทีม: <b>${tp.toLocaleString()}</b> ${tpLabel(tp)}</span>`;
+  }
   $('homeInfo').innerHTML=`👑 Lv.${capLv} · 🪙 ${coins} · การ์ด ${collection.length} ใบ · เด็ค ${deck.length}/6<br>${synText()}`;
   const _nodes=currentChapterNodes();
-  $('mAdv').textContent=advChapter>ADV_CHAPTERS.length?'✅ พิชิตทุกบทแล้ว!':`บท${advChapter}: ด่าน ${advProgress+1}/${_nodes.length}`;
+  $('mAdv').textContent=advEP>EP_DATA.length?'✅ พิชิตทุก EP แล้ว!':`EP${advEP}: ด่าน ${advStage+1}/${currentStages().length}`;
   $('mLg').textContent=lgRound>=5?`✅ จบฤดูกาล ${lgSeason}`:`S${lgSeason} นัดที่ ${lgRound+1}/5`;
   $('mTw').textContent=`สถิติสูงสุด: ชั้น ${twFloor}`;
   $('mPvp').textContent=rankOf(rp).nm+` (${rp} RP)`;
 }
 
 /* ============ ADVENTURE ============ */
+function getRandomRule(){
+  const pool=Object.keys(STAGE_RULES).filter(k=>!k.startsWith('need_asean'));
+  return pool[rnd(pool.length)];
+}
+function checkStageRules(stage){
+  const players=deckPlayers();
+  const rules=stage.rules||[];
+  const resolved=rules.map(r=>r==='random'?getRandomRule():r);
+  const failed=[];
+  resolved.forEach(rk=>{
+    const rule=STAGE_RULES[rk];
+    if(rule&&!rule.check(players)) failed.push(rule.msg);
+  });
+  /* EP-level rule */
+  const ep=currentEP();
+  if(ep.epRule&&ep.epRule!=='ban_support'){
+    const er=STAGE_RULES[ep.epRule];
+    if(er&&!er.check(players)) failed.push('[EP กฎ] '+er.msg);
+  }
+  if(ep.epRule==='ban_support'&&matchSupport.length>0){
+    failed.push('[EP กฎ] ห้ามใช้ Support card ใน EP นี้');
+  }
+  return failed;
+}
 function openAdv(){
   hideAll();$('advScr').classList.remove('hidden');
-  const nodes=currentChapterNodes();
-  const ch=ADV_CHAPTERS[advChapter-1];
-  $('advScr').querySelector('h1').textContent='🗺️ บทที่ '+advChapter+': '+ch.title;
-  // chapter tabs
-  let tabs=ADV_CHAPTERS.map((c,i)=>{
-    const done=i<advChapter-1;
-    const locked=i>advChapter-1;
-    return `<div onclick="${!locked?'switchChapter('+(i+1)+')':''}" style="cursor:${locked?'default':'pointer'};padding:4px 10px;border-radius:6px;font-family:Kanit;font-size:.78rem;background:${i===advChapter-1?'var(--gold)':done?'#1e3a29':'#0a1f13'};color:${i===advChapter-1?'#1a1408':done?'#7fd9a0':'#3a5240'};border:1px solid ${i===advChapter-1?'var(--gold)':'#1e3a29'}">${done?'✅':locked?'🔒':'▶'} บท ${i+1}</div>`;
+  const ep=currentEP();
+  const stages=currentStages();
+  const tp=calcTeamTP();
+  $('advScr').querySelector('h1').textContent=`🗺️ EP ${advEP}: ${ep.title}`;
+  /* EP tabs */
+  let tabs=EP_DATA.map((e,i)=>{
+    const done=i<advEP-1;
+    const locked=e.tpReq>0&&(tp<e.tpReq||i>advEP-1);
+    const active=i===advEP-1;
+    const tpTxt=e.tpReq>0?` (⚡${e.tpReq.toLocaleString()})`:' (ฟรี)';
+    return `<div onclick="${!locked?'switchEP('+(i+1)+')':''}"
+      style="cursor:${locked?'default':'pointer'};padding:4px 8px;border-radius:6px;
+      font-family:Kanit;font-size:.7rem;text-align:center;
+      background:${active?'var(--gold)':done?'#1e3a29':'#0a1f13'};
+      color:${active?'#1a1408':done?'#7fd9a0':locked?'#2a4030':'#a8c9b4'};
+      border:1px solid ${active?'var(--gold)':done?'#2a5238':'#1a2e1e'}">
+      ${done?'✅':locked?'🔒':e.theme} EP${i+1}${locked&&!done?`<br><span style="font-size:.58rem">⚡${e.tpReq.toLocaleString()}</span>`:''}</div>`;
   }).join('');
-  $('advMap').innerHTML=`<div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-bottom:10px">${tabs}</div>`+
-    nodes.map((n,i)=>{
-      const st=i<advProgress?'done':i===advProgress?'':'locked';
+  /* Stage rules preview */
+  const epRuleTag=ep.epRule&&STAGE_RULES[ep.epRule]?
+    `<span style="font-size:.68rem;background:rgba(232,181,58,.12);color:#ba7517;padding:2px 6px;border-radius:4px;margin-left:6px">${STAGE_RULES[ep.epRule].tag}</span>`:'';
+  $('advMap').innerHTML=
+    `<div style="display:flex;gap:5px;flex-wrap:wrap;justify-content:center;margin-bottom:8px">${tabs}</div>
+     <div style="font-family:Kanit;font-size:.75rem;color:#7fa78d;margin-bottom:6px;text-align:center">
+       ⚡ พลังทีมคุณ: <b style="color:${tpColor(tp)}">${tp.toLocaleString()}</b> / ต้องการ: <b>${ep.tpReq.toLocaleString()||'ไม่ต้องการ'}</b>${epRuleTag}
+     </div>`+
+    stages.map((n,i)=>{
+      const done=i<advStage;
+      const current=i===advStage;
+      const locked=i>advStage;
+      const failed=current?checkStageRules(n):[];
+      const rulesTxt=(n.rules||[]).filter(r=>r!=='random').map(rk=>
+        STAGE_RULES[rk]?`<span style="font-size:.58rem;background:rgba(232,181,58,.1);color:#ba7517;padding:1px 4px;border-radius:3px">${STAGE_RULES[rk].tag}</span>`:''
+      ).join(' ');
+      const bonusTxt=n.bonus?`<span style="font-size:.58rem;color:#7fd9a0">🎁 ${n.bonus==='coin2'?'เหรียญ×2':n.bonus==='coin3'?'เหรียญ×3':n.bonus==='drop_legend'?'drop Legend':n.bonus==='xp_l'?'XP Potion L':n.bonus}</span>`:'';
+      const bossBadge=n.isBoss?`<span style="font-size:.58rem;background:rgba(255,122,217,.15);color:#ff7ad9;padding:1px 5px;border-radius:3px">⚔️ BOSS</span>`:'';
       return (i?'<div class="advlink"></div>':'')+
-      `<div class="advnode ${st}" ${st===''?`onclick="playAdv(${i})" role="button" tabindex="0"`:''}>
-        <span class="aico">${i<advProgress?'✅':n.ico}</span>
-        <span><div class="anm">${n.nm}</div><div class="adesc">${n.desc}</div></span>
-      </div>`;
+        `<div class="advnode ${done?'done':locked?'locked':''}" 
+          ${current?`onclick="playAdv(${i})" role="button" tabindex="0"`:''}
+          style="${n.isBoss?'border-color:var(--legend)!important;':done?'':''}">
+          <span class="aico">${done?'✅':n.ico}</span>
+          <span>
+            <div class="anm">${n.nm} ${bossBadge}</div>
+            <div class="adesc">${n.desc}</div>
+            <div style="margin-top:2px">${rulesTxt} ${bonusTxt}</div>
+            ${current&&failed.length?`<div style="color:#f0907f;font-size:.6rem;margin-top:2px">⚠️ ${failed.join(' · ')}</div>`:''}
+          </span>
+        </div>`;
     }).join('');
 }
-function switchChapter(ch){
-  if(ch>advChapter) return;
-  advChapter=ch; advProgress=0; openAdv();
+function switchEP(ep){
+  if(ep>advEP) return;
+  advEP=ep;advStage=0;openAdv();
 }
 function playAdv(i){
-  const n=currentChapterNodes()[i];
-  mode='adv';pendingCtx={node:i,boss:n.boss||null};
-  startMatch(genTeam(n.mult),n.ico+' '+n.nm,'🗺️ บท'+advChapter);
+  const n=currentStages()[i];
+  /* check TP gate */
+  const tp=calcTeamTP();
+  const ep=currentEP();
+  if(tp<ep.tpReq){
+    showMomPop(`⚡ ต้องการ TP ${ep.tpReq.toLocaleString()} (ตอนนี้ ${tp.toLocaleString()})`);
+    return;
+  }
+  /* check stage rules */
+  const failed=checkStageRules(n);
+  if(failed.length){
+    showMomPop('⚠️ '+failed[0]);
+    return;
+  }
+  mode='adv';pendingCtx={node:i,boss:n.boss||null,stage:n};
+  /* apply enemy buffs */
+  let mult=n.mult;
+  if(n.enemyBuff==='atk13') mult*=1.3;
+  if(n.enemyBuff==='atk15') mult*=1.5;
+  startMatch(genTeam(mult),n.ico+' '+n.nm,`🗺️ EP${advEP}`);
 }
 
 /* ============ LEAGUE ============ */
@@ -1740,6 +1916,7 @@ function renderDeck(){
   $('deckStat').innerHTML=`เด็ค <span class="${v.size===6?'ok':'no'}">${v.size}/6</span> · บุก(⚔≥50) <span class="${v.atk>=2?'ok':'no'}">${v.atk}/2+</span> · รับ(🛡≥50) <span class="${v.def>=2?'ok':'no'}">${v.def}/2+</span>`;
   $('deckSyn').textContent=synText();
   $('deckOk').disabled=!v.ok;
+  renderTPBar();
 }
 function toggleDeck(id){
   if(deck.includes(id))deck=deck.filter(d=>d!==id);
@@ -2415,6 +2592,12 @@ function nextTurn(){
   if(fx.rumor>0)fx.rumor--;
   if(turn>8){endMatch();return;}
   [...deckPlayers(),...ai].forEach(p=>p.stamina=Math.min(100,p.stamina+5));
+  /* stampoison effect */
+  if(pendingCtx?.stage?.enemyBuff==='stampoison'){
+    deckPlayers().forEach(p=>p.stamina=Math.max(15,p.stamina-8));
+    ai.forEach(p=>p.stamina=Math.max(15,p.stamina-8));
+    log('<span style="color:#a06bf0">☠️ สตามิน่าพิษ -8 ทั้งสองฝั่ง!</span>');
+  }
   /* captain passive check each turn */
   capState.justConceded=false;
   capState.lastGoal=false;
@@ -2439,10 +2622,15 @@ function endMatch(){
   let desc='',lootChance=win?.6:draw?.35:.15,coinGain=0,xpGain=win?50:draw?25:15;
 
   if(mode==='adv'){
-    coinGain=win?100*advChapter:30;
+    coinGain=win?Math.round(80*currentEP().stages[pendingCtx.node||0]?.mult||100):30;
+    /* stage bonus */
+    const _stageBonus=pendingCtx.stage?.bonus;
+    if(win&&_stageBonus==='coin2') coinGain*=2;
+    if(win&&_stageBonus==='coin3') coinGain*=3;
     if(win){
-      advProgress=Math.max(advProgress,pendingCtx.node+1);
-      const nodes=currentChapterNodes();
+      advStage=Math.max(advStage,pendingCtx.node+1);
+      advProgress=advStage; // backward compat
+      const nodes=currentStages();
       if(pendingCtx.node===nodes.length-1){
         /* boss card per chapter */
         const bossDefs={
@@ -2455,11 +2643,20 @@ function endMatch(){
         collection.push(bossCard);
         desc=`🌟 <b style="color:var(--legend)">${bd.msg}</b> เปิดหน้าจัดเด็คเพื่อใส่ลงทีม!`;
         title='🏆 พิชิตบทที่ '+advChapter+'!';
-        if(advChapter<ADV_CHAPTERS.length){
-          advChapter++;advProgress=0;
-          desc+=`<br>🗺️ <b style="color:var(--gold)">บทที่ ${advChapter} เปิดแล้ว!</b>`;
+        if(advEP<EP_DATA.length){
+          const nextEP=EP_DATA[advEP];
+          const tp=calcTeamTP();
+          advEP++;advStage=0;advProgress=0;
+          desc+=`<br>🗺️ <b style="color:var(--gold)">EP ${advEP}: ${nextEP?.title||''} เปิดแล้ว!</b>`;
+          if(nextEP&&tp<nextEP.tpReq) desc+=`<br><small style="color:#e8b53a">⚡ ต้องการ TP ${nextEP.tpReq.toLocaleString()} เพื่อเข้าเล่น</small>`;
         }
         sfxLegend();
+        /* drop_legend bonus stage */
+        if(_stageBonus==='drop_legend'&&Math.random()<.3){
+          const bonus=rollCard(true,true);collection.push(bonus);
+          desc+=`<br>🌟 <b>โชคดี! drop การ์ดตำนาน: ${bonus.name}</b>`;
+        }
+        if(_stageBonus==='xp_l'){consumables.xp_l=(consumables.xp_l||0)+1;desc+=`<br>⚗️ <b>ได้ XP Potion L!</b>`;}
       } else desc=`ผ่านด่าน ${nodes[pendingCtx.node].nm}! เดินทางต่อได้`;
     } else desc='พ่ายแพ้... พักฟื้นแล้วลองใหม่';
   }
@@ -2669,6 +2866,12 @@ function updateLoginUI(){
   }
   /* update home header if open */
   updateHomeProfile();
+  const _homeTP=$('homeTPBar');
+  if(_homeTP){
+    const tp=calcTeamTP();
+    const c=tpColor(tp);
+    _homeTP.innerHTML=`<span style="color:${c}">⚡ พลังทีม: <b>${tp.toLocaleString()}</b> ${tpLabel(tp)}</span>`;
+  }
 }
 function updateHomeProfile(){
   const el=$('homeUserBadge');
@@ -2710,7 +2913,7 @@ loadProfile();
 function saveGame(){
   try{
     const data={
-      capLv,capXp,coins,advProgress,advChapter,lgRound,lgSeason,lgPts,twFloor,rp,uid,
+      capLv,capXp,coins,advProgress,advEP,advStage,lgRound,lgSeason,lgPts,twFloor,rp,uid,
       inventory,
       deck,
       collection:collection.map(p=>({...p,item:p.item?inventory.indexOf(p.item):-1})),
@@ -2933,9 +3136,59 @@ function setFilter(f,btn){
   sfxClick();
   renderDeck();
 }
+const POS_ORDER={ST:0,WG:1,MF:2,DF:3};
+const TIER_ORDER={legend:0,rare:1,common:2};
+
+/* ===== TEAM POWER ===== */
+function calcPlayerTP(p){
+  const e=eff(p,true);
+  const base=e.atk+e.def;
+  const tierMult=p.legend?1.7:p.rare?1.3:1.0;
+  const stars=afStars(p);
+  const starMult=stars>=5?1.25:stars>=3?1.15:stars>=1?1.05:1.0;
+  const lvMult=1+(p.lv-1)*0.02;
+  return Math.round(base*tierMult*starMult*lvMult);
+}
+function calcTeamTP(players=null){
+  const pl=players||deckPlayers();
+  return pl.reduce((sum,p)=>sum+calcPlayerTP(p),0);
+}
+function tpColor(tp){
+  if(tp>=4500) return '#ff7ad9';
+  if(tp>=2000) return '#a06bf0';
+  if(tp>=1000) return '#7fd9a0';
+  if(tp>=500)  return '#e8b53a';
+  return '#f0907f';
+}
+function tpLabel(tp){
+  if(tp>=4500) return '👑 ราชัน';
+  if(tp>=2000) return '🟣 สูงมาก';
+  if(tp>=1000) return '🟢 ดี';
+  if(tp>=500)  return '🟡 ปานกลาง';
+  return '🔴 ต่ำ';
+}
+function renderTPBar(){
+  const el=$('deckTPBar');
+  if(!el) return;
+  const tp=calcTeamTP();
+  const color=tpColor(tp);
+  el.innerHTML=`<span style="font-family:Kanit;font-size:.85rem;color:${color}">⚡ พลังทีม: <b>${tp.toLocaleString()}</b></span>
+    <span style="font-size:.7rem;color:${color};margin-left:6px">${tpLabel(tp)}</span>`;
+}
+
+function sortCollection(arr){
+  return [...arr].sort((a,b)=>{
+    const pa=POS_ORDER[a.pos]??9, pb=POS_ORDER[b.pos]??9;
+    if(pa!==pb) return pa-pb;
+    const ta=a.legend?0:a.rare?1:2, tb=b.legend?0:b.rare?1:2;
+    if(ta!==tb) return ta-tb;
+    return (b.atk+b.def)-(a.atk+a.def); // stat สูงกว่ามาก่อน
+  });
+}
+
 function filteredCollection(){
   const q=($('deckSearch')?.value||'').toLowerCase();
-  return collection.filter(p=>{
+  const filtered=collection.filter(p=>{
     if(q&&!p.name.toLowerCase().includes(q)) return false;
     if(deckFilter==='all') return true;
     if(deckFilter==='rare') return p.rare&&!p.legend;
@@ -2946,6 +3199,7 @@ function filteredCollection(){
     if(['fire','wind','tech'].includes(deckFilter)) return p.elem===deckFilter;
     return true;
   });
+  return sortCollection(filtered);
 }
 
 /* ============ DAILY QUEST ============ */
