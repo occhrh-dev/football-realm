@@ -2000,7 +2000,8 @@ function applySupportEffect(card){
   sfxClick();
   card.used=true;
   renderSupportBar();
-  setupTurnDisplay();
+  /* ไม่ call setupTurnDisplay ใน support effect เพราะจะ overwrite duelActions */
+  $('sYou').textContent=scoreYou;$('sAi').textContent=scoreAi;
 }
 
 /* ===== CAPTAIN TRIGGER ENGINE ===== */
@@ -2346,7 +2347,13 @@ function finishDuel(attacker,defender,goal,youAtk){
     }
   }
   $('sYou').textContent=scoreYou;$('sAi').textContent=scoreAi;
+  /* ตั้งปุ่มก่อน แล้วค่อย captain trigger */
   $('duelActions').innerHTML=`<button onclick="nextTurn()">เทิร์นถัดไป ▶</button>`;
+  /* re-set ปุ่มหลัง captain trigger เผื่อถูก overwrite */
+  setTimeout(()=>{
+    if($('duelActions')&&!$('duelActions').innerHTML.includes('nextTurn'))
+      $('duelActions').innerHTML=`<button onclick="nextTurn()">เทิร์นถัดไป ▶</button>`;
+  },250);
 }
 function nextTurn(){
   $('duel').className='duel';turn++;
