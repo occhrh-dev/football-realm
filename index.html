@@ -270,6 +270,9 @@ h1,h2,h3,.kanit{font-family:'Kanit',sans-serif}
 .cardm .m-stars .af-star{font-size:.52rem}
 /* elem dot */
 .cardm .m-elem{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.cardm .m-arrow{font-size:.65rem;font-weight:800;line-height:1;flex-shrink:0}
+.cardm .m-arrow.up{color:#7fd9a0}
+.cardm .m-arrow.down{color:#f0907f}
 .cardm .m-elem.fire{background:#ff9d7a}
 .cardm .m-elem.wind{background:#7ad9ff}
 .cardm .m-elem.tech{background:#d9a0ff}
@@ -712,6 +715,9 @@ button:focus-visible{outline:2px solid var(--flood);outline-offset:2px}
 
 <!-- ============ MATCH UI ============ -->
 <div id="matchUI" class="hidden" style="width:100%;display:flex;flex-direction:column;align-items:center">
+<div style="width:100%;max-width:620px;display:flex;justify-content:flex-start;margin-bottom:2px">
+  <button onclick="confirmQuitMatch()" style="font-size:.72rem;padding:4px 10px;background:transparent;border:1px solid #2a5238;border-radius:6px;color:#7fa78d;cursor:pointer">← ออกจากแมตช์</button>
+</div>
 <div class="hud">
   <span class="lv">👑 Lv.<span id="capLv">1</span></span>
   <div class="xpbar"><i id="capXp" style="width:0%"></i></div>
@@ -737,7 +743,7 @@ button:focus-visible{outline:2px solid var(--flood);outline-offset:2px}
 <div class="log" id="log"></div>
 <div class="incoming" id="incoming"></div>
 <div class="phase" id="phase"></div>
-<div class="counterhint">⚖️ 🔥ชนะ🎯 · 💨ชนะ🔥 · 🎯ชนะ💨 (ข่มธาตุ = ทอย +15)</div>
+<!-- elem counter hint removed - shown as arrows on cards -->
 <div class="duel" id="duel"></div>
 <div class="support-bar" id="supportBar"></div>
 <div class="form-picker" id="formPicker">
@@ -2119,15 +2125,28 @@ function cardMatch(p,clickable,advantage=false){
   const afs=afStars(p);
   const tier=p.legend?'legend':p.rare?'rare':'common';
   const isAfActive=afb>0;
-  /* stamina bar color */
   const stamCls=p.stamina>=60?'hi':p.stamina>=30?'mid':'lo';
-  /* elem dot class */
   const elemCls=ELEMS[p.elem]?.cls||'';
-  /* stars strip for active formation */
   const filledCls=tier==='legend'?'filled-legend':tier==='rare'?'filled-rare':'filled-common';
   let starsH='';
   if(isAfActive){
     for(let i=1;i<=5;i++) starsH+=`<span class="af-star ${i<=afs?'filled '+filledCls:'empty'}">★</span>`;
+  }
+  /* elem advantage arrow — เทียบกับ incomingAttacker (ถ้ามี) */
+  let arrowHtml='';
+  if(incomingAttacker&&incomingAttacker.elem){
+    if(ELEMS[p.elem]?.beats===incomingAttacker.elem){
+      arrowHtml=`<span class="m-arrow up">▲</span>`;
+    } else if(ELEMS[incomingAttacker.elem]?.beats===p.elem){
+      arrowHtml=`<span class="m-arrow down">▼</span>`;
+    }
+  } else if(youAttacking&&ai&&ai.length){
+    /* ตอนบุก เทียบกับ DF ของ AI */
+    const aiDef=ai.filter(q=>q.def>=50);
+    const hasAdv=aiDef.some(q=>ELEMS[p.elem]?.beats===q.elem);
+    const hasDisadv=aiDef.some(q=>ELEMS[q.elem]?.beats===p.elem);
+    if(hasAdv) arrowHtml=`<span class="m-arrow up">▲</span>`;
+    else if(hasDisadv) arrowHtml=`<span class="m-arrow down">▼</span>`;
   }
   const clickAttrs=clickable
     ?`onclick="pick('${p.id}')" onkeydown="if(event.key==='Enter')pick('${p.id}')"`:'';
@@ -2142,6 +2161,7 @@ function cardMatch(p,clickable,advantage=false){
         <span class="m-nm" title="${p.name}">${p.name}</span>
         <span class="m-nat">${p.nat}</span>
         <span class="m-lv">Lv${p.lv}</span>
+        ${arrowHtml}
       </div>
       <div class="m-stats">
         <span class="m-elem ${elemCls}"></span>
@@ -2585,6 +2605,13 @@ function finishDuel(attacker,defender,goal,youAtk){
     if($('duelActions')&&!$('duelActions').innerHTML.includes('nextTurn'))
       $('duelActions').innerHTML=`<button onclick="nextTurn()">เทิร์นถัดไป ▶</button>`;
   },250);
+}
+function confirmQuitMatch(){
+  if(confirm('ออกจากแมตช์? จะนับว่าแพ้ (ไม่ได้รางวัล)')) {
+    /* นับว่าแพ้ */
+    scoreYou=0;scoreAi=1;
+    endMatch();
+  }
 }
 function nextTurn(){
   $('duel').className='duel';turn++;
@@ -3100,8 +3127,43 @@ function playTone(freq,dur,type='sine',vol=0.18){
     o.start();o.stop(c.currentTime+dur);
   }catch(e){}
 }
-function sfxGoal(){playTone(523,.12,'square',.22);setTimeout(()=>playTone(659,.12,'square',.22),120);setTimeout(()=>playTone(784,.25,'square',.25),240);}
-function sfxSave(){playTone(392,.15,'sawtooth',.15);setTimeout(()=>playTone(330,.2,'sawtooth',.12),150);}
+function sfxGoal(){
+  /* เสียงนกหวีด + เฮ crowd */
+  playTone(523,.12,'square',.22);
+  setTimeout(()=>playTone(659,.12,'square',.22),120);
+  setTimeout(()=>playTone(784,.35,'square',.28),240);
+  setTimeout(()=>playTone(1046,.2,'sine',.2),480);
+  /* crowd cheer — noise burst */
+  try{
+    const c=ac(),buf=c.createBuffer(1,c.sampleRate*.6,c.sampleRate);
+    const d=buf.getChannelData(0);
+    for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*(1-i/d.length)*.18;
+    const src=c.createBufferSource(),g=c.createGain();
+    const filt=c.createBiquadFilter();filt.type='bandpass';filt.frequency.value=800;filt.Q.value=0.5;
+    src.buffer=buf;src.connect(filt);filt.connect(g);g.connect(c.destination);
+    g.gain.setValueAtTime(.25,c.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001,c.currentTime+.6);
+    src.start(c.currentTime+.3);
+  }catch(e){}
+}
+function sfxSave(){
+  /* เสียงโห่ — ต่ำกว่า + ดิ้น */
+  playTone(220,.15,'sawtooth',.18);
+  setTimeout(()=>playTone(196,.2,'sawtooth',.15),150);
+  setTimeout(()=>playTone(185,.25,'sawtooth',.12),300);
+  /* crowd boo */
+  try{
+    const c=ac(),buf=c.createBuffer(1,c.sampleRate*.5,c.sampleRate);
+    const d=buf.getChannelData(0);
+    for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*(1-i/d.length)*.12;
+    const src=c.createBufferSource(),g=c.createGain();
+    const filt=c.createBiquadFilter();filt.type='bandpass';filt.frequency.value=300;filt.Q.value=0.8;
+    src.buffer=buf;src.connect(filt);filt.connect(g);g.connect(c.destination);
+    g.gain.setValueAtTime(.15,c.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001,c.currentTime+.5);
+    src.start(c.currentTime+.1);
+  }catch(e){}
+}
 function sfxCard(){playTone(660,.08,'sine',.15);}
 function sfxRare(){playTone(440,.1,'sine',.2);setTimeout(()=>playTone(554,.1,'sine',.2),100);setTimeout(()=>playTone(659,.25,'sine',.25),200);}
 function sfxLegend(){[440,554,659,880].forEach((f,i)=>setTimeout(()=>playTone(f,.15,'sine',.28),i*90));}
