@@ -2982,40 +2982,51 @@ function updateHomeProfile(){
 loadProfile();
 /* ===== BOOT SEQUENCE ===== */
 async function bootGame(){
-  /* แสดง loading */
   showLoadingScreen('🔄 กำลังโหลด...');
-  /* โหลดจาก localStorage ก่อน (เร็ว) */
-  const hasLocal=loadGame();
-  /* เชื่อม Supabase */
+
+  /* เชื่อม Supabase ก่อนเลย */
   try{
     const sb=await initSupabase();
     if(sb){
       const {data:{user}}=await sb.auth.getUser();
       _sbUser=user;
+
       if(user){
-        showLoadingScreen('☁️ ซิงค์ข้อมูลจาก Cloud...');
+        /* LOGIN แล้ว — Cloud คือ source of truth เสมอ */
+        showLoadingScreen('☁️ โหลดข้อมูลจาก Cloud...');
         const cloud=await cloudLoad();
+
         if(cloud){
-          /* cloud มีข้อมูล — เอา cloud เป็น source of truth */
-          const cloudOk=applyCloudData(cloud);
-          if(cloudOk){
-            /* อัปเดต localStorage ให้ตรงกัน */
-            localStorage.setItem(SAVE_KEY,JSON.stringify(buildLocalSnap()));
+          /* ได้ข้อมูล cloud → apply ทันที ไม่สนใจ local */
+          applyCloudData(cloud);
+          /* sync local ให้ตรงกับ cloud */
+          localStorage.setItem(SAVE_KEY,JSON.stringify(buildLocalSnap()));
+        } else {
+          /* cloud ว่าง (user ใหม่) → ใช้ local ถ้ามี แล้ว upload */
+          const hasLocal=loadGame();
+          if(hasLocal){
+            showLoadingScreen('☁️ อัปโหลดเซฟขึ้น Cloud...');
+            await cloudSave();
           }
-        } else if(hasLocal){
-          /* cloud ว่าง แต่มี local — upload ขึ้น cloud */
-          showLoadingScreen('☁️ อัปโหลดเซฟขึ้น Cloud...');
-          await cloudSave();
         }
         loadProfile();
         updateLoginUI();
         if(!playerProfile.name) setTimeout(()=>openProfileSetup(),600);
+
       } else {
-        /* ไม่ได้ login — ใช้ local */
+        /* ยังไม่ login → ใช้ local */
+        loadGame();
         updateLoginUI();
       }
+    } else {
+      /* Supabase ไม่ตอบ → fallback local */
+      loadGame();
     }
-  }catch(e){console.warn('boot error',e);}
+  }catch(e){
+    console.warn('boot error',e);
+    loadGame(); // fallback
+  }
+
   hideLoadingScreen();
   /* เข้าหน้าหลัก */
   if(hasLocal||_sbUser){
