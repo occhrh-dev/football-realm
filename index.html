@@ -548,11 +548,13 @@ function pXpNeed(p){return p.lv*40}
 function log(msg,cls=''){const d=document.createElement('div');if(cls)d.className=cls;d.innerHTML=msg;$('log').prepend(d);}
 function popup(html){const p=$('lvupPop');p.innerHTML=html;p.classList.remove('hidden');setTimeout(()=>p.classList.add('hidden'),1700);}
 function gainCapXp(n){
+  const before=capLv;
   capXp+=n;
   while(capXp>=capXpNeed()){capXp-=capXpNeed();capLv++;
     popup(`<h2>👑 LEVEL UP!</h2><p class="kanit">กัปตัน Lv.${capLv} — ทั้งทีม +1</p>`);
     collection.forEach(p=>{p.atk++;p.def++;});}
   $('capLv').textContent=capLv;$('capXp').style.width=(capXp/capXpNeed()*100)+'%';
+  if(capLv>before) sfxLvUp();
 }
 function gainPXp(p,n){
   p.xp+=n;
@@ -661,11 +663,14 @@ function deckValid(){
 }
 function openDeck(){hideAll();$('deckScr').classList.remove('hidden');renderDeck();}
 function renderDeck(){
-  $('collection').innerHTML=collection.map(p=>{
-    const inD=deck.includes(p.id);
-    return cardHTML(p,false).replace(' disabled ',' ')
-      .replace('class="cardp',`onclick="toggleDeck('${p.id}')" onkeydown="if(event.key==='Enter')toggleDeck('${p.id}')" style="cursor:pointer" class="cardp ${inD?'indeck':''}`);
-  }).join('');
+  const visible=filteredCollection();
+  $('collection').innerHTML=visible.length===0
+    ?`<p style="color:#7fa78d;padding:16px">ไม่พบการ์ดที่ตรงเงื่อนไข</p>`
+    :visible.map(p=>{
+      const inD=deck.includes(p.id);
+      return cardHTML(p,false).replace(' disabled ',' ')
+        .replace('class="cardp',`onclick="toggleDeck('${p.id}')" onkeydown="if(event.key==='Enter')toggleDeck('${p.id}')" style="cursor:pointer" class="cardp ${inD?'indeck':''}`);
+    }).join('');
   const v=deckValid();
   $('deckStat').innerHTML=`เด็ค <span class="${v.size===6?'ok':'no'}">${v.size}/6</span> · บุก(⚔≥50) <span class="${v.atk>=2?'ok':'no'}">${v.atk}/2+</span> · รับ(🛡≥50) <span class="${v.def>=2?'ok':'no'}">${v.def}/2+</span>`;
   $('deckSyn').textContent=synText();
@@ -719,6 +724,8 @@ function startMatch(opponent,oppName,modeLabel){
   if(!deckValid().ok){openDeck();return;}
   hideAll();$('matchUI').classList.remove('hidden');
   ai=opponent;scoreYou=0;scoreAi=0;turn=1;youAttacking=true;fx={};
+  momentum=50;updateMomentum(0);
+  questProgress('match',1);
   deckPlayers().forEach(p=>p.stamina=100);
   matchTactics=[...TACTICS].sort(()=>Math.random()-.5).slice(0,3).map(t=>({...t,used:false}));
   $('sYou').textContent=0;$('sAi').textContent=0;
@@ -861,11 +868,12 @@ function throwConfetti(){
 }
 function finishDuel(attacker,defender,goal,youAtk){
   if(goal){
-    if(youAtk){scoreYou++;log(`⚽ <span class="good">${attacker.name} ยิงเข้า! +15 XP</span>`);gainPXp(attacker,15);gainCapXp(15);}
-    else{scoreAi++;log(`⚽ <span class="bad">${attacker.name} ยิงเข้า...</span>`);}
+    if(youAtk){scoreYou++;log(`⚽ <span class="good">${attacker.name} ยิงเข้า! +15 XP</span>`);gainPXp(attacker,15);gainCapXp(15);
+      updateMomentum(+15);if(momentum>=70)showMomPop('🔥 Momentum ลุกโชน!');questProgress('goal',1);sfxGoal();
+    }else{scoreAi++;log(`⚽ <span class="bad">${attacker.name} ยิงเข้า...</span>`);updateMomentum(-15);sfxSave();}
   }else{
-    if(youAtk){log(`🧤 <span class="bad">โดนสกัด... +5 XP</span>`);gainPXp(attacker,5);gainCapXp(5);}
-    else{log(`🧤 <span class="good">${defender.name} สกัดสำเร็จ! +12 XP</span>`);gainPXp(defender,12);gainCapXp(12);}
+    if(youAtk){log(`🧤 <span class="bad">โดนสกัด... +5 XP</span>`);gainPXp(attacker,5);gainCapXp(5);updateMomentum(-8);}
+    else{log(`🧤 <span class="good">${defender.name} สกัดสำเร็จ! +12 XP</span>`);gainPXp(defender,12);gainCapXp(12);updateMomentum(+8);sfxSave();}
   }
   $('sYou').textContent=scoreYou;$('sAi').textContent=scoreAi;
   $('duelActions').innerHTML=`<button onclick="nextTurn()">เทิร์นถัดไป ▶</button>`;
@@ -946,6 +954,8 @@ function endMatch(){
       <div class="lnm">${it.ico} ${it.name}</div><div class="ldesc">${it.desc}</div></div>`;
   }
   hideAll();$('matchEnd').classList.remove('hidden');
+  const _win=scoreYou>scoreAi;if(_win){_achStats.wins++;questProgress('win',1);}
+  checkAchievements();
   saveGame();
 }
 function afterMatch(){
@@ -968,6 +978,7 @@ function saveGame(){
       collection:collection.map(p=>({...p,item:p.item?inventory.indexOf(p.item):-1})),
     };
     localStorage.setItem(SAVE_KEY,JSON.stringify(data));
+    localStorage.setItem('frQuest',JSON.stringify({questState,questDate,achUnlocked:[..._unlocked],wins:_achStats.wins}));
   }catch(e){}
 }
 function loadGame(){
@@ -986,6 +997,12 @@ function loadGame(){
     $('capLv').textContent=capLv;
     $('capXp').style.width=(capXp/capXpNeed()*100)+'%';
     $('coins').textContent=coins;
+    try{
+      const q=JSON.parse(localStorage.getItem('frQuest')||'{}');
+      if(q.questState){questState=q.questState;questDate=q.questDate||'';}
+      if(q.achUnlocked) q.achUnlocked.forEach(id=>_unlocked.add(id));
+      if(q.wins) _achStats.wins=q.wins;
+    }catch(e){}
     return true;
   }catch(e){return false;}
 }
@@ -1269,97 +1286,6 @@ function renderAch(){
       <div style="font-size:.62rem;margin-top:2px;color:#7fa78d">${a.desc}</div>
     </div>`;
   }).join('');
-}
-
-/* ============ PATCH: momentum in duel ============ */
-const _origFinishDuel=finishDuel;
-function finishDuel(attacker,defender,goal,youAtk){
-  if(goal){
-    if(youAtk){
-      updateMomentum(+15);
-      if(momentum>=70) showMomPop('🔥 Momentum ลุกโชน! +bonus');
-      questProgress('goal',1);
-      sfxGoal();
-    } else {
-      updateMomentum(-15);
-      sfxSave();
-    }
-  } else {
-    if(youAtk) updateMomentum(-8);
-    else {updateMomentum(+8);sfxSave();}
-  }
-  _origFinishDuel(attacker,defender,goal,youAtk);
-}
-
-/* ============ PATCH: momentum bonus in duel calc ============ */
-const _origDuel=duel;
-function duel(attacker,defender,youAtk){
-  // inject momentum bonus before calling original
-  const mb=youAtk?momentumBonus():0;
-  if(mb>0) {
-    const orig=attacker.atk;attacker._atkBoost=mb;attacker.atk+=mb;
-    setTimeout(()=>{attacker.atk=orig;delete attacker._atkBoost;},50);
-  }
-  _origDuel(attacker,defender,youAtk);
-}
-
-/* ============ PATCH: quest on match events ============ */
-const _origStartMatch=startMatch;
-function startMatch(opponent,oppName,modeLabel){
-  questProgress('match',1);
-  momentum=50;updateMomentum(0);
-  _origStartMatch(opponent,oppName,modeLabel);
-}
-const _origEndMatch=endMatch;
-function endMatch(){
-  const win=scoreYou>scoreAi;
-  if(win){_achStats.wins++;questProgress('win',1);}
-  checkAchievements();
-  _origEndMatch();
-}
-
-/* ============ PATCH: renderDeck with filter ============ */
-const _origRenderDeck=renderDeck;
-function renderDeck(){
-  const visible=filteredCollection();
-  $('collection').innerHTML=visible.map(p=>{
-    const inD=deck.includes(p.id);
-    return cardHTML(p,false).replace(' disabled ',' ')
-      .replace('class="cardp',`onclick="toggleDeck('${p.id}')" onkeydown="if(event.key==='Enter')toggleDeck('${p.id}')" style="cursor:pointer" class="cardp ${inD?'indeck':''}`);
-  }).join('');
-  if(visible.length===0) $('collection').innerHTML=`<p style="color:#7fa78d;padding:16px">ไม่พบการ์ดที่ตรงเงื่อนไข</p>`;
-  const v=deckValid();
-  $('deckStat').innerHTML=`เด็ค <span class="${v.size===6?'ok':'no'}">${v.size}/6</span> · บุก(⚔≥50) <span class="${v.atk>=2?'ok':'no'}">${v.atk}/2+</span> · รับ(🛡≥50) <span class="${v.def>=2?'ok':'no'}">${v.def}/2+</span>`;
-  $('deckSyn').textContent=synText();
-  $('deckOk').disabled=!v.ok;
-}
-
-/* ============ PATCH: save/load quest & ach ============ */
-const _origSaveGame=saveGame;
-function saveGame(){
-  _origSaveGame();
-  try{
-    localStorage.setItem('frQuest',JSON.stringify({questState,questDate,_achStats:[..._unlocked],wins:_achStats.wins}));
-  }catch(e){}
-}
-const _origLoadGame=loadGame;
-function loadGame(){
-  const r=_origLoadGame();
-  try{
-    const q=JSON.parse(localStorage.getItem('frQuest')||'{}');
-    if(q.questState){questState=q.questState;questDate=q.questDate||'';}
-    if(q._achStats) q._achStats.forEach(id=>_unlocked.add(id));
-    if(q.wins) _achStats.wins=q.wins;
-  }catch(e){}
-  return r;
-}
-
-/* ============ PATCH: add SFX to level up ============ */
-const _origGainCapXp=gainCapXp;
-function gainCapXp(n){
-  const before=capLv;
-  _origGainCapXp(n);
-  if(capLv>before) sfxLvUp();
 }
 
 /* init quest on load */
