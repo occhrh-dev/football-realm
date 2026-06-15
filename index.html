@@ -718,6 +718,7 @@ button:focus-visible{outline:2px solid var(--flood);outline-offset:2px}
     <button class="inv-tab" onclick="switchInvTab('shoe',this)">👟 รองเท้า</button>
     <button class="inv-tab" onclick="switchInvTab('pants',this)">👖 กางเกง</button>
     <button class="inv-tab" onclick="switchInvTab('consumable',this)">⚗️ ของใช้</button>
+    <button class="inv-tab" onclick="switchInvTab('badge',this)">🏅 ตรา</button>
     <button class="inv-tab" onclick="switchInvTab('dismantle',this)">🔄 ย่อย</button>
     <button class="inv-tab" onclick="switchInvTab('craft',this)">⚗️ Craft</button>
     <button class="inv-tab" onclick="switchInvTab('enchant',this)">✨ Enchant</button>
@@ -1171,6 +1172,64 @@ function rollCaptainCard(premium=false){
 /* legacy compat */
 const ITEMS=ITEMS_DB;
 
+/* ===== SPECIAL ITEMS ===== */
+const SPECIAL_ITEMS={
+  blank_card:   {id:'blank_card',   ico:'📜', nm:'การ์ดว่างเปล่า',    desc:'ใช้ craft Support Card'},
+  captain_band: {id:'captain_band', ico:'💪', nm:'ปลอกแขนกัปตัน',    desc:'ใช้ craft Captain Card'},
+};
+
+/* ===== BADGE POOL (ตราติดเสื้อ = passive) ===== */
+const BADGE_POOL=[
+  /* common badges (ชั้นต่ำ) */
+  {id:'b_stamina',  ico:'🔋', nm:'ตราเหล็ก',        tier:'common', passive:{id:'iron_stamina',   nm:'Iron Stamina',    desc:'stam ลดช้า 30%'}},
+  {id:'b_recovery', ico:'💉', nm:'ตราฟื้นฟู',       tier:'common', passive:{id:'quick_recovery', nm:'Quick Recovery',  desc:'ฟื้น stam +8/เทิร์น'}},
+  {id:'b_power',    ico:'💥', nm:'ตราพลัง',         tier:'common', passive:{id:'power_shot',     nm:'Power Shot',      desc:'25% ยิงแรง ×1.5'}},
+  {id:'b_wall',     ico:'🧱', nm:'ตรากำแพง',        tier:'common', passive:{id:'iron_wall',      nm:'Iron Wall',       desc:'DEF ไม่ต่ำกว่า 40'}},
+  {id:'b_safe',     ico:'🧤', nm:'ตราเซฟ',          tier:'common', passive:{id:'safe_hands',     nm:'Safe Hands',      desc:'เซฟได้: stam +15'}},
+  {id:'b_gold',     ico:'💰', nm:'ตราทอง',          tier:'common', passive:{id:'golden_boot',    nm:'Golden Boot',     desc:'ยิงเข้า: +15 เหรียญ'}},
+  {id:'b_focus',    ico:'🎯', nm:'ตราสมาธิ',        tier:'common', passive:{id:'laser_focus',    nm:'Laser Focus',     desc:'ATK ไม่ลดจาก debuff'}},
+  {id:'b_last',     ico:'🚨', nm:'ตรานักสู้',       tier:'common', passive:{id:'last_stand',     nm:'Last Stand',      desc:'แพ้อยู่: DEF +15'}},
+  /* rare badges (ชั้น 10+) */
+  {id:'b_vamp',     ico:'🧛', nm:'ตราแวมไพร์',      tier:'rare',   passive:{id:'vampire_kit',   nm:'Vampire Kit',     desc:'ยิงเข้า: stam +20'}},
+  {id:'b_reflect',  ico:'🔄', nm:'ตราสะท้อน',       tier:'rare',   passive:{id:'reflect',       nm:'Reflect',         desc:'20% สะท้อน ATK กลับ'}},
+  {id:'b_magnet',   ico:'🧲', nm:'ตราแม่เหล็ก',     tier:'rare',   passive:{id:'ball_magnet',   nm:'Ball Magnet',     desc:'ยิงเข้า: บุกซ้ำ 20%'}},
+  {id:'b_star',     ico:'🌟', nm:'ตราดาว',          tier:'rare',   passive:{id:'star_power',    nm:'Star Power',      desc:'XP ×2 ตลอดแมตช์'}},
+  {id:'b_explode',  ico:'⚡', nm:'ตราระเบิด',        tier:'rare',   passive:{id:'explosive_start',nm:'Explosive Start', desc:'เทิร์น 1-2: ATK +15'}},
+  {id:'b_shadow',   ico:'👻', nm:'ตราเงา',          tier:'rare',   passive:{id:'shadow_strike', nm:'Shadow Strike',   desc:'25% ยิงผ่านกองหลัง'}},
+  {id:'b_unbreak',  ico:'⛰️', nm:'ตราแกร่ง',        tier:'rare',   passive:{id:'unbreakable',   nm:'Unbreakable',     desc:'โดนยิง ≥3: DEF+30'}},
+  /* legend badges (ชั้น 20+) */
+  {id:'b_berserk',  ico:'😡', nm:'ตราคลั่ง',        tier:'legend', passive:{id:'berserker_aura',nm:'Berserker Aura',  desc:'stam<30%: ATK ×1.8'}},
+  {id:'b_speed',    ico:'🌪️', nm:'ตราพายุ',         tier:'legend', passive:{id:'speed_demon',   nm:'Speed Demon',     desc:'💨 ข่มทุกธาตุ +8'}},
+  {id:'b_notire',   ico:'♾️', nm:'ตราไม่เหนื่อย',   tier:'legend', passive:{id:'never_tire',    nm:'Never Tire',      desc:'stam ไม่ต่ำกว่า 30%'}},
+  {id:'b_captain',  ico:'🎖️', nm:'ตรากัปตันทีม',   tier:'legend', passive:{id:'captains_armband',nm:"Captain's Armband",desc:'ทีม +3 ATK/DEF'}},
+];
+
+/* drop badge ตามชั้น */
+function rollBadge(floor){
+  const tier=floor>=20&&Math.random()<.35?'legend':
+             floor>=10&&Math.random()<.55?'rare':'common';
+  const pool=BADGE_POOL.filter(b=>b.tier===tier);
+  if(!pool.length) return BADGE_POOL[rnd(BADGE_POOL.length)];
+  return {...pool[rnd(pool.length)]};
+}
+
+/* drop % ตามชั้นหอคอย */
+function towerDropChance(floor){
+  const isMilestone=floor%10===0;
+  return {
+    badge:     isMilestone?.40:floor>=20?.20:floor>=10?.12:.05,
+    blankCard: isMilestone?.40:floor>=20?.25:floor>=10?.15:.08,
+    capBand:   isMilestone?.40:0,
+    legendDust:isMilestone&&floor>=20?.30:0,
+    rareDust:  isMilestone?.50:floor>=10?.20:.10,
+  };
+}
+
+/* special items inventory */
+let specialItems={blank_card:0,captain_band:0};
+let badges=[]; // owned badges {id,ico,nm,tier,passive,equippedTo:null}
+
+
 /* ===== SHOP DATA ===== */
 const SHOP_ITEMS_FIXED=[
   /* SHIRTS */
@@ -1396,6 +1455,20 @@ function afStars(p){
   return e.stars||(e.pct>=90?5:e.pct>=75?4:e.pct>=60?3:e.pct>=45?2:1);
 }
 
+function getBadgeBonus(p){
+  if(!p.badges||!p.badges.length) return {atk:0,def:0};
+  let atk=0,def=0;
+  p.badges.forEach(bi=>{
+    const b=badges[bi];
+    if(!b||!b.passive) return;
+    if(b.passive.id==='captains_armband'){atk+=3;def+=3;}
+  });
+  return {atk,def};
+}
+function hasBadgePassive(p,pid){
+  if(!p.badges) return false;
+  return p.badges.some(bi=>badges[bi]?.passive?.id===pid);
+}
 function getItemBonus(p){
   let atk=0,def=0;
   ['shirt','shoe','pants'].forEach(slot=>{
@@ -1415,12 +1488,13 @@ function eff(p,isMine=true){
   const ib=getItemBonus(p);
   const ia=ib.atk+(p.item?p.item.atk:0); // legacy compat
   const idf=ib.def+(p.item?p.item.def:0);
-  let bonus=isMine&&deck.includes(p.id)?synergyBonus().bonus:0;
+  const bb=getBadgeBonus(p);
+  let bonus=(isMine&&deck.includes(p.id)?synergyBonus().bonus:0)+bb.atk;
   if(isMine) bonus+=formationAffinityBonus(p);
   if(isMine&&fx.storm>0){if(p.elem==='fire')bonus+=12;if(p.elem==='tech')bonus-=5;}
   if(!isMine&&fx.rumor>0&&(p.rare||p.legend))bonus-=12;
   return {atk:Math.max(1,Math.round((p.atk+ia+bonus)*f)),
-          def:Math.max(1,Math.round((p.def+idf+bonus)*f))};
+          def:Math.max(1,Math.round((p.def+idf+bonus+bb.def)*f))};
 }
 
 /* ============ XP ============ */
@@ -1970,6 +2044,7 @@ function switchInvTab(tab,btn){
   if(tab==='dismantle') renderDismantle();
   else if(tab==='craft') renderCraft();
   else if(tab==='enchant') renderEnchant();
+  else if(tab==='badge') renderBadges();
   else renderInvGrid();
 }
 function renderInvGrid(){
@@ -2061,8 +2136,66 @@ function useXpPotion(type){
   sfxLvUp();showMomPop(`⚗️ ${player.name} +${xpAmt} XP!`);
 }
 /* ===== DISMANTLE (ย่อยการ์ด) ===== */
-const DISMANTLE_YIELD={legend:{dust_l:3,dust_r:1},rare:{dust_r:2,dust_c:1},common:{dust_c:2}};
+const DISMANTLE_YIELD={
+  legend:{dust_r:3,dust_c:2}, /* legend การ์ด → rare+common dust เท่านั้น ไม่ได้ legend dust */
+  rare:  {dust_r:2,dust_c:1},
+  common:{dust_c:2},
+};
 function dustLabel(type){return type==='dust_l'?'✨ Legend Dust':type==='dust_r'?'💎 Rare Dust':'🔮 Common Dust';}
+
+/* ===== BADGE EQUIP SYSTEM ===== */
+function renderBadges(){
+  const grid=$('invGrid');
+  /* special items summary */
+  const specHtml=`<div style="background:#05130b;border:1px solid #1e3a29;border-radius:8px;padding:8px 12px;margin-bottom:8px;width:100%;max-width:480px;font-size:.78rem;display:flex;gap:12px;flex-wrap:wrap">
+    <span>📜 การ์ดว่างเปล่า: <b style="color:#a8c9b4">${specialItems.blank_card||0}</b></span>
+    <span>💪 ปลอกแขนกัปตัน: <b style="color:var(--gold)">${specialItems.captain_band||0}</b></span>
+  </div>`;
+  if(!badges.length){
+    grid.innerHTML=specHtml+'<div class="inv-empty">ยังไม่มีตราติดเสื้อ<br><span style="font-size:.75rem">ดรอปจากหอคอยทุกชั้น</span></div>';
+    return;
+  }
+  grid.innerHTML=specHtml+badges.map((b,i)=>{
+    const tc=b.tier==='legend'?'var(--legend)':b.tier==='rare'?'var(--gold)':'#a8c9b4';
+    const equippedPlayer=b.equippedTo?collection.find(p=>p.id===b.equippedTo):null;
+    return `<div class="enchant-card">
+      <div class="enc-title" style="color:${tc}">${b.ico} ${b.nm} <span style="font-size:.6rem;color:${tc}">${b.tier}</span></div>
+      <div style="font-size:.7rem;color:var(--gold);margin-bottom:4px">✨ ${b.passive.nm}: ${b.passive.desc}</div>
+      <div style="font-size:.65rem;color:#7fa78d;margin-bottom:6px">
+        ${equippedPlayer?`📌 ติดอยู่กับ: <b style="color:var(--flood)">${equippedPlayer.name}</b>`:'ยังไม่ได้ติด'}
+      </div>
+      <select onchange="equipBadge(${i},this.value)" style="font-size:.65rem;background:#0a1f13;color:var(--flood);border:1px solid #2a5238;border-radius:5px;padding:3px;width:100%;margin-bottom:4px">
+        <option value="">— เลือกการ์ดที่จะติด —</option>
+        ${collection.map(p=>`<option value="${p.id}" ${b.equippedTo===p.id?'selected':''}>${p.name} (${p.pos} ${p.rare?'⭐':p.legend?'🌟':''})</option>`).join('')}
+      </select>
+      <button class="dc-btn" onclick="removeBadge(${i})" style="font-size:.65rem">✕ ถอด</button>
+    </div>`;
+  }).join('');
+}
+function equipBadge(badgeIdx,playerId){
+  const b=badges[badgeIdx];
+  if(!b) return;
+  /* unequip จาก player เดิม */
+  if(b.equippedTo){
+    const old=collection.find(p=>p.id===b.equippedTo);
+    if(old) old.badges=(old.badges||[]).filter((_,i)=>i!==badgeIdx);
+  }
+  b.equippedTo=playerId||null;
+  if(playerId){
+    const p=collection.find(x=>x.id===playerId);
+    if(p){
+      if(!p.badges) p.badges=[];
+      /* ไม่ให้ติดซ้ำ passive เดิม */
+      p.badges=p.badges.filter(bi=>badges[bi]?.passive?.id!==b.passive.id);
+      p.badges.push(badgeIdx);
+    }
+  }
+  saveGame();sfxClick();renderBadges();
+  showMomPop(playerId?`✅ ติด ${b.nm} แล้ว!`:'ถอดตราแล้ว');
+}
+function removeBadge(badgeIdx){
+  equipBadge(badgeIdx,'');
+}
 
 function renderDismantle(){
   const grid=$('invGrid');
@@ -2114,21 +2247,25 @@ const CRAFT_RECIPES=[
   {id:'r2l_pants', name:'กางเกงตำนาน', ico:'👖', result:null,
    cost:{dust_r:0,dust_l:3}, desc:'Legend Dust ×3 → กางเกงตำนาน random', isLegend:true, slot:'pants'},
   {id:'sup_card',  name:'Support Card', ico:'⚡', result:null,
-   cost:{dust_c:3,dust_r:1}, desc:'Common Dust ×3 + Rare Dust ×1 → Support Card random', isSupport:true},
+   cost:{dust_c:2}, special:{blank_card:1}, desc:'📜 การ์ดว่างเปล่า ×1 + Common Dust ×2 → Support Card', isSupport:true},
   {id:'cap_card',  name:'Captain Card', ico:'👑', result:null,
-   cost:{dust_r:3,dust_l:1}, desc:'Rare Dust ×3 + Legend Dust ×1 → Captain Card (Rare+)', isCaptain:true},
+   cost:{dust_r:2,dust_l:1}, special:{captain_band:1}, desc:'💪 ปลอกแขนกัปตัน ×1 + Rare Dust ×2 + Legend Dust ×1 → Captain Card (Rare+)', isCaptain:true},
 ];
 
 function canCraft(recipe){
-  return Object.entries(recipe.cost).every(([k,v])=>(consumables[k]||0)>=v);
+  const dustOk=Object.entries(recipe.cost).every(([k,v])=>(consumables[k]||0)>=v);
+  const specialOk=!recipe.special||Object.entries(recipe.special).every(([k,v])=>(specialItems[k]||0)>=v);
+  return dustOk&&specialOk;
 }
 function renderCraft(){
   const grid=$('invGrid');
   /* dust summary */
-  const dustSummary=`<div style="background:#05130b;border:1px solid #1e3a29;border-radius:8px;padding:8px 12px;margin-bottom:10px;width:100%;max-width:480px;font-size:.78rem;display:flex;gap:12px;flex-wrap:wrap">
-    <span>🔮 Common: <b style="color:#a8c9b4">${consumables.dust_c||0}</b></span>
-    <span>💎 Rare: <b style="color:var(--gold)">${consumables.dust_r||0}</b></span>
-    <span>✨ Legend: <b style="color:var(--legend)">${consumables.dust_l||0}</b></span>
+  const dustSummary=`<div style="background:#05130b;border:1px solid #1e3a29;border-radius:8px;padding:8px 12px;margin-bottom:10px;width:100%;max-width:480px;font-size:.78rem;display:flex;gap:8px;flex-wrap:wrap">
+    <span>🔮 <b style="color:#a8c9b4">${consumables.dust_c||0}</b></span>
+    <span>💎 <b style="color:var(--gold)">${consumables.dust_r||0}</b></span>
+    <span>✨ <b style="color:var(--legend)">${consumables.dust_l||0}</b></span>
+    <span>📜 <b style="color:#a8c9b4">${specialItems.blank_card||0}</b></span>
+    <span>💪 <b style="color:var(--gold)">${specialItems.captain_band||0}</b></span>
   </div>`;
   grid.innerHTML=dustSummary+CRAFT_RECIPES.map(r=>{
     const ok=canCraft(r);
@@ -2149,6 +2286,7 @@ function doCraft(rid){
   if(!r||!canCraft(r)) return;
   /* deduct cost */
   Object.entries(r.cost).forEach(([k,v])=>consumables[k]=(consumables[k]||0)-v);
+  if(r.special) Object.entries(r.special).forEach(([k,v])=>specialItems[k]=(specialItems[k]||0)-v);
   let resultName='';
   if(r.isSupport){
     const c=rollSupportCard();supportCollection.push(c);resultName=c.nm;sfxRare();
@@ -2873,6 +3011,10 @@ function endMatch(){
           if(nextEP&&tp<nextEP.tpReq) desc+=`<br><small style="color:#e8b53a">⚡ ต้องการ TP ${nextEP.tpReq.toLocaleString()} เพื่อเข้าเล่น</small>`;
         }
         sfxLegend();
+        /* boss drop: legend dust การันตี */
+        const legendDustQty=1+(pendingCtx.stage?.isBoss?1:0);
+        consumables.dust_l=(consumables.dust_l||0)+legendDustQty;
+        desc+=`<br>✨ <b style="color:var(--legend)">Boss Drop: Legend Dust ×${legendDustQty}!</b>`;
         /* drop_legend bonus stage */
         if(_stageBonus==='drop_legend'&&Math.random()<.3){
           const bonus=rollCard(true,true);collection.push(bonus);
@@ -2902,24 +3044,57 @@ function endMatch(){
   }
   else if(mode==='tower'){
     if(win){
-      const isMilestone10=twFloor%10===0;
-      const isMilestone5=twFloor%5===0&&!isMilestone10;
-      const coinMult=isMilestone10?3:isMilestone5?2:1;
+      const isMilestone=twFloor%10===0;
+      const isMilestone5=twFloor%5===0&&!isMilestone;
+      const coinMult=isMilestone?3:isMilestone5?2:1;
       coinGain=(40+twFloor*15)*coinMult;
-      if(twFloor%3===0||isMilestone10)lootChance=1;
+      if(twFloor%3===0||isMilestone)lootChance=1;
       desc=`พิชิตชั้น ${twFloor}!`;
-      if(isMilestone10){
-        desc+=` 🌟 <b style="color:var(--legend)">Milestone x10! เหรียญ ×3 + ไอเทมการันตี!</b>`;
-        lootChance=1;
-        /* bonus rare card on milestone 10,20,30... */
-        const bonus=rollCard(true);collection.push(bonus);
-        desc+=`<br>🎁 ได้การ์ดโบนัส: <b>${bonus.name}</b>`;
+      /* drop system */
+      const dc=towerDropChance(twFloor);
+      const drops=[];
+      /* badge drop ทุกชั้น */
+      if(Math.random()<dc.badge){
+        const b=rollBadge(twFloor);badges.push({...b,equippedTo:null});
+        drops.push(`${b.ico} <b style="color:${b.tier==='legend'?'var(--legend)':b.tier==='rare'?'var(--gold)':'#a8c9b4'}">${b.nm}</b> (${b.passive.desc})`);
         sfxRare();
-      } else if(isMilestone5){
-        desc+=` ⭐ <b style="color:var(--gold)">Milestone ×5! เหรียญ ×2!</b>`;
       }
-      desc+=` ขึ้นชั้น ${twFloor+1}`;
-      twFloor++;
+      /* blank card ทุกชั้น */
+      if(Math.random()<dc.blankCard){
+        specialItems.blank_card++;
+        drops.push('📜 การ์ดว่างเปล่า ×1');
+      }
+      if(isMilestone){
+        /* ปลอกแขนกัปตัน */
+        if(Math.random()<dc.capBand){
+          specialItems.captain_band++;
+          drops.push('💪 ปลอกแขนกัปตัน ×1');sfxRare();
+        }
+        /* legend dust (ชั้น 20+) */
+        if(Math.random()<dc.legendDust){
+          consumables.dust_l=(consumables.dust_l||0)+1;
+          drops.push('✨ Legend Dust ×1');sfxLegend();
+        }
+        /* rare dust */
+        if(Math.random()<dc.rareDust){
+          const qty=Math.floor(twFloor/10);
+          consumables.dust_r=(consumables.dust_r||0)+qty;
+          drops.push(`💎 Rare Dust ×${qty}`);
+        }
+        desc+=` 🌟 <b style="color:var(--legend)">Milestone! เหรียญ ×3</b>`;
+        /* rare card bonus */
+        const bonus=rollCard(true);collection.push(bonus);
+        drops.push(`🎁 การ์ดโบนัส: ${bonus.name}`);
+        /* replay milestone — ไม่ขึ้นชั้น ให้เล่นซ้ำได้ */
+        desc+=`<br><button onclick="mode='tower';pendingCtx={};hideAll();openTower();" style="font-family:Kanit;font-size:.72rem;margin-top:4px;padding:4px 10px;border-radius:6px;background:#1e3a29;border:1px solid #2a5238;color:#7fd9a0;cursor:pointer">🔄 เล่น milestone ซ้ำ</button>`;
+        desc+=` หรือ <b>ขึ้นชั้น ${twFloor+1}</b>`;
+        twFloor++;
+      } else {
+        if(isMilestone5) desc+=` ⭐ <b style="color:var(--gold)">×2!</b>`;
+        desc+=` → ชั้น ${twFloor+1}`;
+        twFloor++;
+      }
+      if(drops.length) desc+=`<br>📦 Drop: ${drops.join(' · ')}`;
     }else{
       coinGain=10;desc=`ร่วงจากชั้น ${twFloor}... กลับไปเริ่มชั้น 1`;
       twFloor=1;
@@ -2932,6 +3107,14 @@ function endMatch(){
     const after=rankOf(rp).nm;
     desc=`${win?'+25':draw?'+5':'-10'} RP → ${rp} RP (${after})`;
     if(after!==before&&win)desc+=`<br>🎉 <b style="color:var(--legend)">เลื่อนแรงก์เป็น ${after}!</b>`;
+    /* PvP dust reward ตาม RP */
+    if(win){
+      const pvpDust=rp>=1000?{dust_l:1}:rp>=600?{dust_r:2}:rp>=300?{dust_r:1,dust_c:1}:rp>=100?{dust_c:2}:null;
+      if(pvpDust){
+        Object.entries(pvpDust).forEach(([k,v])=>consumables[k]=(consumables[k]||0)+v);
+        desc+=`<br>🎁 <span style="color:var(--gold)">Dust: ${Object.entries(pvpDust).map(([k,v])=>`${dustLabel(k)} ×${v}`).join(' + ')}</span>`;
+      }
+    }
   }
 
   coins+=coinGain;$('coins').textContent=coins;gainCapXp(xpGain);
