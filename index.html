@@ -824,7 +824,7 @@ button:focus-visible{outline:2px solid var(--flood);outline-offset:2px}
 <script>
 const rnd=n=>Math.floor(Math.random()*n);
 const $=id=>document.getElementById(id);
-const NATIONS=['🇹🇭','🇧🇷','🇯🇵','🇩🇪'];
+const NATIONS=['🇹🇭','🇧🇷','🇯🇵','🇩🇪','🇰🇷','🇫🇷','🇦🇷','🇵🇹','🇳🇱','🇮🇹','🇻🇳','🇪🇸'];
 const ELEMS={fire:{ico:'🔥',nm:'พลัง',beats:'tech',cls:'fire'},
              wind:{ico:'💨',nm:'เร็ว',beats:'fire',cls:'wind'},
              tech:{ico:'🎯',nm:'เทคนิค',beats:'wind',cls:'tech'}};
@@ -913,30 +913,130 @@ let matchSupport=[]; // copies of support cards in current match
 let matchCaptain=null; // captain in current match
 let capState={}; // match-level captain state tracker
 
-const FIRST=[
-  'เพชฌฆาต','พายุ','ราชสีห์','เหยี่ยว','ภูเขา','อินทรี','มีดโกน','จรวด','ผี','เสือ',
-  'สายฟ้า','มังกร','นกอินทรี','พระอาทิตย์','ดาวเหนือ','เงา','ไฟป่า','คลื่น','พระจันทร์','ดาบ',
-  'เพลิง','น้ำแข็ง','พายุฝน','แสงอรุณ','ขุนศึก','นักรบ','จอมพล','ราชา','ราชัน','ยักษ์',
-  'อสูร','เทพ','วายุ','พรหม','อัคนี','วรุณ','กาล','ยม','อิศวร','นารายณ์',
-];
-const MIDDLE=['','','','','สาย','ซุปเปอร์','จ้าว','มหา','แฝด','พลัง'];
-const LAST=[
-  'โอตะ','ซิลวา','มุลเลอร์','สมชาย','คาวาอิ','ซานโตส','ชไนเดอร์','บุญมา','เรียว','คากะ',
-  'เปเล่','โรนัลโด้','เมสซี่','เนย์มาร์','เอ็มบาเป้','ฮาลันด์','เบลลิงแฮม','ซาลาห์','เดอบรุยน์','คีลิยัน',
-  'ทองดี','แก้วใจ','ศรีสุข','บัวงาม','วงษ์สวัสดิ์','ประทุม','รุ่งเรือง','สุขสันต์','มีโชค','จันทร์เพ็ญ',
-  'ยามาโมโต้','คิม','ปาร์ค','ลี','ตราน','เหงียน','อาหมัด','ราฮิม','โมฮัมเหม็ด','อาลี',
-];
-function genUniqueName(){
+/* ===== NAME POOLS BY NATIONALITY ===== */
+const NAT_NAMES={
+  '🇹🇭':{
+    first:['ธันเดอร์','พายุ','ราชสีห์','เหยี่ยว','สายฟ้า','มังกร','เงา','ไฟป่า','ดาบ','ขุนศึก',
+           'นักรบ','จอมพล','ราชา','ราชัน','อินทรี','เพลิง','คลื่น','ดาวเหนือ','วายุ','เทพ'],
+    last: ['ทองดี','แก้วใจ','ศรีสุข','บัวงาม','วงษ์สวัสดิ์','ประทุม','รุ่งเรือง','สุขสันต์',
+           'มีโชค','จันทร์เพ็ญ','สมชาย','บุญมา','ดวงดี','วิไล','พรมมา','สิงห์','ชัย','กล้า'],
+    mid:  ['','','','สาย','มหา','พลัง'],
+    format:(f,m,l)=>m?f+' '+m+l:f+' '+l,
+  },
+  '🇯🇵':{
+    first:['ฮารุโตะ','เรย์','ยูโตะ','ไคโตะ','ชุน','ริวสุเกะ','ทาเคชิ','โคโตะ','โซตะ','อิสเซย์',
+           'เคนจิ','นาโอกิ','ฮิโรชิ','มาซาชิ','โยชิ','ชินจิ','ทาคุมะ','เรนจิ','อากิระ','ไดกิ'],
+    last: ['ยามาโมโต้','คาวาอิ','โอตะ','คากะ','ซาโต้','ซูซูกิ','ทานากะ','วาตานาเบะ','อิโต้',
+           'นากามูระ','โคบายาชิ','คาโตะ','โยชิดะ','ยามาดะ','ฮายาชิ','มัตสึโมโต้','อิโนอุเอะ'],
+    mid:  ['','','',''],
+    format:(f,m,l)=>l+' '+f,
+  },
+  '🇧🇷':{
+    first:['ราฟาเอล','ลูคัส','กาเบรียล','มาเตอุส','ธิอาโก','เฟลิเป','กิลแบร์โต','เฮลเดอร์',
+           'ดิเอโก้','เฮนริเก้','เอดูอาร์โด้','คาร์ลอส','มาร์กอส','โรเบอร์โต้','อเล็กซ์'],
+    last: ['ซิลวา','ซานโตส','โอลิเวียร่า','ซูซา','เปเรร่า','คอสต้า','โรดริเกซ','เฟอร์เรร่า',
+           'อัลเมด้า','กอนซาเลส','บาร์โบซ่า','มาชาโด้','มาร์ตินส์','โกเมส','ลิมา'],
+    mid:  ['','','',''],
+    format:(f,m,l)=>f+' '+l,
+  },
+  '🇩🇪':{
+    first:['ลูคัส','ยานนิค','ฟลอเรียน','นิโคลาส','ฟาเบียน','มาร์วิน','ทิโม','เลออน','เคย์',
+           'มาร์โค','เซบาสเตียน','ฟิลิปป์','โทมัส','อันเดรอัส','ดาเนียล','มอริทซ์'],
+    last: ['มุลเลอร์','ชไนเดอร์','ไมเออร์','ชมิดต์','ฟิชเชอร์','เบเกอร์','ฮอฟมันน์','วีแดม',
+           'ฮาร์ตมันน์','เคิร์ชเนอร์','บาวเออร์','ไรน์ฮาร์ต','ฮาเกน','ริตเตอร์','ชวาร์ซ'],
+    mid:  ['','',''],
+    format:(f,m,l)=>f+' '+l,
+  },
+  '🇰🇷':{
+    first:['มินจุน','ซองฮยอน','ยุนโฮ','จีฮุน','แทยอน','ฮยอนวู','ดงฮยอน','ซองมิน',
+           'กีมิน','จองฮัน','ซูฮยอน','จินฮยอน','ยองฮุน','แทกิ','ซอฮุน'],
+    last: ['คิม','ลี','ปาร์ค','ชเว','จอง','คัง','โช','ยุน','จัง','อิม',
+           'ฮัน','โอ','ซอ','ชิน','กวอน'],
+    mid:  ['','',''],
+    format:(f,m,l)=>l+' '+f,
+  },
+  '🇫🇷':{
+    first:['กิลส์','อองตวน','มัตตีโอ','เอ็งกอโล','เอดูอาร์','แอ็กเซล','ธีโบต์','ออเรลีอัง',
+           'มาร์คัส','ราฟาเอล','อาดรียง','ซิลแวง','โลรองต์','เฟลิกซ์','อูโก้'],
+    last: ['เดอบรุยน์','มาร์แตง','มอแร','เลอแฟฟร์','ดูบัวส์','บอนนาร์','ปิการ์','ฟอร์แตง',
+           'ชาโปต์','เดอลากรัวซ์','เบอร์นาร์','ฟงแตน','ลาปอร์ต','คามาร์','ซิดิเบ'],
+    mid:  ['','',''],
+    format:(f,m,l)=>f+' '+l,
+  },
+  '🇦🇷':{
+    first:['เลอันโดร','กอนซาโล','เซบาสเตียน','ฟาคุนโด','เอเซกิเอล','เนวิน','มาเทียส',
+           'นิโคลาส','เฟเดริโก้','ลาอูทาโร','เปาโล','ฮาเวียร์','มาร์กอส','กุสตาโว'],
+    last: ['โรดริเกซ','กอนซาเลส','มาร์ตีเนซ','โลเปซ','การ์เซีย','เอร์นันเดซ','เปเรซ',
+           'รามิเรซ','ซานเชซ','โรมาโน','ฟลอเรส','กาสโตร','รูอิซ','ดิอาซ','มอราเลส'],
+    mid:  ['','',''],
+    format:(f,m,l)=>f+' '+l,
+  },
+  '🇵🇹':{
+    first:['โจอาว','ดิโอโก้','รุย','นูโน','แบร์นาร์โด','ราฟาเอล','เปโดร','อันเดร',
+           'กอนซาโล','บรูโน','มาร์เซโล','ริคาร์โด','ฮวาว','ฟิลิเป้','โตมัส'],
+    last: ['ซิลวา','คอสต้า','เฟอร์เรร่า','โอลิเวียร่า','โซอาเรส','มาร์ตินส์','กอนซาเลส',
+           'โรดริเกซ','เปเรร่า','โลเปส','นูเนส','มาชาโด้','คาร์วาลโญ่','บาร์โบซ่า'],
+    mid:  ['','',''],
+    format:(f,m,l)=>f+' '+l,
+  },
+  '🇳🇱':{
+    first:['วีเรน','แมทส์','จอร์ดี','ลุค','ดาวิ','นาธาน','ไจ','เดนเซล','สตีเวน','แซนดี้',
+           'ทิจยานี','ไฮ้อัน','คูอิ','ราน','ทวิ'],
+    last: ['เดอยอง','เดอลิกต์','แบร์คามป์','รอเบน','ฟานไดก์','กาเคโป','ดัมฟรีส์',
+           'คลาสเซน','บลินด์','วินาลดุม','เดอบัวร์','เฮสเซลิงค์','นิสเตลรอย','โอฟเฟอร์มาร์ส'],
+    mid:  ['','',''],
+    format:(f,m,l)=>f+' '+l,
+  },
+  '🇮🇹':{
+    first:['มาร์โค','ลอเรนโซ','ฟิลิปโป','อเลสซานโดร','ฟรานเชสโก','ลูก้า','นิโคโล่','ซีโม่',
+           'คิเอซ่า','เบลลา','อินซาเย','บาเรลลา','โดนนารุมม่า','อีโมบิเล','แวรัตติ'],
+    last: ['รอสซี่','เดอซีโก้','มัลดินี่','ปิร์โล','เดลปิเอโร่','โทตติ','อิลลาริ',
+           'คาโมเรซี','เบอร์กอมิ','บาเรซี่','บอนิเปอร์ติ','กิกิ','อันเชลลอตติ'],
+    mid:  ['','',''],
+    format:(f,m,l)=>f+' '+l,
+  },
+  '🇻🇳':{
+    first:['ดัก','มินห์','ฮุย','ตวน','ฮิว','ขวาง','บา','นาม','เคียน','ถัน',
+           'ลอง','ฮุง','ลัม','ดุ๊ก','เกียน'],
+    last: ['เหงียน','ตราน','เล','ฝาม','หวุ','ดั้ง','บุ่ย','โด่','โฮ่','งอ',
+           'ด่าว','ดือง','หลือu','หวอ','ตรึ'],
+    mid:  ['','',''],
+    format:(f,m,l)=>l+' '+f,
+  },
+  '🇪🇸':{
+    first:['เซร์คิโอ','ดาบิ','อัลบา','คาร์ลอส','ฆาบี','อันดรส','แกเรธ','เฟอร์รัน',
+           'อาโย','เปโดร','รูเบน','มาร์กอส','อีเค่','กาบี','มิเคล'],
+    last: ['บุสเก็ตส์','อัลบา','ปิเก้','ราโมส','กาซิยาส','โตร์เรส','บียา','ฟาเบรกัส',
+           'ไอน์ยา','บาร์ตรา','มอร์เอโน่','โลเปส','เบลทราน','มิเรตส์','คาลาฟัต'],
+    mid:  ['','',''],
+    format:(f,m,l)=>f+' '+l,
+  },
+};
+/* fallback pool ถ้าไม่มี nat ใน NAT_NAMES */
+const NAT_FALLBACK={
+  first:['สตาร์','ซูเปอร์','แม็กซ์','อเล็กซ์','คริส','แดน','แจ็ค','มาร์ค','ไรอัน','โคล'],
+  last: ['สมิธ','จอห์นสัน','บราวน์','วิลสัน','เทย์เลอร์','แอนเดอร์สัน','โจนส์','เดวิส'],
+  mid:  ['',''],
+  format:(f,m,l)=>f+' '+l,
+};
+
+function genUniqueName(nat){
+  const pool=NAT_NAMES[nat]||NAT_FALLBACK;
   const used=new Set(collection.map(p=>p.name));
   for(let i=0;i<60;i++){
-    const f=FIRST[rnd(FIRST.length)];
-    const m=MIDDLE[rnd(MIDDLE.length)];
-    const l=LAST[rnd(LAST.length)];
-    const nm=m?f+' '+m+' '+l:f+' '+l;
+    const f=pool.first[rnd(pool.first.length)];
+    const m=pool.mid[rnd(pool.mid.length)];
+    const l=pool.last[rnd(pool.last.length)];
+    const nm=pool.format(f,m,l);
     if(!used.has(nm)) return nm;
   }
-  return FIRST[rnd(FIRST.length)]+' '+LAST[rnd(LAST.length)]+' #'+rnd(999);
+  /* fallback ถ้าชนซ้ำหมด */
+  return pool.first[rnd(pool.first.length)]+' '+pool.last[rnd(pool.last.length)]+' #'+rnd(99);
 }
+/* backward compat — FIRST/LAST ยังใช้ใน legacy */
+const FIRST=NAT_NAMES['🇹🇭'].first;
+const LAST=NAT_NAMES['🇹🇭'].last;
+const MIDDLE=NAT_NAMES['🇹🇭'].mid;
 
 const SKILLS=[
   {skill:'crit',      skillTxt:'💥 25% ยิงแรง ×1.5'},
@@ -1038,8 +1138,9 @@ function rollCard(premium,forceLegend=false,forceRare=false){
   const def=isAtk?Math.round(base*.45):(pos==='MF'?base-6:base);
   const skillChance=tier==='legend'?1:tier==='rare'?.65:.2;
   const sk=Math.random()<skillChance?SKILLS[rnd(SKILLS.length)]:{};
-  const nm=genUniqueName();
-  return P(nm,pos,atk,def,NATIONS[rnd(NATIONS.length)],ELEMKEYS[rnd(3)],{r:tier==='common'?null:tier,...sk});
+  const nat=NATIONS[rnd(NATIONS.length)];
+  const nm=genUniqueName(nat);
+  return P(nm,pos,atk,def,nat,ELEMKEYS[rnd(3)],{r:tier==='common'?null:tier,...sk});
 }
 function genTeam(mult,natBias){
   const mk=(nm,pos,a,d,r)=>P(nm,pos,Math.round(a*mult),Math.round(d*mult),
@@ -1880,6 +1981,7 @@ function playTower(){
 function rankOf(p){let r=RANKS[0];RANKS.forEach(x=>{if(p>=x.min)r=x;});return r;}
 /* ===== ONLINE PVP SYSTEM ===== */
 let _pvpQueueTimer=null;
+let _pvpPendingMode='quick';
 let _pvpQueueSec=0;
 let _pvpMatchSub=null;
 let _currentPvpMatchId=null;
@@ -1919,11 +2021,20 @@ async function joinPvpQueue(pvpMode){
   _pvpQueueTimer=setInterval(()=>{
     _pvpQueueSec++;
     $('pvpQueueTimer').textContent=`รอมา ${_pvpQueueSec} วินาที...`;
-    if(_pvpQueueSec>=120){cancelPvpQueue();showMomPop('หมดเวลา ไม่พบคู่');}
+    if(_pvpQueueSec===30){
+      /* 30 วินาที — แจ้งว่าจะจับกับบอท */
+      $('pvpQueueMsg').textContent='🤖 ไม่พบผู้เล่น — กำลังหาบอทระดับใกล้เคียง...';
+    }
+    if(_pvpQueueSec>=45){
+      /* 45 วินาที — ให้บอท */
+      clearInterval(_pvpQueueTimer);
+      cancelPvpQueue().then(()=>startBotMatch(_pvpPendingMode||'quick'));
+    }
   },1000);
   /* subscribe ดูแมตช์ใหม่ที่มีชื่อเรา */
   subscribeMyMatches();
   /* insert เข้าคิว */
+  _pvpPendingMode=pvpMode;
   try{
     await _sb.from('pvp_queue').upsert({
       user_id:_sbUser.id,
@@ -2111,6 +2222,18 @@ function endOnlinePvpMatch(m,myRole){
   endMatch();
 }
 
+function startBotMatch(pvpMode){
+  /* จับกับบอทที่ RP ใกล้เคียง */
+  const botRpRange=100;
+  const botRp=Math.max(0,rp+rnd(botRpRange*2)-botRpRange);
+  const botMult=1+botRp*.0012+Math.random()*.08;
+  const botNames=['⚡ A.I. Thunder','🤖 Bot Striker','🦾 AutoFC','💻 CyberKick','🎮 GameBot FC'];
+  const botName=botNames[rnd(botNames.length)]+` (RP ${botRp})`;
+  mode='pvp';
+  pendingCtx={opp:botName,isBot:true};
+  showMomPop('🤖 พบบอท! '+botName);
+  startMatch(genTeam(botMult),botName,`⚔️ PvP ${pvpMode==='ranked'?'Ranked':'Quick'} (Bot)`);
+}
 function playPvpOffline(){
   mode='pvp';
   const oppName=PVP_NAMES[rnd(PVP_NAMES.length)];
