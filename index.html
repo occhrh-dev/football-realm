@@ -1075,9 +1075,8 @@ function equip(itemIdx,pid){
 function elemChip(e){const E=ELEMS[e];return `<span class="elem ${E.cls}">${E.ico} ${E.nm}</span>`;}
 function portraitURL(p){
   const seed=encodeURIComponent(p.name);
-  const style=p.legend?'lorelei':p.rare?'pixel-art':'thumbs';
-  const bg=p.legend?'b6009e':p.rare?'3d2a10':'0a1f13';
-  return `https://api.dicebear.com/7.x/${style}/svg?seed=${seed}&backgroundColor=${bg}`;
+  const bg=p.legend?'2d0b22':p.rare?'1e1406':'071510';
+  return `https://api.dicebear.com/7.x/lorelei/svg?seed=${seed}&backgroundColor=${bg}`;
 }
 function starsHTML(stars,tier,isActive){
   /* tier for color: common=gray-green, rare=gold, legend=pink */
