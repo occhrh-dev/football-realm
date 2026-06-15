@@ -2,7 +2,7 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Football Realm RPG v5 — 4 โหมด</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0d3b22">
@@ -22,7 +22,7 @@ if('serviceWorker' in navigator){
   --pitch:#0d3b22; --night:#071a10; --flood:#f5f7ee;
   --gold:#e8b53a; --red:#d94f3d; --blue:#3d7bd9; --purple:#a06bf0; --legend:#ff7ad9;
 }
-*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none}
 body{
   font-family:'Sarabun',sans-serif;
   background:
@@ -61,16 +61,16 @@ h1,h2,h3,.kanit{font-family:'Kanit',sans-serif}
 /* formation pitch layout */
 .pitch-field{
   width:100%;max-width:620px;
-  background:
-    repeating-linear-gradient(0deg,rgba(255,255,255,.025) 0 1px,transparent 1px 40px),
-    repeating-linear-gradient(90deg,rgba(255,255,255,.025) 0 1px,transparent 1px 40px),
-    linear-gradient(180deg,#0a2e16 0%,#0d3b1e 50%,#0a2e16 100%);
-  border:2px solid #1e4a2a;border-radius:12px;
-  padding:8px 6px;position:relative;overflow:hidden;
+  background:linear-gradient(180deg,#082010 0%,#0a2a14 40%,#0a2a14 60%,#082010 100%);
+  border:1.5px solid #1e4a2a;border-radius:12px;
+  padding:6px 6px;position:relative;overflow:hidden;
 }
-.pitch-field::before{content:'';position:absolute;left:50%;top:0;bottom:0;width:1px;background:rgba(255,255,255,.08);}
+/* pitch markings */
+.pitch-field::before{content:'';position:absolute;left:8px;right:8px;top:50%;height:1px;background:rgba(255,255,255,.07);}
+.pitch-field::after{content:'';position:absolute;left:50%;top:30%;bottom:30%;width:1px;background:rgba(255,255,255,.05);}
 .pitch-row{display:flex;gap:5px;justify-content:center;margin:4px 0;position:relative}
-.pitch-row-label{font-family:'Kanit';font-size:.6rem;color:rgba(255,255,255,.3);text-align:center;margin:1px 0 3px;letter-spacing:1px}
+.pitch-row-label{font-family:'Kanit';font-size:.58rem;color:rgba(255,255,255,.28);margin:2px 0 2px 2px;letter-spacing:.5px}
+.pitch-row-match{display:flex;flex-direction:column;gap:3px;width:100%;margin-bottom:4px}
 /* card new design */
 .cardp{
   width:88px;border-radius:10px;
@@ -132,7 +132,70 @@ h1,h2,h3,.kanit{font-family:'Kanit',sans-serif}
 .form-btn{font-family:'Kanit';font-size:.7rem;padding:4px 8px;border-radius:6px;border:1px solid #2a5238;background:transparent;color:#7fa78d;cursor:pointer;transition:all .12s}
 .form-btn.active{background:var(--gold);color:#1a1408;border-color:var(--gold);font-weight:700}
 .form-info{font-size:.68rem;color:#7fa78d;text-align:center;margin-top:4px;min-height:14px}
-@media(max-width:480px){.cardp{width:78px}.cardp .portrait-wrap{height:42px}.cardp .nm{font-size:.65rem}}
+/* ===== MATCH CARD (horizontal) ===== */
+.cardm{
+  display:flex;align-items:stretch;
+  border-radius:9px;overflow:hidden;
+  border:1.5px solid #2a5238;
+  background:linear-gradient(135deg,#0f2218,#07130d);
+  cursor:pointer;position:relative;
+  transition:transform .12s,box-shadow .12s,border-color .12s;
+  user-select:none;flex-shrink:0;
+  width:100%;
+}
+.cardm:hover{transform:translateY(-2px);border-color:var(--gold);box-shadow:0 4px 16px rgba(0,0,0,.6)}
+.cardm.disabled{opacity:.3;pointer-events:none;filter:grayscale(.4)}
+.cardm.rare{border-color:var(--gold);background:linear-gradient(135deg,#1e1406,#0d0904)}
+.cardm.legend{border-color:var(--legend);background:linear-gradient(135deg,#1c0716,#0a030b);box-shadow:0 0 10px rgba(255,122,217,.3)}
+.cardm.advantage{outline:2px solid #7fd9a0;outline-offset:2px}
+.cardm.disabled-look{opacity:.35;pointer-events:none}
+/* portrait strip */
+.cardm .m-portrait{width:44px;min-width:44px;overflow:hidden;background:#071510;position:relative;flex-shrink:0}
+.cardm .m-portrait img{width:100%;height:100%;object-fit:cover;display:block}
+.cardm .m-pos{position:absolute;bottom:1px;left:0;right:0;text-align:center;font-family:'Kanit';font-weight:800;font-size:.55rem;background:rgba(0,0,0,.7);color:#9fd9b5;line-height:1.4}
+.cardm.rare .m-pos{color:var(--gold)}
+.cardm.legend .m-pos{color:var(--legend)}
+/* info area */
+.cardm .m-info{flex:1;padding:4px 5px;display:flex;flex-direction:column;justify-content:space-between;min-width:0}
+.cardm .m-top{display:flex;align-items:center;gap:3px;margin-bottom:1px}
+.cardm .m-nm{font-family:'Kanit';font-weight:700;font-size:.68rem;color:var(--flood);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1}
+.cardm .m-nat{font-size:.6rem;flex-shrink:0}
+.cardm .m-lv{font-family:'Kanit';font-size:.52rem;color:var(--purple);flex-shrink:0}
+.cardm .m-stats{display:flex;gap:5px;font-size:.62rem;color:#a8c9b4;align-items:center;margin-bottom:1px}
+.cardm .m-stats b{color:var(--flood);font-weight:700}
+.cardm .m-skill{font-size:.52rem;color:var(--gold);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2;min-height:9px}
+.cardm .m-stam{height:3px;border-radius:2px;background:#0a1f13;overflow:hidden;margin-top:2px}
+.cardm .m-stam i{display:block;height:100%;transition:width .3s}
+/* stam color by level */
+.cardm .m-stam i.hi{background:#7fd9a0}
+.cardm .m-stam i.mid{background:#e8b53a}
+.cardm .m-stam i.lo{background:#d94f3d}
+/* formation stars strip — hidden by default, shown when affinity active */
+.cardm .m-stars{display:none;align-items:center;gap:1px;margin-left:3px}
+.cardm.af-active .m-stars{display:flex}
+.cardm .m-stars .af-star{font-size:.52rem}
+/* elem dot */
+.cardm .m-elem{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.cardm .m-elem.fire{background:#ff9d7a}
+.cardm .m-elem.wind{background:#7ad9ff}
+.cardm .m-elem.tech{background:#d9a0ff}
+/* pitch row for match — vertical layout, each row fills width */
+.pitch-row-match{display:flex;flex-direction:column;gap:3px;width:100%}
+/* responsive breakpoints */
+@media(max-width:380px){
+  .cardm .m-portrait{width:36px;min-width:36px}
+  .cardm .m-nm{font-size:.6rem}
+  .cardp{width:70px}.cardp .portrait-wrap{height:38px}
+}
+@media(min-width:481px) and (max-width:768px){
+  .cardm .m-portrait{width:48px;min-width:48px}
+  .cardp{width:96px}.cardp .portrait-wrap{height:54px}
+}
+@media(min-width:769px){
+  .cardm .m-portrait{width:52px;min-width:52px}
+  .pitch-field{max-width:720px}
+  .cardp{width:104px}.cardp .portrait-wrap{height:58px}
+}
 .tactics{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;width:100%;max-width:620px;margin:6px 0}
 .tcard{width:128px;border-radius:10px;border:2px dashed var(--purple);background:rgba(30,18,56,.85);padding:8px;cursor:pointer;user-select:none;transition:transform .12s,border-color .12s;font-size:.7rem;color:#c9b8e8;line-height:1.35}
 .tcard:hover{transform:translateY(-3px);border-color:#d3a7ff}
@@ -326,6 +389,7 @@ button:focus-visible{outline:2px solid var(--flood);outline-offset:2px}
   ⚔️ <b>PvP จัดอันดับ</b> — ดวลเด็คคู่แข่ง สะสมแต้มแรงก์ Bronze → Legend<br>
   <small>(PvP ในต้นแบบนี้เป็นการจำลองเด็คคู่แข่ง — เกมจริงจะเชื่อมผู้เล่นออนไลน์)</small></p>
   <button onclick="goHome()">เข้าสโมสร 🏟️</button>
+  <button class="ghost" id="loginBtn" onclick="cloudLogin()" style="font-size:.8rem;margin-top:4px">☁️ เข้าสู่ระบบ (บันทึก Cloud)</button>
 </div>
 
 <!-- ============ HOME ============ -->
@@ -1070,6 +1134,50 @@ function cardHTML(p,clickable,advantage=false,miniMode=false){
   </div>`;
 }
 
+/* ===== MATCH CARD (horizontal compact) ===== */
+function cardMatch(p,clickable,advantage=false){
+  const e=eff(p,true);
+  const tierCls=p.legend?'legend':p.rare?'rare':'';
+  const afb=formationAffinityBonus(p);
+  const afs=afStars(p);
+  const tier=p.legend?'legend':p.rare?'rare':'common';
+  const isAfActive=afb>0;
+  /* stamina bar color */
+  const stamCls=p.stamina>=60?'hi':p.stamina>=30?'mid':'lo';
+  /* elem dot class */
+  const elemCls=ELEMS[p.elem]?.cls||'';
+  /* stars strip for active formation */
+  const filledCls=tier==='legend'?'filled-legend':tier==='rare'?'filled-rare':'filled-common';
+  let starsH='';
+  if(isAfActive){
+    for(let i=1;i<=5;i++) starsH+=`<span class="af-star ${i<=afs?'filled '+filledCls:'empty'}">★</span>`;
+  }
+  const clickAttrs=clickable
+    ?`onclick="pick('${p.id}')" onkeydown="if(event.key==='Enter')pick('${p.id}')"`:'';
+  return `<div class="cardm ${tierCls} ${advantage?'advantage':''} ${!clickable?'disabled-look':''} ${isAfActive?'af-active':''}"
+    ${clickAttrs} role="button" tabindex="${clickable?0:-1}">
+    <div class="m-portrait">
+      <img src="${portraitURL(p)}" alt="" loading="lazy" onerror="this.style.display='none'">
+      <div class="m-pos">${p.pos}</div>
+    </div>
+    <div class="m-info">
+      <div class="m-top">
+        <span class="m-nm" title="${p.name}">${p.name}</span>
+        <span class="m-nat">${p.nat}</span>
+        <span class="m-lv">Lv${p.lv}</span>
+      </div>
+      <div class="m-stats">
+        <span class="m-elem ${elemCls}"></span>
+        <span>⚔<b>${e.atk}</b></span>
+        <span>🛡<b>${e.def}</b></span>
+        ${isAfActive?`<span class="m-stars">${starsH}</span><span style="color:var(--gold);font-size:.52rem">+${afb}</span>`:''}
+      </div>
+      <div class="m-skill">${p.skillTxt||'&nbsp;'}</div>
+      <div class="m-stam"><i class="${stamCls}" style="width:${p.stamina}%"></i></div>
+    </div>
+  </div>`;
+}
+
 /* ===== FORMATION PITCH LAYOUT ===== */
 const FORMATION_ROWS={
   '4-4-2': {fw:['ST','ST'],mid:['MF','MF','MF','MF'],def:['DF','DF','DF','DF']},
@@ -1082,24 +1190,24 @@ const FORMATION_ROWS={
   '4-3-1-2':{fw:['ST','ST'],mid:['WG','MF'],def:['MF','MF','DF','DF','DF','DF']},
 };
 function renderPitch(players,clickableFn,advFn){
-  const rows=FORMATION_ROWS[teamFormation]||FORMATION_ROWS['4-4-2'];
-  // assign players to rows by pos preference
+  /* sort players into rows */
   const fw=players.filter(p=>p.pos==='ST'||p.pos==='WG');
   const mid=players.filter(p=>p.pos==='MF');
   const def=players.filter(p=>p.pos==='DF');
-  // fill remaining slots
   const remaining=players.filter(p=>!fw.includes(p)&&!mid.includes(p)&&!def.includes(p));
   const allRows=[fw,mid,def];
-  remaining.forEach(p=>{ allRows.sort((a,b)=>a.length-b.length)[0].push(p); });
+  remaining.forEach(p=>{allRows.sort((a,b)=>a.length-b.length)[0].push(p);});
   const rowData=[
-    {label:'⚡ แนวหน้า',players:fw},
-    {label:'🔀 กองกลาง',players:mid},
-    {label:'🛡️ แนวหลัง',players:def},
+    {label:'⚡ แนวหน้า',ico:'⚡',players:fw},
+    {label:'🔀 กองกลาง',ico:'🔀',players:mid},
+    {label:'🛡️ แนวหลัง',ico:'🛡️',players:def},
   ].filter(r=>r.players.length>0);
   return `<div class="pitch-field">${
     rowData.map(r=>`
       <div class="pitch-row-label">${r.label}</div>
-      <div class="pitch-row">${r.players.map(p=>cardHTML(p,clickableFn(p),advFn?advFn(p):false)).join('')}</div>
+      <div class="pitch-row-match">${
+        r.players.map(p=>cardMatch(p,clickableFn(p),advFn?advFn(p):false)).join('')
+      }</div>
     `).join('')
   }</div>`;
 }
@@ -1173,7 +1281,7 @@ function setupTurnDisplay(){
   $('hand').innerHTML=renderPitch(
     deckPlayers(),
     p=>youAttacking?p.atk>=50:p.def>=50,
-    p=>!youAttacking&&incomingAttacker&&ELEMS[p.elem].beats===incomingAttacker.elem
+    p=>!youAttacking&&incomingAttacker&&ELEMS[p.elem]&&ELEMS[p.elem].beats===incomingAttacker.elem
   );
   renderTactics();$('actions').innerHTML='';
 }
@@ -1226,7 +1334,7 @@ function duel(attacker,defender,youAtk){
     <div class="roll" id="duelNotes" style="min-height:20px"></div>
     <div class="result" id="duelResult" style="min-height:30px"></div>
     <div class="actions" id="duelActions" style="margin:4px 0 0"></div>`;
-  $('hand').innerHTML=deckPlayers().map(p=>cardHTML(p,false)).join('');
+  $('hand').innerHTML=renderPitch(deckPlayers(),()=>false,()=>false);
   $('actions').innerHTML='';$('incoming').className='incoming';
 
   const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -1444,6 +1552,75 @@ function afterMatch(){
 
 /* ============ SAVE SYSTEM ============ */
 const SAVE_KEY='footballRealmSave_v5';
+
+/* ===== SUPABASE CLOUD SAVE (optional — needs init) ===== */
+let _sb=null; // supabase client, null = not initialized yet
+let _sbUser=null;
+const SB_URL='https://poluizzkzpexfnnydbcl.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBvbHVpenprenBleGZubnlkYmNsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTA0MTA5NjIsImV4cCI6MjAyNTk4Njk2Mn0.placeholder';
+
+async function initSupabase(){
+  if(_sb) return _sb;
+  try{
+    /* load supabase-js from CDN */
+    if(!window.supabase){
+      await new Promise((res,rej)=>{
+        const s=document.createElement('script');
+        s.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';
+        s.onload=res;s.onerror=rej;document.head.appendChild(s);
+      });
+    }
+    _sb=window.supabase.createClient(SB_URL,SB_KEY);
+    const {data:{user}}=await _sb.auth.getUser();
+    _sbUser=user;
+    return _sb;
+  }catch(e){console.warn('Supabase init failed',e);return null;}
+}
+
+async function cloudLogin(){
+  const sb=await initSupabase();
+  if(!sb) return alert('ไม่สามารถเชื่อมต่อ Supabase ได้');
+  await sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:location.href}});
+}
+async function cloudLogout(){
+  if(_sb) await _sb.auth.signOut();
+  _sbUser=null;
+  updateLoginUI();
+}
+async function cloudSave(data){
+  if(!_sbUser||!_sb) return;
+  await _sb.from('saves').upsert({user_id:_sbUser.id,save_data:data,updated_at:new Date().toISOString()},{onConflict:'user_id'});
+}
+async function cloudLoad(){
+  if(!_sbUser||!_sb) return null;
+  const {data}=await _sb.from('saves').select('save_data').eq('user_id',_sbUser.id).single();
+  return data?.save_data||null;
+}
+function updateLoginUI(){
+  const el=$('loginBtn');
+  if(!el) return;
+  el.textContent=_sbUser?'☁️ '+(_sbUser.email||'').split('@')[0]+' ✓':'☁️ เข้าสู่ระบบ';
+  el.style.borderColor=_sbUser?'#7fd9a0':'#2a5238';
+}
+/* check session on load */
+(async()=>{
+  try{
+    const sb=await initSupabase();
+    if(sb){
+      const {data:{user}}=await sb.auth.getUser();
+      _sbUser=user;
+      updateLoginUI();
+      if(user){
+        /* try load cloud save */
+        const cloud=await cloudLoad();
+        if(cloud&&!localStorage.getItem(SAVE_KEY)){
+          localStorage.setItem(SAVE_KEY,JSON.stringify(cloud));
+          loadGame();
+        }
+      }
+    }
+  }catch(e){}
+})();
 function saveGame(){
   try{
     const data={
