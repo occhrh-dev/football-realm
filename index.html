@@ -200,6 +200,20 @@ h1,h2,h3,.kanit{font-family:'Kanit',sans-serif}
 .enc-btn:disabled{opacity:.4;cursor:not-allowed}
 .enc-badge{display:inline-block;font-family:'Kanit';font-size:.6rem;padding:1px 5px;border-radius:3px;margin-left:4px}
 
+/* ===== ONLINE PVP ===== */
+.pvp-match-card{background:#05130b;border:1.5px solid #2a5238;border-radius:10px;padding:10px 12px;margin-bottom:6px;width:100%;max-width:480px}
+.pvp-match-card.my-turn{border-color:var(--gold);animation:pvpPulse 1.5s ease-in-out infinite}
+.pvp-match-card.waiting{border-color:#3a5240;opacity:.8}
+.pvp-match-card.finished{opacity:.5;border-style:dashed}
+@keyframes pvpPulse{0%,100%{box-shadow:0 0 0 rgba(232,181,58,0)}50%{box-shadow:0 0 10px rgba(232,181,58,.4)}}
+.pvp-mc-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.pvp-mc-vs{font-family:'Kanit';font-size:.8rem;color:var(--flood)}
+.pvp-mc-status{font-size:.65rem;padding:2px 7px;border-radius:10px;font-family:Kanit}
+.pvp-mc-status.myturn{background:rgba(232,181,58,.15);color:var(--gold)}
+.pvp-mc-status.waiting{background:#0a1f13;color:#7fa78d}
+.pvp-mc-status.finished{background:#1e2a1e;color:#7fd9a0}
+.pvp-mc-score{font-family:'Kanit';font-size:1rem;font-weight:700;text-align:center;margin:4px 0}
+.pvp-mc-turn{font-size:.68rem;color:#7fa78d;text-align:center}
 /* ===== SUPPORT BAR ===== */
 .support-bar{width:100%;max-width:620px;display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;align-items:flex-start}
 .scard{display:flex;flex-direction:column;align-items:center;background:rgba(5,19,11,.9);border:1.5px solid #3d7bd9;border-radius:10px;padding:6px 8px;cursor:pointer;min-width:74px;max-width:90px;transition:transform .12s,border-color .12s;user-select:none;text-align:center}
@@ -586,14 +600,39 @@ button:focus-visible{outline:2px solid var(--flood);outline-offset:2px}
 
 <!-- ============ PVP ============ -->
 <div class="overlay center hidden" id="pvpScr">
-  <h1>⚔️ PvP จัดอันดับ</h1>
+  <h1>⚔️ PvP ออนไลน์</h1>
   <div class="rankbadge" id="rankBadge"></div>
   <div class="rpbar"><i id="rpFill"></i></div>
-  <p id="pvpInfo" style="font-size:.86rem"></p>
-  <div class="actions">
-    <button class="purple" onclick="playPvp()">ค้นหาคู่ดวล 🔍</button>
-    <button class="ghost" onclick="goHome()">กลับสโมสร</button>
+  <p id="pvpInfo" style="font-size:.82rem;margin-bottom:6px"></p>
+
+  <!-- Login required notice -->
+  <div id="pvpLoginNotice" style="display:none;background:#0a1f13;border:1px solid #1e3a29;border-radius:8px;padding:10px;font-size:.8rem;color:#7fa78d;margin-bottom:8px;text-align:center">
+    ⚠️ ต้อง Login ด้วย Google ก่อนเล่น PvP ออนไลน์<br>
+    <button onclick="cloudLogin()" style="margin-top:6px;font-family:Kanit;font-size:.75rem;padding:4px 12px;border-radius:6px;background:var(--gold);color:#1a1408;border:none;cursor:pointer">☁️ Login</button>
   </div>
+
+  <!-- Online PvP buttons -->
+  <div id="pvpOnlineSection">
+    <div class="actions" style="flex-direction:column;gap:8px">
+      <button class="purple" id="pvpQuickBtn" onclick="joinPvpQueue('quick')">⚡ Quick Match</button>
+      <button class="purple" id="pvpRankedBtn" onclick="joinPvpQueue('ranked')" style="background:linear-gradient(135deg,#3d1060,#1e0a40);border-color:var(--legend)">🏆 Ranked Match</button>
+    </div>
+    <!-- Queuing status -->
+    <div id="pvpQueueStatus" style="display:none;text-align:center;margin-top:10px">
+      <div style="font-family:Kanit;font-size:.9rem;color:var(--gold);margin-bottom:6px" id="pvpQueueMsg">🔍 กำลังหาคู่...</div>
+      <div style="font-size:.75rem;color:#7fa78d" id="pvpQueueTimer"></div>
+      <button onclick="cancelPvpQueue()" style="margin-top:8px;font-family:Kanit;font-size:.75rem;padding:4px 12px;border-radius:6px;background:transparent;border:1px solid #d94f3d;color:#f0907f;cursor:pointer">ยกเลิก</button>
+    </div>
+    <!-- Active matches -->
+    <div id="pvpActiveMatches" style="width:100%;max-width:480px;margin-top:10px"></div>
+  </div>
+
+  <!-- Offline mode fallback -->
+  <div style="margin-top:8px;padding-top:8px;border-top:1px solid #1e3a29;width:100%;text-align:center">
+    <div style="font-size:.7rem;color:#3a5240;margin-bottom:4px">หรือเล่นกับ AI</div>
+    <button class="ghost" onclick="playPvpOffline()" style="font-size:.75rem">🤖 จำลอง PvP (AI)</button>
+  </div>
+  <button class="ghost" onclick="goHome()" style="margin-top:6px">กลับสโมสร</button>
 </div>
 
 <!-- ============ SHOP / DECK / INV / END ============ -->
@@ -1839,6 +1878,13 @@ function playTower(){
 
 /* ============ PVP ============ */
 function rankOf(p){let r=RANKS[0];RANKS.forEach(x=>{if(p>=x.min)r=x;});return r;}
+/* ===== ONLINE PVP SYSTEM ===== */
+let _pvpQueueTimer=null;
+let _pvpQueueSec=0;
+let _pvpMatchSub=null;
+let _currentPvpMatchId=null;
+let _pvpRole=null; // 'a' or 'b'
+
 function openPvp(){
   hideAll();$('pvpScr').classList.remove('hidden');
   const r=rankOf(rp);
@@ -1847,14 +1893,232 @@ function openPvp(){
   $('rankBadge').style.borderColor=r.c;$('rankBadge').style.color=r.c;
   $('rpFill').style.width=next?((rp-r.min)/(next.min-r.min)*100)+'%':'100%';
   $('pvpInfo').innerHTML=(next?`อีก ${next.min-rp} RP ถึงแรงก์ ${next.nm}`:'🌟 แรงก์สูงสุดแล้ว!')+
-    `<br>ชนะ +25 RP · แพ้ -10 RP · คู่แข่งแกร่งตามแรงก์`;
+    `<br>ชนะ +25 RP · แพ้ -10 RP`;
+  /* show/hide sections */
+  const loggedIn=!!_sbUser;
+  $('pvpLoginNotice').style.display=loggedIn?'none':'block';
+  $('pvpOnlineSection').style.display=loggedIn?'block':'none';
+  if(loggedIn) loadActiveMatches();
 }
-function playPvp(){
+
+async function joinPvpQueue(pvpMode){
+  if(!_sbUser){cloudLogin();return;}
+  if(!deckValid().ok){openDeck();return;}
+  /* snapshot เด็คปัจจุบัน */
+  const deckSnap=deckPlayers().map(p=>({
+    id:p.id,name:p.name,pos:p.pos,atk:p.atk,def:p.def,
+    nat:p.nat,elem:p.elem,lv:p.lv,rare:p.rare,legend:p.legend,
+    skill:p.skill,skillTxt:p.skillTxt,stamina:p.stamina,
+  }));
+  /* show queuing UI */
+  $('pvpQueueStatus').style.display='block';
+  document.querySelectorAll('#pvpOnlineSection .actions button').forEach(b=>b.disabled=true);
+  _pvpQueueSec=0;
+  $('pvpQueueTimer').textContent='';
+  clearInterval(_pvpQueueTimer);
+  _pvpQueueTimer=setInterval(()=>{
+    _pvpQueueSec++;
+    $('pvpQueueTimer').textContent=`รอมา ${_pvpQueueSec} วินาที...`;
+    if(_pvpQueueSec>=120){cancelPvpQueue();showMomPop('หมดเวลา ไม่พบคู่');}
+  },1000);
+  /* subscribe ดูแมตช์ใหม่ที่มีชื่อเรา */
+  subscribeMyMatches();
+  /* insert เข้าคิว */
+  try{
+    await _sb.from('pvp_queue').upsert({
+      user_id:_sbUser.id,
+      display_name:playerProfile.name||'ผู้เล่น',
+      rp, deck_snapshot:deckSnap, mode:pvpMode,
+    });
+    $('pvpQueueMsg').textContent=pvpMode==='ranked'?'🏆 หาคู่ Ranked...':'⚡ หาคู่ Quick Match...';
+  }catch(e){
+    showMomPop('เกิดข้อผิดพลาด: '+e.message);
+    cancelPvpQueue();
+  }
+}
+
+async function cancelPvpQueue(){
+  clearInterval(_pvpQueueTimer);
+  $('pvpQueueStatus').style.display='none';
+  document.querySelectorAll('#pvpOnlineSection .actions button').forEach(b=>b.disabled=false);
+  if(_pvpMatchSub){_pvpMatchSub.unsubscribe();_pvpMatchSub=null;}
+  if(_sbUser) await _sb.from('pvp_queue').delete().eq('user_id',_sbUser.id);
+}
+
+function subscribeMyMatches(){
+  if(!_sb||!_sbUser) return;
+  if(_pvpMatchSub) _pvpMatchSub.unsubscribe();
+  _pvpMatchSub=_sb.channel('pvp_matches_'+_sbUser.id)
+    .on('postgres_changes',{
+      event:'INSERT', schema:'public', table:'pvp_matches',
+      filter:`player_a=eq.${_sbUser.id}`,
+    },payload=>onMatchFound(payload.new))
+    .on('postgres_changes',{
+      event:'INSERT', schema:'public', table:'pvp_matches',
+      filter:`player_b=eq.${_sbUser.id}`,
+    },payload=>onMatchFound(payload.new))
+    .on('postgres_changes',{
+      event:'UPDATE', schema:'public', table:'pvp_matches',
+    },payload=>onMatchUpdated(payload.new))
+    .subscribe();
+}
+
+function onMatchFound(match){
+  clearInterval(_pvpQueueTimer);
+  $('pvpQueueStatus').style.display='none';
+  document.querySelectorAll('#pvpOnlineSection .actions button').forEach(b=>b.disabled=false);
+  sfxGoal();
+  showMomPop('🎮 พบคู่แล้ว! '+
+    (match.player_a===_sbUser.id?match.name_b:match.name_a));
+  setTimeout(()=>loadActiveMatches(),500);
+}
+
+function onMatchUpdated(match){
+  if(match.player_a!==_sbUser?.id&&match.player_b!==_sbUser?.id) return;
+  loadActiveMatches();
+  /* ถ้าเป็นเทิร์นเรา notify */
+  const myRole=match.player_a===_sbUser.id?'a':'b';
+  if(match.whose_turn===myRole&&match.status==='playing'){
+    sfxCard();showMomPop('🎮 ถึงเทิร์นคุณแล้ว!');
+  }
+}
+
+async function loadActiveMatches(){
+  if(!_sbUser||!_sb) return;
+  const {data}=await _sb.from('pvp_matches')
+    .select('*')
+    .or(`player_a.eq.${_sbUser.id},player_b.eq.${_sbUser.id}`)
+    .in('status',['playing','finished'])
+    .order('updated_at',{ascending:false})
+    .limit(5);
+  renderActiveMatches(data||[]);
+}
+
+function renderActiveMatches(matches){
+  const el=$('pvpActiveMatches');
+  if(!matches.length){el.innerHTML='<p style="font-size:.75rem;color:#3a5240;text-align:center">ยังไม่มีแมตช์ที่กำลังเล่น</p>';return;}
+  el.innerHTML=matches.map(m=>{
+    const myRole=m.player_a===_sbUser.id?'a':'b';
+    const oppName=myRole==='a'?m.name_b:m.name_a;
+    const myScore=myRole==='a'?m.score_a:m.score_b;
+    const oppScore=myRole==='a'?m.score_b:m.score_a;
+    const isMyTurn=m.whose_turn===myRole&&m.status==='playing';
+    const finished=m.status==='finished';
+    const won=m.winner===myRole;
+    const statusTxt=finished?(won?'🏆 ชนะ':'💔 แพ้'):isMyTurn?'⚡ ถึงเทิร์นคุณ!':'⏳ รอคู่ตอบ';
+    const statusCls=finished?'finished':isMyTurn?'myturn':'waiting';
+    return `<div class="pvp-match-card ${statusCls}" onclick="${!finished?`enterPvpMatch('${m.id}','${myRole}')`:''}" style="cursor:${finished?'default':'pointer'}">
+      <div class="pvp-mc-header">
+        <span class="pvp-mc-vs">vs ${oppName}</span>
+        <span class="pvp-mc-status ${statusCls}">${statusTxt}</span>
+      </div>
+      <div class="pvp-mc-score" style="color:${myScore>oppScore?'#7fd9a0':myScore<oppScore?'#f0907f':'var(--gold)'}">
+        ${myScore} : ${oppScore}
+      </div>
+      <div class="pvp-mc-turn">${m.mode==='ranked'?'🏆 Ranked':'⚡ Quick'} · เทิร์น ${m.turn}/8${finished?'':''}</div>
+    </div>`;
+  }).join('');
+}
+
+async function enterPvpMatch(matchId,myRole){
+  if(!_sb) return;
+  const {data:match}=await _sb.from('pvp_matches').select('*').eq('id',matchId).single();
+  if(!match) return;
+  _currentPvpMatchId=matchId;
+  _pvpRole=myRole;
+  /* เปิดหน้าแข่งกับ deck ของคู่ต่อสู้ */
+  const oppDeck=myRole==='a'?match.deck_b:match.deck_a;
+  const oppName=myRole==='a'?match.name_b:match.name_a;
+  /* restore state จาก match */
+  const moves=match.moves||[];
+  mode='pvp_online';
+  pendingCtx={matchId,myRole,match};
+  /* สร้าง AI team จาก deck ของคู่ */
+  const oppTeam=oppDeck.map(p=>({...p,stamina:100}));
+  hideAll();$('matchUI').classList.remove('hidden');
+  ai=oppTeam;
+  scoreYou=myRole==='a'?match.score_a:match.score_b;
+  scoreAi=myRole==='a'?match.score_b:match.score_a;
+  turn=match.turn;
+  youAttacking=match.whose_turn===myRole;
+  fx={};momentum=50;updateMomentum(0);
+  $('sYou').textContent=scoreYou;
+  $('sAi').textContent=scoreAi;
+  $('scoreboard').querySelector('.team.you').textContent='⚡ '+(playerProfile.name||'คุณ');
+  $('scoreboard').querySelector('.team.opp').textContent=oppName;
+  renderSupportBar();
+  setupTurnDisplay();
+  /* subscribe realtime สำหรับ match นี้ */
+  subscribeCurrentMatch(matchId,myRole);
+  /* re-play moves ที่ผ่านมาใน log */
+  if(moves.length) log(`<span style="color:#7fa78d">📜 ประวัติ ${moves.length} เทิร์นที่ผ่านมา</span>`);
+}
+
+function subscribeCurrentMatch(matchId,myRole){
+  if(_pvpMatchSub) _pvpMatchSub.unsubscribe();
+  _pvpMatchSub=_sb.channel('match_'+matchId)
+    .on('postgres_changes',{
+      event:'UPDATE',schema:'public',table:'pvp_matches',
+      filter:`id=eq.${matchId}`,
+    },payload=>{
+      const m=payload.new;
+      scoreYou=myRole==='a'?m.score_a:m.score_b;
+      scoreAi=myRole==='a'?m.score_b:m.score_a;
+      $('sYou').textContent=scoreYou;
+      $('sAi').textContent=scoreAi;
+      turn=m.turn;
+      if(m.status==='finished'){endOnlinePvpMatch(m,myRole);return;}
+      youAttacking=m.whose_turn===myRole;
+      if(youAttacking){sfxCard();log('<span style="color:var(--gold)">⚡ ถึงเทิร์นคุณแล้ว!</span>');}
+      else log('<span style="color:#7fa78d">⏳ รอคู่ต่อสู้...</span>');
+      setupTurnDisplay();
+    })
+    .subscribe();
+}
+
+/* ส่ง move ขึ้น Supabase */
+async function submitPvpMove(attackerId,defenderId,goal){
+  if(!_currentPvpMatchId||!_sb) return;
+  const match=pendingCtx.match;
+  const myRole=_pvpRole;
+  const newScoreA=myRole==='a'?(goal?match.score_a+1:match.score_a):match.score_a;
+  const newScoreB=myRole==='b'?(goal?match.score_b+1:match.score_b):match.score_b;
+  const newTurn=match.turn+(myRole==='b'?1:0)+（match.whose_turn!==myRole?1:0);
+  const nextTurnPlayer=myRole==='a'?'b':'a';
+  const moves=[...(match.moves||[]),{
+    turn:match.turn,role:myRole,attackerId,defenderId,goal,ts:Date.now()
+  }];
+  const finished=newTurn>8||(newScoreA>=5||newScoreB>=5);
+  const winner=finished?(newScoreA>newScoreB?'a':newScoreA<newScoreB?'b':'draw'):null;
+  await _sb.from('pvp_matches').update({
+    score_a:newScoreA,score_b:newScoreB,
+    turn:newTurn,whose_turn:nextTurnPlayer,
+    moves,status:finished?'finished':'playing',
+    winner,updated_at:new Date().toISOString(),
+  }).eq('id',_currentPvpMatchId);
+  pendingCtx.match={...match,score_a:newScoreA,score_b:newScoreB,turn:newTurn,whose_turn:nextTurnPlayer,moves,winner};
+}
+
+function endOnlinePvpMatch(m,myRole){
+  const won=m.winner===myRole;
+  const draw=m.winner==='draw';
+  $('pvpQueueStatus').style.display='none';
+  if(_pvpMatchSub){_pvpMatchSub.unsubscribe();_pvpMatchSub=null;}
+  _currentPvpMatchId=null;_pvpRole=null;
+  /* ใช้ endMatch ปกติ */
+  scoreYou=myRole==='a'?m.score_a:m.score_b;
+  scoreAi=myRole==='a'?m.score_b:m.score_a;
+  endMatch();
+}
+
+function playPvpOffline(){
   mode='pvp';
   const oppName=PVP_NAMES[rnd(PVP_NAMES.length)];
   pendingCtx={opp:oppName};
-  startMatch(genTeam(1+rp*.0012+Math.random()*.1),oppName,'⚔️ PvP '+rankOf(rp).nm);
+  startMatch(genTeam(1+rp*.0012+Math.random()*.1),oppName,'⚔️ PvP AI');
 }
+/* backward compat */
+function playPvp(){playPvpOffline();}
 
 /* ============ GACHA / DECK / INV ============ */
 function openShop(){openShopFull();}
@@ -2983,8 +3247,16 @@ function finishDuel(attacker,defender,goal,youAtk){
   }
   $('sYou').textContent=scoreYou;$('sAi').textContent=scoreAi;
   /* ตั้งปุ่มก่อน แล้วค่อย captain trigger */
+  /* pvp_online: submit move */
+  if(mode==='pvp_online'&&_currentPvpMatchId){
+    submitPvpMove(attacker?.id,defender?.id,goal).catch(e=>console.warn('submitMove error',e));
+    if(!youAtk){
+      /* ถ้าเป็นเทิร์นรับ → รอคู่ต่อสู้ทำ move */
+      $('duelActions').innerHTML=`<div style="font-family:Kanit;font-size:.8rem;color:#7fa78d;padding:8px">⏳ รอคู่ต่อสู้...</div>`;
+      return;
+    }
+  }
   $('duelActions').innerHTML=`<button onclick="nextTurn()">เทิร์นถัดไป ▶</button>`;
-  /* re-set ปุ่มหลัง captain trigger เผื่อถูก overwrite */
   setTimeout(()=>{
     if($('duelActions')&&!$('duelActions').innerHTML.includes('nextTurn'))
       $('duelActions').innerHTML=`<button onclick="nextTurn()">เทิร์นถัดไป ▶</button>`;
@@ -3167,7 +3439,7 @@ function endMatch(){
       twFloor=1;
     }
   }
-  else if(mode==='pvp'){
+  else if(mode==='pvp_online'||mode==='pvp'){
     coinGain=win?90:draw?40:20;
     const before=rankOf(rp).nm;
     rp=Math.max(0,rp+(win?25:draw?5:-10));
@@ -3457,6 +3729,8 @@ async function bootGame(){
         loadProfile();
         updateLoginUI();
         if(!playerProfile.name) setTimeout(()=>openProfileSetup(),600);
+        /* subscribe PvP matches realtime */
+        subscribeMyMatches();
 
       } else {
         /* ยังไม่ login → ใช้ local */
