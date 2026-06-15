@@ -75,6 +75,8 @@ h1,h2,h3,.kanit{font-family:'Kanit',sans-serif}
 .stam{height:5px;border-radius:3px;background:#0a1f13;margin-top:3px;overflow:hidden}
 .stam i{display:block;height:100%;background:linear-gradient(90deg,#3d7bd9,#7fd9a0);transition:width .3s}
 .cardp .skill{font-size:.6rem;color:var(--gold);margin-top:2px;min-height:11px}
+.cardp .portrait{width:100%;height:52px;object-fit:cover;border-radius:5px;margin:3px 0 2px;background:#0a1f13;display:block}
+.cardp .portrait-wrap{width:100%;height:52px;border-radius:5px;overflow:hidden;margin:3px 0 2px;background:linear-gradient(160deg,#0f2a1a,#081b10)}
 .cardp.indeck{outline:3px solid var(--blue)}
 .tactics{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;width:100%;max-width:620px;margin:6px 0}
 .tcard{width:128px;border-radius:10px;border:2px dashed var(--purple);background:rgba(30,18,56,.85);padding:8px;cursor:pointer;user-select:none;transition:transform .12s,border-color .12s;font-size:.7rem;color:#c9b8e8;line-height:1.35}
@@ -448,24 +450,112 @@ let collection=[
 ];
 let deck=collection.map(p=>p.id);
 
-const FIRST=['เพชฌฆาต','พายุ','ราชสีห์','เหยี่ยว','ภูเขา','อินทรี','มีดโกน','จรวด','ผี','เสือ'];
-const LAST=['โอตะ','ซิลวา','มุลเลอร์','สมชาย','คาวาอิ','ซานโตส','ชไนเดอร์','บุญมา','เรียว','คากะ'];
-const SKILLS=[
-  {skill:'crit',skillTxt:'⭐ 25% ยิงแรง x1.5'},
-  {skill:'wall',skillTxt:'⭐ 25% บล็อกสนิท'},
-  {skill:'engine',skillTxt:'⭐ สตามิน่าลดช้าครึ่งนึง'},
+const FIRST=[
+  'เพชฌฆาต','พายุ','ราชสีห์','เหยี่ยว','ภูเขา','อินทรี','มีดโกน','จรวด','ผี','เสือ',
+  'สายฟ้า','มังกร','นกอินทรี','พระอาทิตย์','ดาวเหนือ','เงา','ไฟป่า','คลื่น','พระจันทร์','ดาบ',
+  'เพลิง','น้ำแข็ง','พายุฝน','แสงอรุณ','ขุนศึก','นักรบ','จอมพล','ราชา','ราชัน','ยักษ์',
+  'อสูร','เทพ','วายุ','พรหม','อัคนี','วรุณ','กาล','ยม','อิศวร','นารายณ์',
 ];
-function rollCard(premium){
+const MIDDLE=['','','','','สาย','ซุปเปอร์','จ้าว','มหา','แฝด','พลัง'];
+const LAST=[
+  'โอตะ','ซิลวา','มุลเลอร์','สมชาย','คาวาอิ','ซานโตส','ชไนเดอร์','บุญมา','เรียว','คากะ',
+  'เปเล่','โรนัลโด้','เมสซี่','เนย์มาร์','เอ็มบาเป้','ฮาลันด์','เบลลิงแฮม','ซาลาห์','เดอบรุยน์','คีลิยัน',
+  'ทองดี','แก้วใจ','ศรีสุข','บัวงาม','วงษ์สวัสดิ์','ประทุม','รุ่งเรือง','สุขสันต์','มีโชค','จันทร์เพ็ญ',
+  'ยามาโมโต้','คิม','ปาร์ค','ลี','ตราน','เหงียน','อาหมัด','ราฮิม','โมฮัมเหม็ด','อาลี',
+];
+function genUniqueName(){
+  const used=new Set(collection.map(p=>p.name));
+  for(let i=0;i<60;i++){
+    const f=FIRST[rnd(FIRST.length)];
+    const m=MIDDLE[rnd(MIDDLE.length)];
+    const l=LAST[rnd(LAST.length)];
+    const nm=m?f+' '+m+' '+l:f+' '+l;
+    if(!used.has(nm)) return nm;
+  }
+  return FIRST[rnd(FIRST.length)]+' '+LAST[rnd(LAST.length)]+' #'+rnd(999);
+}
+
+const SKILLS=[
+  {skill:'crit',      skillTxt:'💥 25% ยิงแรง ×1.5'},
+  {skill:'snipe',     skillTxt:'🎯 30% สไนป์: +20 ATK'},
+  {skill:'volley',    skillTxt:'🌪️ วอลเล่ย์: ทอย 2 ลูกเอาดีกว่า'},
+  {skill:'freekick',  skillTxt:'🍃 20% ฟรีคิก: +25 ATK'},
+  {skill:'header',    skillTxt:'👤 เฮดบอล: ATK ×1.2'},
+  {skill:'longshot',  skillTxt:'🔭 ยิงไกล: +10 ATK เสมอ'},
+  {skill:'berserker', skillTxt:'😡 สตามิน่า<30 → ATK ×1.5'},
+  {skill:'phantom',   skillTxt:'👻 20% ผ่ากองหลัง'},
+  {skill:'golden',    skillTxt:'✨ ยิงเข้า: +20 เหรียญ'},
+  {skill:'vampire',   skillTxt:'🧛 ยิงเข้า: สตามิน่า +25'},
+  {skill:'thunderbolt',skillTxt:'⚡ 15% ฟ้าผ่า: DEF ศัตรู /2'},
+  {skill:'pyroclasm', skillTxt:'🔥 🔥ข่มทุกธาตุ: +10 เพิ่ม'},
+  {skill:'wall',      skillTxt:'🧱 25% บล็อกสนิท'},
+  {skill:'tackle',    skillTxt:'🦵 30% แทคเกิล: ATK ศัตรู /2'},
+  {skill:'intercept', skillTxt:'✋ 20% อินเตอร์เซ็ป: DEF +8'},
+  {skill:'sweeper',   skillTxt:'🧹 สตามิน่า<40 → DEF +15'},
+  {skill:'lastman',   skillTxt:'🚨 แพ้อยู่ → DEF ×1.3'},
+  {skill:'aerial',    skillTxt:'🦅 เฮดบอลรับ: DEF +12'},
+  {skill:'ironwall',  skillTxt:'🛡️ DEF ไม่ต่ำกว่า 40'},
+  {skill:'tailwind',  skillTxt:'💨 💨ในเทิร์นรับ: DEF +12'},
+  {skill:'engine',    skillTxt:'⚙️ สตามิน่าลดช้าครึ่งนึง'},
+  {skill:'captain',   skillTxt:'🎖️ กัปตัน: ทีม +3 ATK/DEF'},
+  {skill:'playmaker', skillTxt:'🎩 เพลย์เมกเกอร์: ทีม +2/เทิร์น'},
+  {skill:'energizer', skillTxt:'⚡ หลังดวล: เพื่อน +20 สตามิน่า'},
+  {skill:'mentor',    skillTxt:'📚 หลังแมตช์: ทุกคน +5 XP'},
+  {skill:'clutch',    skillTxt:'😤 แพ้อยู่: ATK+DEF +10'},
+  {skill:'algorithm', skillTxt:'🎯 🎯ทุกสถานการณ์: +8 ATK/DEF'},
+  {skill:'prodigy',   skillTxt:'🌟 XP ที่ได้ ×2'},
+  {skill:'hatrick',   skillTxt:'⚽ ยิง 2 ติด: ฟรี 1 เทิร์น'},
+  {skill:'penalty',   skillTxt:'🟢 จุดโทษ: +30 ATK (เสี่ยง)'},
+];
+
+function applySkillEffect(p,isAtk,atkR,defR,notes,fx2){
+  const s=p.skill;if(!s)return;
+  const e=eff(p,isAtk);
+  if(isAtk){
+    if(s==='crit'&&Math.random()<.25){atkR.v=Math.round(atkR.v*1.5);notes.push('💥 Crit!');}
+    if(s==='snipe'&&Math.random()<.30){atkR.v+=20;notes.push('🎯 สไนป์!');}
+    if(s==='volley'){const v2=e.atk+rnd(40);if(v2>atkR.v){atkR.v=v2;notes.push('🌪️ วอลเล่ย์!');}}
+    if(s==='freekick'&&Math.random()<.20){atkR.v+=25;notes.push('🍃 ฟรีคิก!');}
+    if(s==='header'){atkR.v=Math.round(e.atk*1.2);notes.push('👤 เฮดบอล!');}
+    if(s==='longshot'){atkR.v+=10;notes.push('🔭 ยิงไกล!');}
+    if(s==='berserker'&&p.stamina<30){atkR.v=Math.round(atkR.v*1.5);notes.push('😡 Berserker!');}
+    if(s==='phantom'&&Math.random()<.20){atkR.v+=999;notes.push('👻 Phantom!');}
+    if(s==='golden'){/* handled post-duel */}
+    if(s==='vampire'){/* handled post-duel */}
+    if(s==='clutch'&&scoreAi>scoreYou){atkR.v+=10;notes.push('😤 Clutch!');}
+    if(s==='pyroclasm'&&p.elem==='fire'){atkR.v+=10;notes.push('🔥 Pyroclasm!');}
+    if(s==='algorithm'&&p.elem==='tech'){atkR.v+=8;notes.push('🎯 Algorithm!');}
+    if(s==='thunderbolt'&&Math.random()<.15){fx2.halfDef=true;notes.push('⚡ ฟ้าผ่า!');}
+    if(s==='penalty'){atkR.v+=30;notes.push('🟢 จุดโทษ!');}
+  }else{
+    if(s==='wall'&&Math.random()<.25){defR.v+=999;notes.push('🧱 กำแพงเหล็ก!');}
+    if(s==='tackle'&&Math.random()<.30){atkR.v=Math.max(1,Math.round(atkR.v/2));notes.push('🦵 แทคเกิล!');}
+    if(s==='intercept'&&Math.random()<.20){defR.v+=8;notes.push('✋ อินเตอร์เซ็ป!');}
+    if(s==='sweeper'&&p.stamina<40){defR.v+=15;notes.push('🧹 Sweeper!');}
+    if(s==='lastman'&&scoreAi<scoreYou){defR.v=Math.round(defR.v*1.3);notes.push('🚨 Last man!');}
+    if(s==='aerial'&&eff(p,false).def>atkR.v/2){defR.v+=12;notes.push('🦅 Aerial!');}
+    if(s==='ironwall'){defR.v=Math.max(defR.v,40);notes.push('🛡️ Iron wall!');}
+    if(s==='clutch'&&scoreAi>scoreYou){defR.v+=10;notes.push('😤 Clutch!');}
+    if(s==='tailwind'&&p.elem==='wind'){defR.v+=12;notes.push('💨 Tailwind!');}
+    if(s==='algorithm'&&p.elem==='tech'){defR.v+=8;notes.push('🎯 Algorithm!');}
+  }
+}
+
+function rollCard(premium,forceLegend=false,forceRare=false){
   const r=Math.random();
-  let tier=premium?(r<.12?'legend':r<.6?'rare':'common'):(r<.03?'legend':r<.25?'rare':'common');
+  let tier;
+  if(forceLegend) tier='legend';
+  else if(forceRare) tier=r<.08?'legend':'rare';
+  else tier=premium?(r<.12?'legend':r<.6?'rare':'common'):(r<.03?'legend':r<.25?'rare':'common');
   const pos=['ST','WG','MF','DF'][rnd(4)];
   const isAtk=pos==='ST'||pos==='WG';
   let base=(tier==='legend'?88:tier==='rare'?76:62)+rnd(8);
   const atk=isAtk?base:(pos==='MF'?base-6:Math.round(base*.45));
   const def=isAtk?Math.round(base*.45):(pos==='MF'?base-6:base);
-  const sk=tier!=='common'?SKILLS[rnd(SKILLS.length)]:{};
-  return P(FIRST[rnd(FIRST.length)]+' '+LAST[rnd(LAST.length)],pos,atk,def,
-    NATIONS[rnd(NATIONS.length)],ELEMKEYS[rnd(3)],{r:tier==='common'?null:tier,...sk});
+  const skillChance=tier==='legend'?1:tier==='rare'?.65:.2;
+  const sk=Math.random()<skillChance?SKILLS[rnd(SKILLS.length)]:{};
+  const nm=genUniqueName();
+  return P(nm,pos,atk,def,NATIONS[rnd(NATIONS.length)],ELEMKEYS[rnd(3)],{r:tier==='common'?null:tier,...sk});
 }
 function genTeam(mult,natBias){
   const mk=(nm,pos,a,d,r)=>P(nm,pos,Math.round(a*mult),Math.round(d*mult),
@@ -506,16 +596,37 @@ const ITEMS=[
 ];
 
 /* mode states */
-let advProgress=0; // nodes cleared
-const ADV_NODES=[
-  {ico:'🏘️',nm:'หมู่บ้านลูกหนัง',desc:'ทีมเด็กหมู่บ้านขอท้าดวล (ง่าย)',mult:.85},
-  {ico:'🌲',nm:'ป่าทมิฬ',desc:'โจรลูกหนังดักปล้นนักเดินทาง',mult:1.0},
-  {ico:'🏜️',nm:'ทะเลทรายแผดเผา',desc:'ทีมเร่ร่อนแกร่งจากแดดทราย',mult:1.12},
-  {ico:'⛰️',nm:'ภูเขามังกร',desc:'ผู้พิทักษ์หุบเขาขวางทางอยู่',mult:1.25},
-  {ico:'👑',nm:'วิหารราชัน',desc:'บอส: ราชัน เลออน — ชนะแล้วเขาจะร่วมทีม!',mult:1.45},
+let advProgress=0,advChapter=1; // nodes cleared
+const ADV_CHAPTERS=[
+  {title:'ตามหาราชันลูกหนัง',nodes:[
+    {ico:'🏘️',nm:'หมู่บ้านลูกหนัง',desc:'ทีมเด็กหมู่บ้านขอท้าดวล (ง่าย)',mult:.85},
+    {ico:'🌲',nm:'ป่าทมิฬ',desc:'โจรลูกหนังดักปล้นนักเดินทาง',mult:1.0},
+    {ico:'🏜️',nm:'ทะเลทรายแผดเผา',desc:'ทีมเร่ร่อนแกร่งจากแดดทราย',mult:1.12},
+    {ico:'⛰️',nm:'ภูเขามังกร',desc:'ผู้พิทักษ์หุบเขาขวางทางอยู่',mult:1.25},
+    {ico:'👑',nm:'วิหารราชัน',desc:'บอส: ราชัน เลออน!',mult:1.45,boss:'leon'},
+  ]},
+  {title:'ศึกแชมป์ทวีป',nodes:[
+    {ico:'🗾',nm:'คัดเลือกโซน A',desc:'ทีมตัวแทนเอเชียตะวันออก',mult:1.5},
+    {ico:'🌍',nm:'คัดเลือกโซน B',desc:'ทีมจากแอฟริกาแกร่งมาก',mult:1.65},
+    {ico:'🏟️',nm:'รอบ 8 ทีม',desc:'ทัวร์นาเมนต์นานาชาติ',mult:1.8},
+    {ico:'🥈',nm:'รอบรองชนะเลิศ',desc:'แค่หนึ่งก้าวจากแชมป์',mult:2.0},
+    {ico:'🏆',nm:'รอบชิงแชมป์ทวีป',desc:'บอส: กัปตันยุโรป — ตำนานแห่งยุค!',mult:2.3,boss:'euro'},
+  ]},
+  {title:'ลีกซูเปอร์อาเซียน',nodes:[
+    {ico:'🇹🇭',nm:'ไทยลีกดิวิชั่น 1',desc:'เปิดตัวในลีกระดับประเทศ',mult:2.4},
+    {ico:'🇻🇳',nm:'เวียดนาม ซุปเปอร์ลีก',desc:'คู่แข่งอาเซียนระดับแนวหน้า',mult:2.6},
+    {ico:'🇯🇵',nm:'เจลีก',desc:'สไตล์ญี่ปุ่น: เทคนิคสูง',mult:2.8},
+    {ico:'🇰🇷',nm:'เค-ลีก',desc:'เร็วและฟิตสุดๆ',mult:3.0},
+    {ico:'🌏',nm:'ซูเปอร์คัพอาเซียน',desc:'บอส: สิงห์อาเซียน — ชนะได้ตำนานพิเศษ!',mult:3.3,boss:'asean'},
+  ]},
 ];
-let lgRound=0,lgPts={};
+function currentChapterNodes(){return ADV_CHAPTERS[advChapter-1]?.nodes||ADV_CHAPTERS[0].nodes;}
+const ADV_NODES=ADV_CHAPTERS[0].nodes; // backward compat
+
+let lgRound=0,lgSeason=1,lgPts={};
 const LG_TEAMS=['อสูรแดง 🔥','หมาป่าเทา 🐺','อินทรีดำ 🦅','ฉลามคลั่ง 🦈','ราชามังกร 🐉'];
+const LG_TEAMS2=['ไทกร้าว ⚡','พญาครุฑ 🦅','มังกรดำ 🐉','สิงห์ขาว 🦁','นาคราช 🐍'];
+function currentLgTeams(){return lgSeason<=1?LG_TEAMS:LG_TEAMS2;}
 let twFloor=1;
 let rp=0; // rank points
 const RANKS=[{nm:'Bronze',min:0,c:'#c08552'},{nm:'Silver',min:100,c:'#b8c4cc'},{nm:'Gold',min:220,c:'#e8b53a'},{nm:'Diamond',min:380,c:'#7ad9ff'},{nm:'Legend',min:600,c:'#ff7ad9'}];
@@ -568,8 +679,9 @@ function hideAll(){SCREENS.forEach(i=>$(i).classList.add('hidden'));}
 function goHome(){
   hideAll();$('home').classList.remove('hidden');
   $('homeInfo').innerHTML=`👑 Lv.${capLv} · 🪙 ${coins} · การ์ด ${collection.length} ใบ · เด็ค ${deck.length}/6<br>${synText()}`;
-  $('mAdv').textContent=advProgress>=ADV_NODES.length?'✅ พิชิตครบแล้ว':`ด่าน ${advProgress+1}/${ADV_NODES.length}`;
-  $('mLg').textContent=lgRound>=5?'✅ จบฤดูกาล':`นัดที่ ${lgRound+1}/5`;
+  const _nodes=currentChapterNodes();
+  $('mAdv').textContent=advChapter>ADV_CHAPTERS.length?'✅ พิชิตทุกบทแล้ว!':`บท${advChapter}: ด่าน ${advProgress+1}/${_nodes.length}`;
+  $('mLg').textContent=lgRound>=5?`✅ จบฤดูกาล ${lgSeason}`:`S${lgSeason} นัดที่ ${lgRound+1}/5`;
   $('mTw').textContent=`สถิติสูงสุด: ชั้น ${twFloor}`;
   $('mPvp').textContent=rankOf(rp).nm+` (${rp} RP)`;
 }
@@ -577,51 +689,78 @@ function goHome(){
 /* ============ ADVENTURE ============ */
 function openAdv(){
   hideAll();$('advScr').classList.remove('hidden');
-  $('advMap').innerHTML=ADV_NODES.map((n,i)=>{
-    const st=i<advProgress?'done':i===advProgress?'':'locked';
-    return (i?'<div class="advlink"></div>':'')+
-    `<div class="advnode ${st}" ${st===''?`onclick="playAdv(${i})" role="button" tabindex="0"`:''}>
-      <span class="aico">${i<advProgress?'✅':n.ico}</span>
-      <span><div class="anm">${n.nm}</div><div class="adesc">${n.desc}</div></span>
-    </div>`;
+  const nodes=currentChapterNodes();
+  const ch=ADV_CHAPTERS[advChapter-1];
+  $('advScr').querySelector('h1').textContent='🗺️ บทที่ '+advChapter+': '+ch.title;
+  // chapter tabs
+  let tabs=ADV_CHAPTERS.map((c,i)=>{
+    const done=i<advChapter-1;
+    const locked=i>advChapter-1;
+    return `<div onclick="${!locked?'switchChapter('+(i+1)+')':''}" style="cursor:${locked?'default':'pointer'};padding:4px 10px;border-radius:6px;font-family:Kanit;font-size:.78rem;background:${i===advChapter-1?'var(--gold)':done?'#1e3a29':'#0a1f13'};color:${i===advChapter-1?'#1a1408':done?'#7fd9a0':'#3a5240'};border:1px solid ${i===advChapter-1?'var(--gold)':'#1e3a29'}">${done?'✅':locked?'🔒':'▶'} บท ${i+1}</div>`;
   }).join('');
+  $('advMap').innerHTML=`<div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-bottom:10px">${tabs}</div>`+
+    nodes.map((n,i)=>{
+      const st=i<advProgress?'done':i===advProgress?'':'locked';
+      return (i?'<div class="advlink"></div>':'')+
+      `<div class="advnode ${st}" ${st===''?`onclick="playAdv(${i})" role="button" tabindex="0"`:''}>
+        <span class="aico">${i<advProgress?'✅':n.ico}</span>
+        <span><div class="anm">${n.nm}</div><div class="adesc">${n.desc}</div></span>
+      </div>`;
+    }).join('');
+}
+function switchChapter(ch){
+  if(ch>advChapter) return;
+  advChapter=ch; advProgress=0; openAdv();
 }
 function playAdv(i){
-  const n=ADV_NODES[i];
-  mode='adv';pendingCtx={node:i};
-  startMatch(genTeam(n.mult),n.ico+' '+n.nm,'🗺️ ผจญภัย');
+  const n=currentChapterNodes()[i];
+  mode='adv';pendingCtx={node:i,boss:n.boss||null};
+  startMatch(genTeam(n.mult),n.ico+' '+n.nm,'🗺️ บท'+advChapter);
 }
 
 /* ============ LEAGUE ============ */
 function initLg(){if(Object.keys(lgPts).length)return;
-  lgPts['คุณ']=0;LG_TEAMS.forEach(t=>lgPts[t]=0);}
+  const teams=currentLgTeams();
+  lgPts['คุณ']=0;teams.forEach(t=>lgPts[t]=0);}
 function openLeague(){
   initLg();hideAll();$('lgScr').classList.remove('hidden');
   renderLg();
 }
 function renderLg(){
   const rows=Object.entries(lgPts).sort((a,b)=>b[1]-a[1]);
-  $('lgTable').innerHTML=`<tr><th>#</th><th style="text-align:left">ทีม</th><th>แต้ม</th></tr>`+
+  $('lgTable').innerHTML=`<tr><th>#</th><th style="text-align:left">ทีม (ฤดูกาล ${lgSeason})</th><th>แต้ม</th></tr>`+
     rows.map(([t,p],i)=>`<tr class="${t==='คุณ'?'me':''}"><td>${i+1}</td><td class="tn">${t==='คุณ'?'⚡ ราชันสายฟ้า (คุณ)':t}</td><td class="pts">${p}</td></tr>`).join('');
+  const teams=currentLgTeams();
   if(lgRound>=5){
     const champ=rows[0][0];
-    $('lgInfo').innerHTML=champ==='คุณ'?'🏆 <b style="color:var(--gold)">คุณคือแชมป์ฤดูกาล!</b>':'จบฤดูกาล — แชมป์คือ '+champ;
+    const isChamp=champ==='คุณ';
+    $('lgInfo').innerHTML=(isChamp?'🏆 <b style="color:var(--gold)">คุณคือแชมป์ฤดูกาล '+lgSeason+'!</b>':'จบฤดูกาล — แชมป์คือ '+champ)+
+      (lgSeason<3?`<br><button onclick="newLgSeason()" style="margin-top:6px;font-size:.8rem">🔄 เริ่มฤดูกาล ${lgSeason+1}</button>`:'<br><small style="color:#7fa78d">จบ 3 ฤดูกาลแล้ว ไปโหมดอื่นได้!</small>');
     $('lgPlayBtn').disabled=true;$('lgPlayBtn').textContent='จบฤดูกาลแล้ว';
   }else{
-    $('lgInfo').textContent=`นัดที่ ${lgRound+1}/5 — พบ ${LG_TEAMS[lgRound]} (ชนะ 3 แต้ม / เสมอ 1)`;
+    $('lgInfo').textContent=`ฤดูกาล ${lgSeason} นัดที่ ${lgRound+1}/5 — พบ ${teams[lgRound]} (ชนะ 3 แต้ม / เสมอ 1)`;
     $('lgPlayBtn').disabled=false;$('lgPlayBtn').textContent='เตะนัดถัดไป ⚽';
   }
 }
 function playLeague(){
-  mode='league';pendingCtx={opp:LG_TEAMS[lgRound]};
-  startMatch(genTeam(1+lgRound*.09),LG_TEAMS[lgRound],`🏟️ ลีก นัด ${lgRound+1}/5`);
+  const _lgTeams=currentLgTeams();
+  mode='league';pendingCtx={opp:_lgTeams[lgRound]};
+  startMatch(genTeam(1+lgSeason*.15+lgRound*.09),_lgTeams[lgRound],`🏟️ ลีก S${lgSeason} นัด ${lgRound+1}/5`);
 }
 
 /* ============ TOWER ============ */
+function newLgSeason(){
+  lgSeason++;lgRound=0;lgPts={};
+  const bonus=lgSeason*50;coins+=bonus;$('coins').textContent=coins;
+  showAchNotif('🏆 ฤดูกาล '+lgSeason+' เริ่มต้นแล้ว! +'+bonus+' เหรียญ');
+  initLg();openLeague();
+}
 function openTower(){
   hideAll();$('twScr').classList.remove('hidden');
   $('twFloor').textContent=twFloor;
-  $('twInfo').innerHTML=`ความแกร่งศัตรู: ×${(1+twFloor*.08).toFixed(2)}<br>รางวัลชั้นนี้: 🪙 ${40+twFloor*15} · แพ้ = ตกกลับชั้น 1<br><b style="color:var(--gold)">ทุก 3 ชั้น มีไอเทมดรอปแน่นอน!</b>`;
+  const milestone=twFloor%10===0?`<br>🌟 <b style="color:var(--legend)">Milestone! ชั้น ${twFloor} — รางวัลพิเศษรอ!</b>`:
+    twFloor%5===0?`<br>⭐ <b style="color:var(--gold)">ชั้น ${twFloor} — โบนัสเหรียญ ×2!</b>`:'';
+  $('twInfo').innerHTML=`ความแกร่งศัตรู: ×${(1+twFloor*.08).toFixed(2)}<br>รางวัลชั้นนี้: 🪙 ${40+twFloor*15}${twFloor%5===0?' (×2!)':''} · แพ้ = ตกกลับชั้น 1<br><b style="color:var(--gold)">ทุก 3 ชั้น มีไอเทมดรอปแน่นอน!</b>${milestone}`;
 }
 function playTower(){
   mode='tower';pendingCtx={};
@@ -707,17 +846,24 @@ function equip(itemIdx,pid){
 
 /* ============ MATCH ENGINE (shared) ============ */
 function elemChip(e){const E=ELEMS[e];return `<span class="elem ${E.cls}">${E.ico} ${E.nm}</span>`;}
+function portraitURL(p){
+  const seed=encodeURIComponent(p.name);
+  const style=p.legend?'lorelei':p.rare?'pixel-art':'thumbs';
+  const bg=p.legend?'b6009e':p.rare?'3d2a10':'0a1f13';
+  return `https://api.dicebear.com/7.x/${style}/svg?seed=${seed}&backgroundColor=${bg}`;
+}
 function cardHTML(p,clickable,advantage=false){
   const e=eff(p,collection.includes(p));
   return `<div class="cardp ${p.legend?'legend':p.rare?'rare':''} ${clickable?'':'disabled'} ${advantage?'advantage':''}"
     ${clickable?`onclick="pick('${p.id}')" onkeydown="if(event.key==='Enter')pick('${p.id}')"`:''} role="button" tabindex="0">
     <span class="pos">${p.pos}</span><span class="plv">Lv.${p.lv}</span><span class="nat">${p.nat}</span>
     <div class="nm">${p.name}</div>
+    <div class="portrait-wrap"><img class="portrait" src="${portraitURL(p)}" alt="" loading="lazy" onerror="this.style.display='none'"></div>
     ${elemChip(p.elem)}
     <div class="st">⚔ <b>${e.atk}</b> · 🛡 <b>${e.def}</b></div>
     <div class="itm">${p.item?p.item.ico+' '+p.item.name:''}</div>
     <div class="stam"><i style="width:${p.stamina}%"></i></div>
-    <div class="skill">${p.skillTxt}</div>
+    <div class="skill">${p.skillTxt||''}</div>
   </div>`;
 }
 function startMatch(opponent,oppName,modeLabel){
@@ -726,6 +872,9 @@ function startMatch(opponent,oppName,modeLabel){
   ai=opponent;scoreYou=0;scoreAi=0;turn=1;youAttacking=true;fx={};
   momentum=50;updateMomentum(0);
   questProgress('match',1);
+  /* captain skill: permanent team buff */
+  const cap=deckPlayers().find(p=>p.skill==='captain');
+  if(cap){deckPlayers().forEach(p=>{p.atk+=3;p.def+=3;});log('🎖️ <span class="good">กัปตัน! ทีม +3 ATK/DEF</span>');}
   deckPlayers().forEach(p=>p.stamina=100);
   matchTactics=[...TACTICS].sort(()=>Math.random()-.5).slice(0,3).map(t=>({...t,used:false}));
   $('sYou').textContent=0;$('sAi').textContent=0;
@@ -784,11 +933,16 @@ function duel(attacker,defender,youAtk){
   if(ELEMS[attacker.elem].beats===defender.elem){atkBonus=15;notes.push(`${ELEMS[attacker.elem].ico}ข่ม${ELEMS[defender.elem].ico} บุก+15`);}
   if(ELEMS[defender.elem].beats===attacker.elem){defBonus=15;notes.push(`${ELEMS[defender.elem].ico}ข่ม${ELEMS[attacker.elem].ico} รับ+15`);}
   const enemyRollMax=fx.press?20:40;
-  let atkRoll=ea.atk+atkBonus+(youAtk?rnd(40):rnd(enemyRollMax));
+  const mb=youAtk?momentumBonus():0;
+  let atkRoll=ea.atk+atkBonus+mb+(youAtk?rnd(40):rnd(enemyRollMax));
   let defRoll=ed.def+defBonus+(youAtk?rnd(enemyRollMax):rnd(40));
   if(fx.press){notes.push('🥶 กดดัน!');fx.press=false;}
-  if(attacker.skill==='crit'&&Math.random()<.25){atkRoll=Math.round(atkRoll*1.5);notes.push('⭐ ซูเปอร์ช็อต!');}
-  if(defender.skill==='wall'&&Math.random()<.25){defRoll+=999;notes.push('⭐ กำแพงเหล็ก!');}
+  const fx2={};
+  const atkR={v:atkRoll},defR={v:defRoll};
+  applySkillEffect(attacker,true,atkR,defR,notes,fx2);
+  applySkillEffect(defender,false,atkR,defR,notes,fx2);
+  if(fx2.halfDef) defR.v=Math.max(1,Math.round(defR.v/2));
+  atkRoll=atkR.v; defRoll=defR.v;
   const goal=atkRoll>defRoll;
   attacker.stamina=Math.max(15,attacker.stamina-(attacker.skill==='engine'?19:38));
   defender.stamina=Math.max(15,defender.stamina-(defender.skill==='engine'?15:30));
@@ -867,13 +1021,34 @@ function throwConfetti(){
   }
 }
 function finishDuel(attacker,defender,goal,youAtk){
+  const xpMult=attacker.skill==='prodigy'||defender.skill==='prodigy'?2:1;
   if(goal){
-    if(youAtk){scoreYou++;log(`⚽ <span class="good">${attacker.name} ยิงเข้า! +15 XP</span>`);gainPXp(attacker,15);gainCapXp(15);
+    if(youAtk){
+      scoreYou++;
+      const xp=15*xpMult; gainPXp(attacker,xp); gainCapXp(xp);
+      log(`⚽ <span class="good">${attacker.name} ยิงเข้า! +${xp} XP</span>`);
       updateMomentum(+15);if(momentum>=70)showMomPop('🔥 Momentum ลุกโชน!');questProgress('goal',1);sfxGoal();
+      if(attacker.skill==='golden'){coins+=20;$('coins').textContent=coins;log('✨ <span class="loot">Golden +20 เหรียญ!</span>');}
+      if(attacker.skill==='vampire'){attacker.stamina=Math.min(100,attacker.stamina+25);log('🧛 <span class="good">Vampire สตามิน่า +25!</span>');}
+      if(attacker.skill==='hatrick'){if(!fx._hatrick)fx._hatrick=0;fx._hatrick++;if(fx._hatrick>=2){fx._hatrick=0;fx.freeAtk=true;log('⚽ <span class="loot">Hat-trick! ได้บุกฟรี!</span>');}}
+      if(attacker.skill==='energizer'){
+        const nb=deckPlayers().find(p=>p.id!==attacker.id&&p.stamina<100);
+        if(nb){nb.stamina=Math.min(100,nb.stamina+20);log(`⚡ <span class="good">Energizer: ${nb.name} +20 สตามิน่า!</span>`);}
+      }
     }else{scoreAi++;log(`⚽ <span class="bad">${attacker.name} ยิงเข้า...</span>`);updateMomentum(-15);sfxSave();}
   }else{
-    if(youAtk){log(`🧤 <span class="bad">โดนสกัด... +5 XP</span>`);gainPXp(attacker,5);gainCapXp(5);updateMomentum(-8);}
-    else{log(`🧤 <span class="good">${defender.name} สกัดสำเร็จ! +12 XP</span>`);gainPXp(defender,12);gainCapXp(12);updateMomentum(+8);sfxSave();}
+    if(youAtk){
+      const xp=5*xpMult; gainPXp(attacker,xp); gainCapXp(xp);
+      log(`🧤 <span class="bad">โดนสกัด... +${xp} XP</span>`); updateMomentum(-8);
+      if(attacker.skill==='penalty'&&!goal){attacker.atk=Math.max(5,attacker.atk-10);log('🟢 <span class="bad">จุดโทษพลาด! ATK -10</span>');}
+    }else{
+      const xp=12*xpMult; gainPXp(defender,xp); gainCapXp(xp);
+      log(`🧤 <span class="good">${defender.name} สกัดสำเร็จ! +${xp} XP</span>`); updateMomentum(+8); sfxSave();
+      if(defender.skill==='energizer'){
+        const nb=deckPlayers().find(p=>p.id!==defender.id&&p.stamina<100);
+        if(nb){nb.stamina=Math.min(100,nb.stamina+20);log(`⚡ <span class="good">Energizer: ${nb.name} +20 สตามิน่า!</span>`);}
+      }
+    }
   }
   $('sYou').textContent=scoreYou;$('sAi').textContent=scoreAi;
   $('duelActions').innerHTML=`<button onclick="nextTurn()">เทิร์นถัดไป ▶</button>`;
@@ -884,7 +1059,13 @@ function nextTurn(){
   if(fx.rumor>0)fx.rumor--;
   if(turn>8){endMatch();return;}
   [...deckPlayers(),...ai].forEach(p=>p.stamina=Math.min(100,p.stamina+5));
-  youAttacking=!youAttacking;$('turnNow').textContent=turn;
+  /* playmaker: team gets +2 ATK each turn */
+  if(deckPlayers().some(p=>p.skill==='playmaker')){
+    deckPlayers().forEach(p=>p.atk=Math.min(p.atk+2,999));
+  }
+  /* free attack from hatrick */
+  if(fx.freeAtk){fx.freeAtk=false;youAttacking=true;}
+  else youAttacking=!youAttacking;$('turnNow').textContent=turn;
   setupTurn();
 }
 
@@ -895,15 +1076,28 @@ function endMatch(){
   let desc='',lootChance=win?.6:draw?.35:.15,coinGain=0,xpGain=win?50:draw?25:15;
 
   if(mode==='adv'){
-    coinGain=win?100:30;
+    coinGain=win?100*advChapter:30;
     if(win){
       advProgress=Math.max(advProgress,pendingCtx.node+1);
-      if(pendingCtx.node===ADV_NODES.length-1){
-        const leon=P('ราชัน เลออน','ST',95,45,'🇧🇷','tech',{r:'legend',skill:'crit',skillTxt:'⭐ 25% ยิงแรง x1.5'});
-        collection.push(leon);
-        desc=`👑 <b style="color:var(--legend)">ราชัน เลออน เข้าร่วมทีม!</b> (ST ตำนาน 🌟 ⚔95) เปิดหน้าจัดเด็คเพื่อใส่เขาลงทีม!`;
-        title='🌟 พิชิตวิหารราชัน!';
-      } else desc=`ผ่านด่าน ${ADV_NODES[pendingCtx.node].nm}! เดินทางต่อได้`;
+      const nodes=currentChapterNodes();
+      if(pendingCtx.node===nodes.length-1){
+        /* boss card per chapter */
+        const bossDefs={
+          leon:{nm:'ราชัน เลออน',pos:'ST',atk:95,def:45,nat:'🇧🇷',elem:'tech',skill:'crit',skillTxt:'💥 25% ยิงแรง ×1.5',msg:'ราชัน เลออน เข้าร่วมทีม!'},
+          euro:{nm:'ฟรานซ์ ไกเซอร์',pos:'MF',atk:88,def:80,nat:'🇩🇪',elem:'wind',skill:'captain',skillTxt:'🎖️ กัปตัน: ทีม +3 ATK/DEF',msg:'ฟรานซ์ ไกเซอร์ กัปตันยุโรปเข้าร่วม!'},
+          asean:{nm:'สิงห์ อาเซียน',pos:'ST',atk:98,def:50,nat:'🇹🇭',elem:'fire',skill:'pyroclasm',skillTxt:'🔥 🔥ข่มทุกธาตุ: +10 เพิ่ม',msg:'สิงห์ อาเซียน นักเตะไทยตำนานเข้าร่วม!'},
+        };
+        const bd=bossDefs[pendingCtx.boss]||bossDefs.leon;
+        const bossCard=P(bd.nm,bd.pos,bd.atk,bd.def,bd.nat,bd.elem,{r:'legend',skill:bd.skill,skillTxt:bd.skillTxt});
+        collection.push(bossCard);
+        desc=`🌟 <b style="color:var(--legend)">${bd.msg}</b> เปิดหน้าจัดเด็คเพื่อใส่ลงทีม!`;
+        title='🏆 พิชิตบทที่ '+advChapter+'!';
+        if(advChapter<ADV_CHAPTERS.length){
+          advChapter++;advProgress=0;
+          desc+=`<br>🗺️ <b style="color:var(--gold)">บทที่ ${advChapter} เปิดแล้ว!</b>`;
+        }
+        sfxLegend();
+      } else desc=`ผ่านด่าน ${nodes[pendingCtx.node].nm}! เดินทางต่อได้`;
     } else desc='พ่ายแพ้... พักฟื้นแล้วลองใหม่';
   }
   else if(mode==='league'){
@@ -926,12 +1120,26 @@ function endMatch(){
   }
   else if(mode==='tower'){
     if(win){
-      coinGain=40+twFloor*15;
-      if(twFloor%3===0)lootChance=1;
-      desc=`พิชิตชั้น ${twFloor}! ขึ้นชั้น ${twFloor+1}`;
+      const isMilestone10=twFloor%10===0;
+      const isMilestone5=twFloor%5===0&&!isMilestone10;
+      const coinMult=isMilestone10?3:isMilestone5?2:1;
+      coinGain=(40+twFloor*15)*coinMult;
+      if(twFloor%3===0||isMilestone10)lootChance=1;
+      desc=`พิชิตชั้น ${twFloor}!`;
+      if(isMilestone10){
+        desc+=` 🌟 <b style="color:var(--legend)">Milestone x10! เหรียญ ×3 + ไอเทมการันตี!</b>`;
+        lootChance=1;
+        /* bonus rare card on milestone 10,20,30... */
+        const bonus=rollCard(true);collection.push(bonus);
+        desc+=`<br>🎁 ได้การ์ดโบนัส: <b>${bonus.name}</b>`;
+        sfxRare();
+      } else if(isMilestone5){
+        desc+=` ⭐ <b style="color:var(--gold)">Milestone ×5! เหรียญ ×2!</b>`;
+      }
+      desc+=` ขึ้นชั้น ${twFloor+1}`;
       twFloor++;
     }else{
-      coinGain=10;desc=`ร่วงจากชั้น ${twFloor}... กลับไปเริ่มชั้น 1 (ความท้าทายของหอคอย!)`;
+      coinGain=10;desc=`ร่วงจากชั้น ${twFloor}... กลับไปเริ่มชั้น 1`;
       twFloor=1;
     }
   }
@@ -956,6 +1164,11 @@ function endMatch(){
   hideAll();$('matchEnd').classList.remove('hidden');
   const _win=scoreYou>scoreAi;if(_win){_achStats.wins++;questProgress('win',1);}
   checkAchievements();
+  /* mentor skill: bonus XP after match */
+  if(deckPlayers().some(p=>p.skill==='mentor')){
+    deckPlayers().forEach(p=>gainPXp(p,5));
+    log('📚 <span class="loot">Mentor: ทุกคน +5 XP!</span>');
+  }
   saveGame();
 }
 function afterMatch(){
@@ -972,7 +1185,7 @@ const SAVE_KEY='footballRealmSave_v5';
 function saveGame(){
   try{
     const data={
-      capLv,capXp,coins,advProgress,lgRound,lgPts,twFloor,rp,uid,
+      capLv,capXp,coins,advProgress,advChapter,lgRound,lgSeason,lgPts,twFloor,rp,uid,
       inventory,
       deck,
       collection:collection.map(p=>({...p,item:p.item?inventory.indexOf(p.item):-1})),
