@@ -1057,25 +1057,25 @@ const ITEM_PASSIVES={
 };
 
 const ITEMS_DB=[
-  /* SHIRTS */
-  {ico:'🎽',name:'เสื้อธรรมดา',      slot:'shirt',atk:4, def:0, tier:'common',passives:[]},
-  {ico:'🎽',name:'เสื้อสายฟ้า',      slot:'shirt',atk:8, def:0, tier:'rare',  passives:['power_shot']},
-  {ico:'🎽',name:'เสื้อดาวเหนือ',    slot:'shirt',atk:6, def:0, tier:'rare',  passives:['star_power']},
-  {ico:'🎽',name:'เสื้อนักล่า',      slot:'shirt',atk:10,def:0, tier:'rare',  passives:['ball_magnet']},
-  {ico:'🎽',name:'เสื้อตำนาน',       slot:'shirt',atk:14,def:0, tier:'legend',passives:['berserker_aura','shadow_strike']},
-  {ico:'🎽',name:'เสื้อกัปตัน',      slot:'shirt',atk:10,def:4, tier:'legend',passives:['captains_armband','vampire_kit']},
+  /* SHIRTS — badgeSlots: common=0, rare=1, legend=2-3 */
+  {ico:'🎽',name:'เสื้อธรรมดา',      slot:'shirt',atk:4, def:0, tier:'common',passives:[],badgeSlots:0},
+  {ico:'🎽',name:'เสื้อสายฟ้า',      slot:'shirt',atk:8, def:0, tier:'rare',  passives:['power_shot'],badgeSlots:1},
+  {ico:'🎽',name:'เสื้อดาวเหนือ',    slot:'shirt',atk:6, def:0, tier:'rare',  passives:['star_power'],badgeSlots:1},
+  {ico:'🎽',name:'เสื้อนักล่า',      slot:'shirt',atk:10,def:0, tier:'rare',  passives:['ball_magnet'],badgeSlots:1},
+  {ico:'🎽',name:'เสื้อตำนาน',       slot:'shirt',atk:14,def:0, tier:'legend',passives:['berserker_aura','shadow_strike'],badgeSlots:3},
+  {ico:'🎽',name:'เสื้อกัปตัน',      slot:'shirt',atk:10,def:4, tier:'legend',passives:['captains_armband','vampire_kit'],badgeSlots:2},
   /* SHOES */
-  {ico:'👟',name:'รองเท้าธรรมดา',    slot:'shoe', atk:3, def:0, tier:'common',passives:[]},
-  {ico:'👟',name:'รองเท้าสายฟ้า',    slot:'shoe', atk:6, def:0, tier:'rare',  passives:['quick_recovery']},
-  {ico:'👟',name:'รองเท้าจรวด',      slot:'shoe', atk:8, def:0, tier:'rare',  passives:['explosive_start']},
-  {ico:'👟',name:'รองเท้าทอง',       slot:'shoe', atk:5, def:0, tier:'rare',  passives:['golden_boot']},
-  {ico:'👟',name:'รองเท้าเทพ',       slot:'shoe', atk:10,def:0, tier:'legend',passives:['never_tire','speed_demon']},
+  {ico:'👟',name:'รองเท้าธรรมดา',    slot:'shoe', atk:3, def:0, tier:'common',passives:[],badgeSlots:0},
+  {ico:'👟',name:'รองเท้าสายฟ้า',    slot:'shoe', atk:6, def:0, tier:'rare',  passives:['quick_recovery'],badgeSlots:1},
+  {ico:'👟',name:'รองเท้าจรวด',      slot:'shoe', atk:8, def:0, tier:'rare',  passives:['explosive_start'],badgeSlots:1},
+  {ico:'👟',name:'รองเท้าทอง',       slot:'shoe', atk:5, def:0, tier:'rare',  passives:['golden_boot'],badgeSlots:1},
+  {ico:'👟',name:'รองเท้าเทพ',       slot:'shoe', atk:10,def:0, tier:'legend',passives:['never_tire','speed_demon'],badgeSlots:2},
   /* PANTS */
-  {ico:'👖',name:'กางเกงธรรมดา',     slot:'pants',atk:0, def:4, tier:'common',passives:[]},
-  {ico:'👖',name:'กางเกงเหล็ก',      slot:'pants',atk:0, def:8, tier:'rare',  passives:['iron_wall']},
-  {ico:'👖',name:'กางเกงมังกร',      slot:'pants',atk:0, def:8, tier:'rare',  passives:['reflect']},
-  {ico:'👖',name:'กางเกงนักสู้',     slot:'pants',atk:0, def:6, tier:'rare',  passives:['last_stand']},
-  {ico:'👖',name:'กางเกงตำนาน',      slot:'pants',atk:2, def:14,tier:'legend',passives:['unbreakable','all_rounder']},
+  {ico:'👖',name:'กางเกงธรรมดา',     slot:'pants',atk:0, def:4, tier:'common',passives:[],badgeSlots:0},
+  {ico:'👖',name:'กางเกงเหล็ก',      slot:'pants',atk:0, def:8, tier:'rare',  passives:['iron_wall'],badgeSlots:1},
+  {ico:'👖',name:'กางเกงมังกร',      slot:'pants',atk:0, def:8, tier:'rare',  passives:['reflect'],badgeSlots:1},
+  {ico:'👖',name:'กางเกงนักสู้',     slot:'pants',atk:0, def:6, tier:'rare',  passives:['last_stand'],badgeSlots:1},
+  {ico:'👖',name:'กางเกงตำนาน',      slot:'pants',atk:2, def:14,tier:'legend',passives:['unbreakable','all_rounder'],badgeSlots:3},
 ];
 function rollItem(forceTier=null){
   const r=Math.random();
@@ -1216,12 +1216,17 @@ function rollBadge(floor){
 /* drop % ตามชั้นหอคอย */
 function towerDropChance(floor){
   const isMilestone=floor%10===0;
+  /* Legend Dust หายากมาก — ต้องลึกและ milestone เท่านั้น */
+  const legendDustChance=
+    isMilestone&&floor>=50?.20:
+    isMilestone&&floor>=30?.12:
+    isMilestone&&floor>=20?.08:0;
   return {
-    badge:     isMilestone?.40:floor>=20?.20:floor>=10?.12:.05,
-    blankCard: isMilestone?.40:floor>=20?.25:floor>=10?.15:.08,
-    capBand:   isMilestone?.40:0,
-    legendDust:isMilestone&&floor>=20?.30:0,
-    rareDust:  isMilestone?.50:floor>=10?.20:.10,
+    badge:      isMilestone?.40:floor>=20?.18:floor>=10?.10:.04,
+    blankCard:  isMilestone?.40:floor>=20?.22:floor>=10?.13:.07,
+    capBand:    isMilestone?.35:0,
+    legendDust: legendDustChance,
+    rareDust:   isMilestone?.45:floor>=10?.18:.08,
   };
 }
 
@@ -1262,7 +1267,7 @@ const SHOP_CONSUMABLES=[
 ];
 
 /* consumable inventory */
-let consumables={xp_s:0,xp_m:0,xp_l:0,dust_c:0,dust_r:0,dust_l:0};
+let consumables={xp_s:0,xp_m:0,xp_l:0,dust_c:0,dust_r:0,dust_l:0,stam_s:0,stam_m:0,stam_l:0};
 
 /* item inventory (owned items not yet equipped) */
 let itemInventory=[]; // array of item objects from ITEMS_DB
@@ -1473,9 +1478,28 @@ function getItemBonus(p){
   let atk=0,def=0;
   ['shirt','shoe','pants'].forEach(slot=>{
     const it=p[slot];
-    if(it){atk+=it.atk||0;def+=it.def||0;}
+    if(!it) return;
+    atk+=it.atk||0;
+    def+=it.def||0;
+    /* badge passives ติดกับ item */
+    if(it.equippedBadges) it.equippedBadges.forEach(bi=>{
+      if(bi==null) return;
+      const b=badges[bi];
+      if(!b||!b.passive) return;
+      if(b.passive.id==='captains_armband'){atk+=3;def+=3;}
+      /* passives อื่นๆ handled ใน applySkillEffect */
+    });
   });
   return {atk,def};
+}
+function hasItemOrBadgePassive(p,pid){
+  if(hasItemPassive(p,pid)) return true;
+  if(hasBadgePassive(p,pid)) return true;
+  /* check badge on equipped items */
+  return ['shirt','shoe','pants'].some(slot=>{
+    const it=p[slot];
+    return it&&it.equippedBadges&&it.equippedBadges.some(bi=>bi!=null&&badges[bi]?.passive?.id===pid);
+  });
 }
 function hasItemPassive(p,passiveId){
   return ['shirt','shoe','pants'].some(slot=>{
@@ -2052,12 +2076,15 @@ function renderInvGrid(){
   if(!grid) return;
   if(invTab==='consumable'){
     const items=[
-      {ico:'🧪',name:'XP Potion S',type:'xp_s', desc:'+50 XP'},
-      {ico:'⚗️',name:'XP Potion M',type:'xp_m', desc:'+150 XP'},
-      {ico:'🔬',name:'XP Potion L',type:'xp_l', desc:'+400 XP'},
-      {ico:'🔮',name:'Common Dust',type:'dust_c',desc:'craft material'},
-      {ico:'💎',name:'Rare Dust',  type:'dust_r',desc:'craft material'},
-      {ico:'✨',name:'Legend Dust',type:'dust_l',desc:'craft material'},
+      {ico:'🧪',name:'XP Potion S',   type:'xp_s',  desc:'+50 XP'},
+      {ico:'⚗️',name:'XP Potion M',   type:'xp_m',  desc:'+150 XP'},
+      {ico:'🔬',name:'XP Potion L',   type:'xp_l',  desc:'+400 XP'},
+      {ico:'💧',name:'น้ำชูกำลัง S', type:'stam_s', desc:'ทีม +30 Stamina'},
+      {ico:'🧃',name:'น้ำชูกำลัง M', type:'stam_m', desc:'ทีม +60 Stamina'},
+      {ico:'⚡',name:'Energy MAX',     type:'stam_l', desc:'ทีม Stamina 100%'},
+      {ico:'🔮',name:'Common Dust',   type:'dust_c', desc:'craft material'},
+      {ico:'💎',name:'Rare Dust',     type:'dust_r', desc:'craft material'},
+      {ico:'✨',name:'Legend Dust',   type:'dust_l', desc:'craft material'},
     ];
     grid.innerHTML=items.map(c=>{
       const qty=consumables[c.type]||0;
@@ -2068,10 +2095,11 @@ function renderInvGrid(){
         <div class="ic-name">${c.name}</div>
         <div class="ic-desc">${c.desc}</div>
         <div style="font-family:Kanit;font-size:.8rem;color:var(--gold);margin:4px 0">×${qty}</div>
-        ${isXp?`<select id="xpTarget_${c.type}" style="margin-bottom:4px">
+        ${c.type.startsWith('xp')?`<select id="xpTarget_${c.type}" style="margin-bottom:4px">
           ${collection.map(p=>`<option value="${p.id}">${p.name} (Lv${p.lv})</option>`).join('')}
         </select>
-        <button class="si-buy" onclick="useXpPotion('${c.type}')">ใช้</button>`
+        <button class="si-buy" onclick="useXpPotion('${c.type}')">ใช้</button>`:
+        c.type.startsWith('stam')?`<button class="si-buy" onclick="useXpPotion('${c.type}')">ใช้เลย 💧</button>`
         :`<div style="font-size:.65rem;color:#7fa78d">วัตถุดิบ craft</div>`}
       </div>`;
     }).join('')||'<div class="inv-empty">ไม่มีของใช้</div>';
@@ -2125,6 +2153,15 @@ function unequipItem(itemIdx,slot){
 }
 function useXpPotion(type){
   if(!(consumables[type]>0)) return;
+  /* stamina drink */
+  if(type.startsWith('stam')){
+    const amt=type==='stam_l'?100:type==='stam_m'?60:30;
+    consumables[type]--;
+    deckPlayers().forEach(p=>p.stamina=type==='stam_l'?100:Math.min(100,p.stamina+amt));
+    saveGame();renderInvGrid();updateShopCoins();
+    sfxLvUp();showMomPop(`💧 ทีม +${amt} Stamina!`);
+    return;
+  }
   const sel=$(`xpTarget_${type}`);
   if(!sel) return;
   const player=collection.find(p=>p.id===sel.value);
@@ -2171,6 +2208,16 @@ function renderBadges(){
       <button class="dc-btn" onclick="removeBadge(${i})" style="font-size:.65rem">✕ ถอด</button>
     </div>`;
   }).join('');
+}
+function equipBadgeToItem(itemIdx,slot,slotIdx,badgeIdxStr){
+  const item=itemInventory[itemIdx];
+  if(!item) return;
+  if(!item.equippedBadges) item.equippedBadges=[];
+  const bi=badgeIdxStr===''?null:parseInt(badgeIdxStr);
+  item.equippedBadges[slotIdx]=bi;
+  saveGame();sfxClick();
+  renderInvGrid();
+  showMomPop(bi!=null?`✅ ติดตรา ${badges[bi]?.nm} แล้ว!`:'ถอดตราแล้ว');
 }
 function equipBadge(badgeIdx,playerId){
   const b=badges[badgeIdx];
@@ -2697,10 +2744,12 @@ function useSupportCard(i){
   applySupportEffect(c);
 }
 
-function startMatch(opponent,oppName,modeLabel){
+let _isReplayMatch=false;
+function startMatch(opponent,oppName,modeLabel,isReplay=false){
   if(!deckValid().ok){openDeck();return;}
   hideAll();$('matchUI').classList.remove('hidden');
   ai=opponent;scoreYou=0;scoreAi=0;turn=1;youAttacking=true;fx={};
+  _isReplayMatch=isReplay;
   momentum=50;updateMomentum(0);
   questProgress('match',1);
   /* init support + captain for this match */
@@ -2714,7 +2763,9 @@ function startMatch(opponent,oppName,modeLabel){
   /* captain skill: permanent team buff */
   const cap=deckPlayers().find(p=>p.skill==='captain');
   if(cap){deckPlayers().forEach(p=>{p.atk+=3;p.def+=3;});log('🎖️ <span class="good">กัปตัน! ทีม +3 ATK/DEF</span>');}
-  deckPlayers().forEach(p=>p.stamina=100);
+  /* รีเซ็ต stamina เฉพาะแมตช์ใหม่ — replay ต่อเนื่อง */
+  if(!_isReplayMatch) deckPlayers().forEach(p=>p.stamina=100);
+  else log('<span style="color:#e8b53a">🔄 Replay — stamina ต่อเนื่องจากแมตช์ก่อน!</span>');
   matchTactics=[...TACTICS].sort(()=>Math.random()-.5).slice(0,3).map(t=>({...t,used:false}));
   $('sYou').textContent=0;$('sAi').textContent=0;
   $('modeLabel').textContent=modeLabel;$('turnNow').textContent=1;
@@ -2939,6 +2990,14 @@ function finishDuel(attacker,defender,goal,youAtk){
       $('duelActions').innerHTML=`<button onclick="nextTurn()">เทิร์นถัดไป ▶</button>`;
   },250);
 }
+function replayTowerMilestone(floor){
+  hideAll();
+  /* เล่นซ้ำ milestone — ใช้ความยากเดิม ไม่รีเซ็ต stamina */
+  const mult=1+floor*.08;
+  mode='tower';
+  pendingCtx={replayMilestone:floor};
+  startMatch(genTeam(mult),`🗼 ชั้น ${floor} (Replay)`,`🗼 Milestone`,true);
+}
 function confirmQuitMatch(){
   if(confirm('ออกจากแมตช์? จะนับว่าแพ้ (ไม่ได้รางวัล)')) {
     /* นับว่าแพ้ */
@@ -3011,10 +3070,17 @@ function endMatch(){
           if(nextEP&&tp<nextEP.tpReq) desc+=`<br><small style="color:#e8b53a">⚡ ต้องการ TP ${nextEP.tpReq.toLocaleString()} เพื่อเข้าเล่น</small>`;
         }
         sfxLegend();
-        /* boss drop: legend dust การันตี */
-        const legendDustQty=1+(pendingCtx.stage?.isBoss?1:0);
-        consumables.dust_l=(consumables.dust_l||0)+legendDustQty;
-        desc+=`<br>✨ <b style="color:var(--legend)">Boss Drop: Legend Dust ×${legendDustQty}!</b>`;
+        /* boss drop: legend dust เฉพาะ EP 5+ เท่านั้น */
+        if(advEP>=5&&Math.random()<.50){
+          consumables.dust_l=(consumables.dust_l||0)+1;
+          desc+=`<br>✨ <b style="color:var(--legend)">Boss Drop: Legend Dust ×1!</b>`;
+        } else if(advEP>=3){
+          consumables.dust_r=(consumables.dust_r||0)+2;
+          desc+=`<br>💎 <b style="color:var(--gold)">Boss Drop: Rare Dust ×2!</b>`;
+        } else {
+          consumables.dust_c=(consumables.dust_c||0)+3;
+          desc+=`<br>🔮 Boss Drop: Common Dust ×3!`;
+        }
         /* drop_legend bonus stage */
         if(_stageBonus==='drop_legend'&&Math.random()<.3){
           const bonus=rollCard(true,true);collection.push(bonus);
@@ -3086,7 +3152,8 @@ function endMatch(){
         const bonus=rollCard(true);collection.push(bonus);
         drops.push(`🎁 การ์ดโบนัส: ${bonus.name}`);
         /* replay milestone — ไม่ขึ้นชั้น ให้เล่นซ้ำได้ */
-        desc+=`<br><button onclick="mode='tower';pendingCtx={};hideAll();openTower();" style="font-family:Kanit;font-size:.72rem;margin-top:4px;padding:4px 10px;border-radius:6px;background:#1e3a29;border:1px solid #2a5238;color:#7fd9a0;cursor:pointer">🔄 เล่น milestone ซ้ำ</button>`;
+        const _mFloor=twFloor; // save before increment
+        desc+=`<br><button onclick="replayTowerMilestone(${_mFloor})" style="font-family:Kanit;font-size:.72rem;margin-top:4px;padding:4px 10px;border-radius:6px;background:#1e3a29;border:1px solid #2a5238;color:#7fd9a0;cursor:pointer">🔄 เล่น milestone ซ้ำ (stamina ไม่รีเซ็ต)</button>`;
         desc+=` หรือ <b>ขึ้นชั้น ${twFloor+1}</b>`;
         twFloor++;
       } else {
