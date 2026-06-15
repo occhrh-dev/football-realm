@@ -132,6 +132,53 @@ h1,h2,h3,.kanit{font-family:'Kanit',sans-serif}
 .form-btn{font-family:'Kanit';font-size:.7rem;padding:4px 8px;border-radius:6px;border:1px solid #2a5238;background:transparent;color:#7fa78d;cursor:pointer;transition:all .12s}
 .form-btn.active{background:var(--gold);color:#1a1408;border-color:var(--gold);font-weight:700}
 .form-info{font-size:.68rem;color:#7fa78d;text-align:center;margin-top:4px;min-height:14px}
+/* ===== SHOP ===== */
+.shop-tabs{display:flex;gap:6px;margin-bottom:10px;justify-content:center;flex-wrap:wrap}
+.shop-tab{font-family:'Kanit';font-size:.78rem;padding:6px 14px;border-radius:7px;border:1px solid #2a5238;background:transparent;color:#7fa78d;cursor:pointer;transition:all .12s}
+.shop-tab.active{background:var(--gold);color:#1a1408;border-color:var(--gold);font-weight:700}
+.shop-panel{display:none;width:100%;max-width:560px}
+.shop-panel.active{display:block}
+.shop-section-title{font-family:'Kanit';font-size:.82rem;color:#7fa78d;margin:8px 0 6px}
+.shop-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-bottom:10px}
+.shop-item{background:#05130b;border:1.5px solid #1e3a29;border-radius:10px;padding:10px;text-align:center;transition:border-color .12s,transform .12s;position:relative}
+.shop-item:hover{border-color:var(--gold);transform:translateY(-2px)}
+.shop-item.tier-rare{border-color:rgba(232,181,58,.4)}
+.shop-item.tier-legend{border-color:rgba(255,122,217,.4)}
+.shop-item.daily-deal{border-color:#7fd9a0}
+.shop-item .si-ico{font-size:1.6rem;margin-bottom:4px}
+.shop-item .si-name{font-family:'Kanit';font-size:.78rem;color:var(--flood);margin-bottom:2px}
+.shop-item .si-desc{font-size:.65rem;color:#7fa78d;margin-bottom:6px;line-height:1.3}
+.shop-item .si-price{font-family:'Kanit';font-size:.82rem;color:var(--gold);margin-bottom:6px}
+.shop-item .si-price.old{text-decoration:line-through;color:#5a7060;font-size:.7rem}
+.shop-item .si-price.sale{color:#7fd9a0}
+.shop-item .si-tier{font-size:.58rem;padding:1px 5px;border-radius:3px;display:inline-block;margin-bottom:4px}
+.shop-item .si-tier.c{background:#1e2a1e;color:#a8c9b4}
+.shop-item .si-tier.r{background:#2a1e08;color:var(--gold)}
+.shop-item .si-tier.l{background:#2d0b22;color:var(--legend)}
+.shop-item .si-buy{font-family:'Kanit';font-size:.72rem;background:var(--gold);color:#1a1408;border:none;border-radius:6px;padding:5px 14px;cursor:pointer;width:100%;transition:filter .12s}
+.shop-item .si-buy:hover{filter:brightness(1.1)}
+.shop-item .si-buy:disabled{opacity:.4;cursor:not-allowed}
+.shop-item .daily-badge{position:absolute;top:-6px;right:8px;background:#7fd9a0;color:#04342c;font-family:'Kanit';font-size:.55rem;padding:1px 6px;border-radius:8px;font-weight:700}
+.shop-coin-bar{display:flex;align-items:center;justify-content:space-between;background:#05130b;border:1px solid #1e3a29;border-radius:8px;padding:6px 12px;margin-bottom:10px;width:100%;max-width:560px}
+.shop-coin-bar .sc-coins{font-family:'Kanit';font-size:.9rem;color:var(--gold)}
+.shop-coin-bar .sc-reset{font-size:.68rem;color:#7fa78d;cursor:pointer;text-decoration:underline}
+.daily-timer{font-size:.7rem;color:#7fa78d;text-align:center;margin-bottom:6px}
+/* ===== INV redesign ===== */
+.inv-tabs{display:flex;gap:5px;margin-bottom:8px;flex-wrap:wrap}
+.inv-tab{font-family:'Kanit';font-size:.72rem;padding:4px 10px;border-radius:6px;border:1px solid #2a5238;background:transparent;color:#7fa78d;cursor:pointer;transition:all .12s}
+.inv-tab.active{background:#1e3a29;color:var(--flood)}
+.inv-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:6px}
+.inv-card{background:#05130b;border:1.5px solid #1e3a29;border-radius:9px;padding:8px;text-align:center;position:relative}
+.inv-card.tier-rare{border-color:rgba(232,181,58,.35)}
+.inv-card.tier-legend{border-color:rgba(255,122,217,.35)}
+.inv-card .ic-ico{font-size:1.4rem;margin-bottom:3px}
+.inv-card .ic-name{font-family:'Kanit';font-size:.72rem;color:var(--flood);margin-bottom:2px}
+.inv-card .ic-desc{font-size:.62rem;color:#7fa78d;line-height:1.3;margin-bottom:5px}
+.inv-card .ic-slot{font-size:.58rem;padding:1px 5px;border-radius:3px;display:inline-block;margin-bottom:4px}
+.inv-card .ic-equipped{font-size:.6rem;color:#3d7bd9;margin-bottom:3px;min-height:14px}
+.inv-card select{font-family:'Sarabun';background:#0a1f13;color:var(--flood);border:1px solid #2a5238;border-radius:5px;padding:3px 4px;width:100%;font-size:.65rem;cursor:pointer}
+.inv-empty{color:#7fa78d;font-size:.85rem;text-align:center;padding:20px}
+
 /* ===== SUPPORT BAR ===== */
 .support-bar{width:100%;max-width:620px;display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;align-items:flex-start}
 .scard{display:flex;flex-direction:column;align-items:center;background:rgba(5,19,11,.9);border:1.5px solid #3d7bd9;border-radius:10px;padding:6px 8px;cursor:pointer;min-width:74px;max-width:90px;transition:transform .12s,border-color .12s;user-select:none;text-align:center}
@@ -474,9 +521,9 @@ button:focus-visible{outline:2px solid var(--flood);outline-offset:2px}
     <div class="mode" onclick="openPvp()" role="button" tabindex="0"><div class="mico">⚔️</div><div class="mnm">PvP จัดอันดับ</div><div class="mdesc" id="mPvp">ชิงแรงก์</div></div>
   </div>
   <div class="actions">
-    <button onclick="openShop()">🎰 กาชา</button>
+    <button onclick="openShop()">🏪 ร้านค้า</button>
     <button class="ghost" onclick="openDeck()">📋 จัดเด็ค</button>
-    <button class="ghost" onclick="openInv()">🎒 ไอเทม</button>
+    <button class="ghost" onclick="openInv()">🎒 กระเป๋า</button>
     <button class="ghost" onclick="openQuest()">🗒️ ภารกิจ</button>
   </div>
 </div>
@@ -525,19 +572,57 @@ button:focus-visible{outline:2px solid var(--flood);outline-offset:2px}
 
 <!-- ============ SHOP / DECK / INV / END ============ -->
 <div class="overlay hidden" id="shop">
-  <h1>🎰 ร้านกาชา</h1>
-  <p>เหรียญ: 🪙 <b id="shopCoins" style="color:var(--gold)"></b></p>
-  <div style="display:flex;gap:6px;margin-bottom:10px;justify-content:center">
-    <button class="gacha-type-btn active" onclick="setGachaType('player',this)" style="font-family:Kanit;font-size:.75rem;padding:5px 12px;border-radius:6px;border:1px solid #2a5238;background:var(--gold);color:#1a1408;cursor:pointer">⚽ นักเตะ</button>
-    <button class="gacha-type-btn" onclick="setGachaType('support',this)" style="font-family:Kanit;font-size:.75rem;padding:5px 12px;border-radius:6px;border:1px solid #2a5238;background:transparent;color:#7fa78d;cursor:pointer">⚡ Support</button>
-    <button class="gacha-type-btn" onclick="setGachaType('captain',this)" style="font-family:Kanit;font-size:.75rem;padding:5px 12px;border-radius:6px;border:1px solid #2a5238;background:transparent;color:#7fa78d;cursor:pointer">👑 Captain</button>
+  <h1>🏪 ร้านค้า</h1>
+  <div class="shop-coin-bar">
+    <span class="sc-coins">🪙 <span id="shopCoins"></span> เหรียญ</span>
+    <span class="sc-reset" onclick="refreshDailyShop()">🔄 รีเฟรช daily deals</span>
   </div>
-  <div class="packbtns">
-    <div class="pack" onclick="pull(50,false)" role="button" tabindex="0"><div class="pnm">📦 ซองธรรมดา</div><div class="prate">ธรรมดา 75% · แรร์ ⭐ 22%<br>ตำนาน 🌟 3%</div><div class="pcost">🪙 50</div></div>
-    <div class="pack premium" onclick="pull(120,true)" role="button" tabindex="0"><div class="pnm">💎 ซองพรีเมียม</div><div class="prate">ธรรมดา 40% · แรร์ ⭐ 48%<br>ตำนาน 🌟 12%</div><div class="pcost">🪙 120</div></div>
+  <div class="shop-tabs">
+    <button class="shop-tab active" onclick="switchShopTab('gacha',this)">🎰 กาชา</button>
+    <button class="shop-tab" onclick="switchShopTab('items',this)">🎽 ไอเทม</button>
+    <button class="shop-tab" onclick="switchShopTab('consumables',this)">⚗️ ของใช้</button>
+    <button class="shop-tab" onclick="switchShopTab('daily',this)">⭐ Daily Deal</button>
   </div>
-  <div class="gachareveal" id="gachaOut"></div>
-  <button class="ghost" onclick="goHome()">กลับสโมสร</button>
+
+  <!-- GACHA TAB -->
+  <div class="shop-panel active" id="shopGachaPanel">
+    <div style="display:flex;gap:6px;margin-bottom:10px;justify-content:center;flex-wrap:wrap">
+      <button class="gacha-type-btn active" onclick="setGachaType('player',this)" style="font-family:Kanit;font-size:.75rem;padding:5px 12px;border-radius:6px;border:1px solid #2a5238;background:var(--gold);color:#1a1408;cursor:pointer">⚽ นักเตะ</button>
+      <button class="gacha-type-btn" onclick="setGachaType('support',this)" style="font-family:Kanit;font-size:.75rem;padding:5px 12px;border-radius:6px;border:1px solid #2a5238;background:transparent;color:#7fa78d;cursor:pointer">⚡ Support</button>
+      <button class="gacha-type-btn" onclick="setGachaType('captain',this)" style="font-family:Kanit;font-size:.75rem;padding:5px 12px;border-radius:6px;border:1px solid #2a5238;background:transparent;color:#7fa78d;cursor:pointer">👑 Captain</button>
+    </div>
+    <div class="packbtns">
+      <div class="pack" onclick="pull(50,false)" role="button" tabindex="0"><div class="pnm">📦 ซองธรรมดา</div><div class="prate">ธรรมดา 75% · แรร์ ⭐ 22%<br>ตำนาน 🌟 3%</div><div class="pcost">🪙 50</div></div>
+      <div class="pack premium" onclick="pull(120,true)" role="button" tabindex="0"><div class="pnm">💎 ซองพรีเมียม</div><div class="prate">ธรรมดา 40% · แรร์ ⭐ 48%<br>ตำนาน 🌟 12%</div><div class="pcost">🪙 120</div></div>
+    </div>
+    <div class="gachareveal" id="gachaOut"></div>
+  </div>
+
+  <!-- ITEMS TAB -->
+  <div class="shop-panel" id="shopItemsPanel">
+    <div class="shop-section-title">🎽 เสื้อ</div>
+    <div class="shop-grid" id="shopShirts"></div>
+    <div class="shop-section-title">👟 รองเท้า</div>
+    <div class="shop-grid" id="shopShoes"></div>
+    <div class="shop-section-title">👖 กางเกง</div>
+    <div class="shop-grid" id="shopPants"></div>
+  </div>
+
+  <!-- CONSUMABLES TAB -->
+  <div class="shop-panel" id="shopConsPanel">
+    <div class="shop-section-title">⚗️ XP Potion</div>
+    <div class="shop-grid" id="shopPotions"></div>
+    <div class="shop-section-title">🔮 Dust (วัตถุดิบ craft)</div>
+    <div class="shop-grid" id="shopDust"></div>
+  </div>
+
+  <!-- DAILY DEAL TAB -->
+  <div class="shop-panel" id="shopDailyPanel">
+    <div class="daily-timer" id="dailyTimer"></div>
+    <div class="shop-grid" id="shopDaily"></div>
+  </div>
+
+  <button class="ghost" onclick="goHome()" style="margin-top:8px">กลับสโมสร</button>
 </div>
 
 <div class="overlay hidden" id="deckScr">
@@ -592,8 +677,19 @@ button:focus-visible{outline:2px solid var(--flood);outline-offset:2px}
 </div>
 
 <div class="overlay hidden" id="invScr">
-  <h1>🎒 กระเป๋าไอเทม</h1><div class="invwrap" id="invList"></div>
-  <button onclick="goHome()">กลับสโมสร</button>
+  <h1>🎒 กระเป๋า</h1>
+  <div class="shop-coin-bar">
+    <span class="sc-coins">🪙 <span id="invCoins"></span> เหรียญ</span>
+    <span style="font-size:.68rem;color:#7fa78d">🔮 Dust: <span id="invDust">0</span> · ✨ XP Pot: <span id="invPot">0</span></span>
+  </div>
+  <div class="inv-tabs">
+    <button class="inv-tab active" onclick="switchInvTab('shirt',this)">🎽 เสื้อ</button>
+    <button class="inv-tab" onclick="switchInvTab('shoe',this)">👟 รองเท้า</button>
+    <button class="inv-tab" onclick="switchInvTab('pants',this)">👖 กางเกง</button>
+    <button class="inv-tab" onclick="switchInvTab('consumable',this)">⚗️ ของใช้</button>
+  </div>
+  <div class="inv-grid" id="invGrid"></div>
+  <button class="ghost" onclick="goHome()" style="margin-top:8px">กลับสโมสร</button>
 </div>
 
 <!-- ============ DAILY QUEST ============ -->
@@ -1038,6 +1134,65 @@ function rollCaptainCard(premium=false){
 /* legacy compat */
 const ITEMS=ITEMS_DB;
 
+/* ===== SHOP DATA ===== */
+const SHOP_ITEMS_FIXED=[
+  /* SHIRTS */
+  {ico:'🎽',name:'เสื้อธรรมดา',     slot:'shirt', tier:'common', price:80,  passives:[], atk:4,  def:0},
+  {ico:'🎽',name:'เสื้อสายฟ้า',     slot:'shirt', tier:'rare',   price:280, passives:['power_shot'], atk:8,def:0},
+  {ico:'🎽',name:'เสื้อดาวเหนือ',   slot:'shirt', tier:'rare',   price:260, passives:['star_power'], atk:6,def:0},
+  {ico:'🎽',name:'เสื้อนักล่า',     slot:'shirt', tier:'rare',   price:300, passives:['ball_magnet'],atk:10,def:0},
+  {ico:'🎽',name:'เสื้อตำนาน',      slot:'shirt', tier:'legend', price:900, passives:['berserker_aura','shadow_strike'],atk:14,def:0},
+  {ico:'🎽',name:'เสื้อกัปตัน',     slot:'shirt', tier:'legend', price:1100,passives:['captains_armband','vampire_kit'],atk:10,def:4},
+  /* SHOES */
+  {ico:'👟',name:'รองเท้าธรรมดา',   slot:'shoe',  tier:'common', price:80,  passives:[], atk:3,  def:0},
+  {ico:'👟',name:'รองเท้าสายฟ้า',   slot:'shoe',  tier:'rare',   price:250, passives:['quick_recovery'],atk:6,def:0},
+  {ico:'👟',name:'รองเท้าจรวด',     slot:'shoe',  tier:'rare',   price:290, passives:['explosive_start'],atk:8,def:0},
+  {ico:'👟',name:'รองเท้าทอง',      slot:'shoe',  tier:'rare',   price:270, passives:['golden_boot'],atk:5,def:0},
+  {ico:'👟',name:'รองเท้าเทพ',      slot:'shoe',  tier:'legend', price:950, passives:['never_tire','speed_demon'],atk:10,def:0},
+  /* PANTS */
+  {ico:'👖',name:'กางเกงธรรมดา',    slot:'pants', tier:'common', price:80,  passives:[], atk:0, def:4},
+  {ico:'👖',name:'กางเกงเหล็ก',     slot:'pants', tier:'rare',   price:260, passives:['iron_wall'],atk:0,def:8},
+  {ico:'👖',name:'กางเกงมังกร',     slot:'pants', tier:'rare',   price:270, passives:['reflect'],atk:0,def:8},
+  {ico:'👖',name:'กางเกงนักสู้',    slot:'pants', tier:'rare',   price:250, passives:['last_stand'],atk:0,def:6},
+  {ico:'👖',name:'กางเกงตำนาน',     slot:'pants', tier:'legend', price:1000,passives:['unbreakable','all_rounder'],atk:2,def:14},
+];
+const SHOP_CONSUMABLES=[
+  {ico:'🧪',name:'XP Potion S',  type:'xp_s',  desc:'+50 XP ให้นักเตะ 1 คน',   price:60},
+  {ico:'⚗️',name:'XP Potion M',  type:'xp_m',  desc:'+150 XP ให้นักเตะ 1 คน',  price:150},
+  {ico:'🔬',name:'XP Potion L',  type:'xp_l',  desc:'+400 XP ให้นักเตะ 1 คน',  price:350},
+  {ico:'🔮',name:'Common Dust',  type:'dust_c', desc:'วัตถุดิบ craft ธรรมดา',    price:40},
+  {ico:'💎',name:'Rare Dust',    type:'dust_r', desc:'วัตถุดิบ craft แรร์',      price:100},
+  {ico:'✨',name:'Legend Dust',  type:'dust_l', desc:'วัตถุดิบ craft ตำนาน',    price:280},
+];
+
+/* consumable inventory */
+let consumables={xp_s:0,xp_m:0,xp_l:0,dust_c:0,dust_r:0,dust_l:0};
+
+/* item inventory (owned items not yet equipped) */
+let itemInventory=[]; // array of item objects from ITEMS_DB
+
+/* daily deals state */
+let dailyDeals=[];
+let dailyDate='';
+
+function genDailyDeals(){
+  const today=new Date().toDateString();
+  if(dailyDate===today&&dailyDeals.length) return;
+  dailyDate=today;
+  const pool=[...SHOP_ITEMS_FIXED,...SHOP_CONSUMABLES];
+  const picked=[];
+  const used=new Set();
+  while(picked.length<4){
+    const idx=rnd(pool.length);
+    if(used.has(idx)) continue;
+    used.add(idx);
+    const item={...pool[idx]};
+    item.salePrice=Math.round(item.price*.6);
+    picked.push(item);
+  }
+  dailyDeals=picked;
+}
+
 /* mode states */
 let advProgress=0,advChapter=1; // nodes cleared
 const ADV_CHAPTERS=[
@@ -1157,7 +1312,129 @@ function gainPXp(p,n){
 
 /* ============ NAV ============ */
 const SCREENS=['intro','home','advScr','lgScr','twScr','pvpScr','shop','deckScr','matchEnd','invScr','matchUI','questScr','profileScr'];
-function openShopFull(){hideAll();$('shop').classList.remove('hidden');$('shopCoins').textContent=coins;$('gachaOut').innerHTML='';gachaType='player';document.querySelectorAll('.gacha-type-btn')[0]?.classList.add('active');}
+/* ===== SHOP JS ===== */
+let shopTab='gacha';
+
+function openShopFull(){
+  hideAll();$('shop').classList.remove('hidden');
+  updateShopCoins();
+  gachaType='player';
+  document.querySelectorAll('.gacha-type-btn').forEach((b,i)=>b.classList.toggle('active',i===0));
+  $('gachaOut').innerHTML='';
+  genDailyDeals();
+  switchShopTab('gacha',document.querySelector('.shop-tab'));
+}
+function updateShopCoins(){
+  if($('shopCoins')) $('shopCoins').textContent=coins;
+  if($('invCoins')) $('invCoins').textContent=coins;
+  if($('invDust')) $('invDust').textContent=(consumables.dust_c||0)+(consumables.dust_r||0)+(consumables.dust_l||0);
+  if($('invPot')) $('invPot').textContent=(consumables.xp_s||0)+(consumables.xp_m||0)+(consumables.xp_l||0);
+}
+function switchShopTab(tab,btn){
+  shopTab=tab;
+  document.querySelectorAll('.shop-tab').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  document.querySelectorAll('.shop-panel').forEach(p=>p.classList.remove('active'));
+  const panels={gacha:'shopGachaPanel',items:'shopItemsPanel',consumables:'shopConsPanel',daily:'shopDailyPanel'};
+  const el=$(panels[tab]);
+  if(el) el.classList.add('active');
+  if(tab==='items') renderShopItems();
+  else if(tab==='consumables') renderShopCons();
+  else if(tab==='daily') renderDailyDeals();
+}
+function tierCls(tier){return tier==='legend'?'l':tier==='rare'?'r':'c';}
+function tierLabel(tier){return tier==='legend'?'🌟 Legend':tier==='rare'?'⭐ Rare':'⚪ Common';}
+
+function shopItemCard(item,price,salePrice=null,isDaily=false){
+  const tc=tierCls(item.tier||'common');
+  const passStr=item.passives?.map(pid=>ITEM_PASSIVES[pid]?.nm||pid).join(', ')||'—';
+  const slotIco=item.slot==='shirt'?'🎽':item.slot==='shoe'?'👟':item.slot==='pants'?'👖':'📦';
+  const displayPrice=salePrice||price;
+  const canAfford=coins>=displayPrice;
+  return `<div class="shop-item ${item.tier?'tier-'+item.tier:''} ${isDaily?'daily-deal':''}">
+    ${isDaily?'<div class="daily-badge">🔥 -40%</div>':''}
+    <div class="si-ico">${item.ico||slotIco}</div>
+    <div class="si-tier ${tc}">${tierLabel(item.tier||'common')}</div>
+    <div class="si-name">${item.name}</div>
+    <div class="si-desc">
+      ${item.atk?`⚔+${item.atk} `:''}${item.def?`🛡+${item.def} `:''}${item.desc||''}
+      ${item.passives?.length?`<br><span style="color:var(--gold)">✨ ${passStr}</span>`:''}
+    </div>
+    ${salePrice?`<div class="si-price old">🪙 ${price}</div><div class="si-price sale">🪙 ${salePrice}</div>`
+               :`<div class="si-price">🪙 ${price}</div>`}
+    <button class="si-buy" ${canAfford?'':`disabled`}
+      onclick="buyItem(${JSON.stringify(JSON.stringify(item))},${displayPrice})">
+      ${canAfford?'ซื้อ':'เหรียญไม่พอ'}
+    </button>
+  </div>`;
+}
+function consCard(item,isDaily=false,salePrice=null){
+  const displayPrice=salePrice||item.price;
+  const canAfford=coins>=displayPrice;
+  return `<div class="shop-item ${isDaily?'daily-deal':''}">
+    ${isDaily?'<div class="daily-badge">🔥 -40%</div>':''}
+    <div class="si-ico">${item.ico}</div>
+    <div class="si-name">${item.name}</div>
+    <div class="si-desc">${item.desc}</div>
+    ${salePrice?`<div class="si-price old">🪙 ${item.price}</div><div class="si-price sale">🪙 ${salePrice}</div>`
+               :`<div class="si-price">🪙 ${item.price}</div>`}
+    <button class="si-buy" ${canAfford?'':' disabled'}
+      onclick="buyCons('${item.type}',${displayPrice})">
+      ${canAfford?'ซื้อ':'เหรียญไม่พอ'}
+    </button>
+  </div>`;
+}
+
+function renderShopItems(){
+  ['Shirts','Shoes','Pants'].forEach((s,i)=>{
+    const slot=['shirt','shoe','pants'][i];
+    const el=$(`shop${s}`);
+    if(el) el.innerHTML=SHOP_ITEMS_FIXED.filter(it=>it.slot===slot)
+      .map(it=>shopItemCard(it,it.price)).join('');
+  });
+}
+function renderShopCons(){
+  const pot=SHOP_CONSUMABLES.filter(c=>c.type.startsWith('xp'));
+  const dust=SHOP_CONSUMABLES.filter(c=>c.type.startsWith('dust'));
+  if($('shopPotions')) $('shopPotions').innerHTML=pot.map(c=>consCard(c)).join('');
+  if($('shopDust')) $('shopDust').innerHTML=dust.map(c=>consCard(c)).join('');
+}
+function renderDailyDeals(){
+  const tmr=new Date();tmr.setHours(24,0,0,0);
+  const diff=tmr-Date.now();
+  const h=Math.floor(diff/3600000),m=Math.floor((diff%3600000)/60000);
+  if($('dailyTimer')) $('dailyTimer').textContent=`⏰ รีเฟรชใน ${h} ชม. ${m} น.`;
+  if($('shopDaily')) $('shopDaily').innerHTML=dailyDeals.map(item=>{
+    if(item.type) return consCard(item,true,item.salePrice);
+    return shopItemCard(item,item.price,item.salePrice,true);
+  }).join('');
+}
+function refreshDailyShop(){
+  const cost=50;
+  if(coins<cost){showMomPop('เหรียญไม่พอ!');return;}
+  if(!confirm(`ใช้ 🪙 ${cost} รีเฟรช Daily Deal?`)) return;
+  coins-=cost;updateShopCoins();
+  dailyDate='';genDailyDeals();
+  renderDailyDeals();saveGame();sfxClick();
+}
+
+function buyItem(itemJson,price){
+  const item=JSON.parse(itemJson);
+  if(coins<price){showMomPop('เหรียญไม่พอ!');return;}
+  coins-=price;
+  itemInventory.push({...item,_uid:uid++});
+  saveGame();updateShopCoins();
+  sfxRare();showMomPop('✅ ได้ '+item.name+'!');
+  setTimeout(()=>{switchShopTab(shopTab,null);},100);
+}
+function buyCons(type,price){
+  if(coins<price){showMomPop('เหรียญไม่พอ!');return;}
+  coins-=price;
+  consumables[type]=(consumables[type]||0)+1;
+  saveGame();updateShopCoins();sfxCard();
+  showMomPop('✅ ซื้อสำเร็จ!');
+  setTimeout(()=>switchShopTab(shopTab,null),100);
+}
 function hideAll(){SCREENS.forEach(i=>$(i).classList.add('hidden'));}
 function goHome(){
   hideAll();$('home').classList.remove('hidden');
@@ -1272,6 +1549,7 @@ function playPvp(){
 
 /* ============ GACHA / DECK / INV ============ */
 function openShop(){openShopFull();}
+function openShopTab(tab){openShopFull();setTimeout(()=>switchShopTab(tab,document.querySelectorAll('.shop-tab')[["gacha","items","consumables","daily"].indexOf(tab)]),50);}
 /* Gacha type selector */
 let gachaType='player'; // 'player' | 'support' | 'captain'
 function setGachaType(t,btn){
@@ -1415,7 +1693,109 @@ function toggleDeck(id){
   saveGame();
   renderDeck();
 }
+/* ===== INVENTORY JS ===== */
+let invTab='shirt';
+
 function openInv(){
+  hideAll();$('invScr').classList.remove('hidden');
+  updateShopCoins();
+  switchInvTab('shirt',document.querySelector('.inv-tab'));
+}
+function switchInvTab(tab,btn){
+  invTab=tab;
+  document.querySelectorAll('.inv-tab').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  renderInvGrid();
+}
+function renderInvGrid(){
+  const grid=$('invGrid');
+  if(!grid) return;
+  if(invTab==='consumable'){
+    const items=[
+      {ico:'🧪',name:'XP Potion S',type:'xp_s', desc:'+50 XP'},
+      {ico:'⚗️',name:'XP Potion M',type:'xp_m', desc:'+150 XP'},
+      {ico:'🔬',name:'XP Potion L',type:'xp_l', desc:'+400 XP'},
+      {ico:'🔮',name:'Common Dust',type:'dust_c',desc:'craft material'},
+      {ico:'💎',name:'Rare Dust',  type:'dust_r',desc:'craft material'},
+      {ico:'✨',name:'Legend Dust',type:'dust_l',desc:'craft material'},
+    ];
+    grid.innerHTML=items.map(c=>{
+      const qty=consumables[c.type]||0;
+      if(!qty) return '';
+      const isXp=c.type.startsWith('xp');
+      return `<div class="inv-card">
+        <div class="ic-ico">${c.ico}</div>
+        <div class="ic-name">${c.name}</div>
+        <div class="ic-desc">${c.desc}</div>
+        <div style="font-family:Kanit;font-size:.8rem;color:var(--gold);margin:4px 0">×${qty}</div>
+        ${isXp?`<select id="xpTarget_${c.type}" style="margin-bottom:4px">
+          ${collection.map(p=>`<option value="${p.id}">${p.name} (Lv${p.lv})</option>`).join('')}
+        </select>
+        <button class="si-buy" onclick="useXpPotion('${c.type}')">ใช้</button>`
+        :`<div style="font-size:.65rem;color:#7fa78d">วัตถุดิบ craft</div>`}
+      </div>`;
+    }).join('')||'<div class="inv-empty">ไม่มีของใช้</div>';
+    return;
+  }
+  /* equipment tabs */
+  const owned=itemInventory.filter(it=>it.slot===invTab);
+  if(!owned.length){grid.innerHTML='<div class="inv-empty">ยังไม่มีไอเทม slot นี้<br><span style="font-size:.75rem">ซื้อได้ที่ 🏪 ร้านค้า</span></div>';return;}
+  grid.innerHTML=owned.map((item,idx)=>{
+    const tc=tierCls(item.tier||'common');
+    const passStr=item.passives?.map(pid=>ITEM_PASSIVES[pid]?.nm||pid).join(', ')||'—';
+    /* find who has this equipped */
+    const equipped=collection.filter(p=>p[item.slot]&&p[item.slot]._uid===item._uid);
+    const equippedNames=equipped.map(p=>p.name).join(', ');
+    return `<div class="inv-card tier-${item.tier||'common'}">
+      <div class="ic-ico">${item.ico}</div>
+      <div class="si-tier ${tc}" style="font-size:.55rem;padding:1px 4px;border-radius:3px;display:inline-block;margin-bottom:3px">${tierLabel(item.tier||'common')}</div>
+      <div class="ic-name">${item.name}</div>
+      <div class="ic-desc">
+        ${item.atk?`⚔+${item.atk} `:''}${item.def?`🛡+${item.def}`:''}
+        ${item.passives?.length?`<br><span style="color:var(--gold);font-size:.58rem">✨ ${passStr}</span>`:''}
+      </div>
+      <div class="ic-equipped">${equippedNames?`📌 ${equippedNames}`:''}</div>
+      <select onchange="equipItem(${idx},'${invTab}',this.value)" style="margin-bottom:4px;font-size:.65rem;background:#0a1f13;color:var(--flood);border:1px solid #2a5238;border-radius:5px;padding:3px;width:100%">
+        <option value="">— สวมให้นักเตะ —</option>
+        ${collection.map(p=>{
+          const hasThisSlot=p[item.slot]&&p[item.slot]._uid===item._uid;
+          return `<option value="${p.id}" ${hasThisSlot?'selected':''}>${p.name} (${p.pos})</option>`;
+        }).join('')}
+      </select>
+      <button class="si-buy" style="background:#1e3a29;color:#f0907f;font-size:.68rem" onclick="unequipItem(${idx},'${invTab}')">✕ ถอด</button>
+    </div>`;
+  }).join('');
+}
+function equipItem(itemIdx,slot,playerId){
+  if(!playerId) return;
+  const item=itemInventory[itemIdx];
+  if(!item) return;
+  const player=collection.find(p=>p.id===playerId);
+  if(!player) return;
+  /* unequip from previous owner */
+  collection.forEach(p=>{if(p[slot]&&p[slot]._uid===item._uid) p[slot]=null;});
+  player[slot]=item;
+  saveGame();renderInvGrid();sfxClick();
+  showMomPop(`✅ สวม ${item.name} ให้ ${player.name}`);
+}
+function unequipItem(itemIdx,slot){
+  const item=itemInventory[itemIdx];
+  collection.forEach(p=>{if(p[slot]&&p[slot]._uid===item._uid) p[slot]=null;});
+  saveGame();renderInvGrid();sfxClick();
+}
+function useXpPotion(type){
+  if(!(consumables[type]>0)) return;
+  const sel=$(`xpTarget_${type}`);
+  if(!sel) return;
+  const player=collection.find(p=>p.id===sel.value);
+  if(!player) return;
+  const xpAmt=type==='xp_l'?400:type==='xp_m'?150:50;
+  consumables[type]--;
+  gainPXp(player,xpAmt);
+  saveGame();renderInvGrid();updateShopCoins();
+  sfxLvUp();showMomPop(`⚗️ ${player.name} +${xpAmt} XP!`);
+}
+function openInv_old(){
   hideAll();$('invScr').classList.remove('hidden');
   const list=$('invList');
   if(!inventory.length){list.innerHTML=`<p style="color:#7fa78d">กระเป๋าว่าง — ชนะแมตช์เพื่อลุ้นดรอป!</p>`;}
@@ -2281,6 +2661,9 @@ function saveGame(){
       supportDeckIds:supportDeck.map(c=>c?c.id:null),
       captainId:captainCard?captainCard.id:null,
     }));
+    localStorage.setItem('frShop2',JSON.stringify({
+      consumables,itemInventory,dailyDeals,dailyDate,
+    }));
   }catch(e){}
 }
 function loadGame(){
@@ -2311,6 +2694,13 @@ function loadGame(){
       if(fc.captainCollection) captainCollection=fc.captainCollection;
       if(fc.supportDeckIds) supportDeck=fc.supportDeckIds.map(id=>id?supportCollection.find(c=>c.id===id)||null:null).filter(Boolean);
       if(fc.captainId) captainCard=captainCollection.find(c=>c.id===fc.captainId)||null;
+    }catch(e){}
+    try{
+      const fs=JSON.parse(localStorage.getItem('frShop2')||'{}');
+      if(fs.consumables) consumables={...consumables,...fs.consumables};
+      if(fs.itemInventory) itemInventory=fs.itemInventory;
+      if(fs.dailyDeals) dailyDeals=fs.dailyDeals;
+      if(fs.dailyDate) dailyDate=fs.dailyDate;
     }catch(e){}
     return true;
   }catch(e){return false;}
