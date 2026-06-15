@@ -132,6 +132,28 @@ h1,h2,h3,.kanit{font-family:'Kanit',sans-serif}
 .form-btn{font-family:'Kanit';font-size:.7rem;padding:4px 8px;border-radius:6px;border:1px solid #2a5238;background:transparent;color:#7fa78d;cursor:pointer;transition:all .12s}
 .form-btn.active{background:var(--gold);color:#1a1408;border-color:var(--gold);font-weight:700}
 .form-info{font-size:.68rem;color:#7fa78d;text-align:center;margin-top:4px;min-height:14px}
+/* ===== LOGIN BAR + PROFILE ===== */
+.login-bar{width:100%;max-width:480px;display:flex;align-items:center;gap:10px;background:rgba(5,19,11,.8);border:1px solid #1e3a29;border-radius:10px;padding:8px 12px;margin-top:10px}
+.login-avatar{width:40px;height:40px;border-radius:50%;overflow:hidden;background:#0a1f13;border:2px solid #2a5238;flex-shrink:0}
+.login-avatar img{width:100%;height:100%;object-fit:cover}
+.login-avatar.logged{border-color:var(--gold)}
+.login-info{flex:1;min-width:0}
+.login-name{font-family:'Kanit';font-weight:700;font-size:.9rem;color:var(--flood);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.login-sub{font-size:.7rem;color:#7fa78d}
+.login-btn-sm{font-family:'Kanit';font-size:.72rem;padding:5px 12px;border-radius:7px;border:1px solid #2a5238;background:transparent;color:#7fa78d;cursor:pointer;white-space:nowrap;transition:all .12s;flex-shrink:0}
+.login-btn-sm.active{background:var(--gold);color:#1a1408;border-color:var(--gold)}
+.login-btn-sm.danger{border-color:#d94f3d;color:#f0907f}
+.login-btn-sm.danger:hover{background:#d94f3d;color:#fff}
+/* profile setup screen */
+.profile-setup{width:100%;max-width:400px;display:flex;flex-direction:column;align-items:center;gap:12px}
+.avatar-grid{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;max-width:320px}
+.av-opt{width:56px;height:56px;border-radius:50%;overflow:hidden;border:2px solid #2a5238;cursor:pointer;transition:border-color .12s,transform .12s;background:#0a1f13}
+.av-opt img{width:100%;height:100%;object-fit:cover}
+.av-opt:hover{border-color:var(--gold);transform:scale(1.08)}
+.av-opt.selected{border-color:var(--gold);box-shadow:0 0 10px rgba(232,181,58,.5)}
+.name-input{font-family:'Sarabun';font-size:1rem;background:#05130b;color:var(--flood);border:1.5px solid #2a5238;border-radius:8px;padding:8px 14px;width:100%;max-width:280px;outline:none;text-align:center}
+.name-input:focus{border-color:var(--gold)}
+
 /* ===== MATCH CARD (horizontal) ===== */
 .cardm{
   display:flex;align-items:stretch;
@@ -382,19 +404,43 @@ button:focus-visible{outline:2px solid var(--flood);outline-offset:2px}
 <!-- ============ INTRO ============ -->
 <div class="overlay center" id="intro">
   <h1>⚽ FOOTBALL REALM <span style="color:var(--legend)">v5</span></h1>
-  <h3 class="kanit">4 โหมดเกม</h3>
-  <p>🗺️ <b>ผจญภัย</b> — เดินแมพทำเควสต์ ปลายทางมีนักเตะตำนานรอ<br>
-  🏟️ <b>ลีกฤดูกาล</b> — 5 นัด เก็บแต้มชิงแชมป์ตาราง<br>
-  🗼 <b>หอคอยไร้ที่สิ้นสุด</b> — ไต่ชั้น ยากขึ้นเรื่อยๆ ไปได้ไกลแค่ไหน?<br>
-  ⚔️ <b>PvP จัดอันดับ</b> — ดวลเด็คคู่แข่ง สะสมแต้มแรงก์ Bronze → Legend<br>
-  <small>(PvP ในต้นแบบนี้เป็นการจำลองเด็คคู่แข่ง — เกมจริงจะเชื่อมผู้เล่นออนไลน์)</small></p>
-  <button onclick="goHome()">เข้าสโมสร 🏟️</button>
-  <button class="ghost" id="loginBtn" onclick="cloudLogin()" style="font-size:.8rem;margin-top:4px">☁️ เข้าสู่ระบบ (บันทึก Cloud)</button>
+  <p style="font-size:.82rem;max-width:460px;color:#a8c9b4;line-height:1.8">
+    🗺️ <b>ผจญภัย</b> 3 บท · 🏟️ <b>ลีก</b> 3 ฤดูกาล · 🗼 <b>หอคอย</b> ไร้ที่สิ้นสุด · ⚔️ <b>PvP</b> จัดอันดับ
+  </p>
+  <!-- login bar -->
+  <div class="login-bar" id="loginBar">
+    <div class="login-avatar" id="introAvatar">
+      <img id="introAvatarImg" src="" alt="" onerror="this.style.display='none'">
+    </div>
+    <div class="login-info">
+      <div class="login-name" id="introName">ยังไม่ได้เข้าสู่ระบบ</div>
+      <div class="login-sub" id="introSub">เซฟจะเก็บไว้ที่เครื่องนี้เท่านั้น</div>
+    </div>
+    <button class="login-btn-sm active" id="loginBtn" onclick="cloudLogin()">☁️ เข้าสู่ระบบ</button>
+  </div>
+  <button onclick="goHome()" style="margin-top:6px">เข้าสโมสร 🏟️</button>
+  <button class="ghost" id="introLogout" onclick="cloudLogout()" style="font-size:.75rem;display:none">ออกจากระบบ</button>
+</div>
+
+<!-- ============ PROFILE SETUP ============ -->
+<div class="overlay center hidden" id="profileScr">
+  <h1 style="font-size:1.3rem">✏️ ตั้งค่าโปรไฟล์</h1>
+  <div class="profile-setup">
+    <p style="font-size:.85rem;color:#7fa78d">เลือก Avatar</p>
+    <div class="avatar-grid" id="avatarGrid"></div>
+    <p style="font-size:.85rem;color:#7fa78d;margin-top:4px">ชื่อในเกม</p>
+    <input class="name-input" id="profileNameInput" type="text" maxlength="16" placeholder="ใส่ชื่อ (สูงสุด 16 ตัว)">
+    <div style="display:flex;gap:10px;margin-top:4px">
+      <button onclick="saveProfile()">บันทึก ✔</button>
+      <button class="ghost" onclick="skipProfile()">ข้าม</button>
+    </div>
+  </div>
 </div>
 
 <!-- ============ HOME ============ -->
 <div class="overlay hidden" id="home" style="justify-content:center">
   <h1>🏟️ สโมสรราชันสายฟ้า</h1>
+  <div id="homeUserBadge" style="display:none;align-items:center;margin-bottom:4px"></div>
   <p id="homeInfo" style="margin-bottom:4px"></p>
   <div class="modes">
     <div class="mode" onclick="openAdv()" role="button" tabindex="0"><div class="mico">🗺️</div><div class="mnm">ผจญภัย</div><div class="mdesc" id="mAdv">เดินแมพ ตามหาตำนาน</div></div>
@@ -901,10 +947,11 @@ function gainPXp(p,n){
 }
 
 /* ============ NAV ============ */
-const SCREENS=['intro','home','advScr','lgScr','twScr','pvpScr','shop','deckScr','matchEnd','invScr','matchUI'];
+const SCREENS=['intro','home','advScr','lgScr','twScr','pvpScr','shop','deckScr','matchEnd','invScr','matchUI','questScr','profileScr'];
 function hideAll(){SCREENS.forEach(i=>$(i).classList.add('hidden'));}
 function goHome(){
   hideAll();$('home').classList.remove('hidden');
+  updateHomeProfile();
   $('homeInfo').innerHTML=`👑 Lv.${capLv} · 🪙 ${coins} · การ์ด ${collection.length} ใบ · เด็ค ${deck.length}/6<br>${synText()}`;
   const _nodes=currentChapterNodes();
   $('mAdv').textContent=advChapter>ADV_CHAPTERS.length?'✅ พิชิตทุกบทแล้ว!':`บท${advChapter}: ด่าน ${advProgress+1}/${_nodes.length}`;
@@ -1595,12 +1642,100 @@ async function cloudLoad(){
   const {data}=await _sb.from('saves').select('save_data').eq('user_id',_sbUser.id).single();
   return data?.save_data||null;
 }
-function updateLoginUI(){
-  const el=$('loginBtn');
-  if(!el) return;
-  el.textContent=_sbUser?'☁️ '+(_sbUser.email||'').split('@')[0]+' ✓':'☁️ เข้าสู่ระบบ';
-  el.style.borderColor=_sbUser?'#7fd9a0':'#2a5238';
+/* ===== PLAYER PROFILE ===== */
+let playerProfile={name:'',avatarSeed:'',avatarIdx:0};
+const AVATAR_SEEDS=['coach1','striker','defender','keeper','winger','captain','legend','rookie','veteran','star'];
+
+function loadProfile(){
+  try{const p=JSON.parse(localStorage.getItem('frProfile')||'{}');
+    if(p.name) playerProfile={...playerProfile,...p};}catch(e){}
 }
+function saveProfileData(){
+  localStorage.setItem('frProfile',JSON.stringify(playerProfile));
+}
+function getAvatarURL(seed){
+  return `https://api.dicebear.com/7.x/lorelei/svg?seed=${encodeURIComponent(seed)}&backgroundColor=0a2e16`;
+}
+function openProfileSetup(){
+  hideAll();$('profileScr').classList.remove('hidden');
+  /* build avatar grid */
+  const grid=$('avatarGrid');
+  grid.innerHTML=AVATAR_SEEDS.map((s,i)=>`
+    <div class="av-opt ${i===playerProfile.avatarIdx?'selected':''}" onclick="selectAvatar(${i},'${s}')">
+      <img src="${getAvatarURL(s)}" loading="lazy" alt="">
+    </div>`).join('');
+  $('profileNameInput').value=playerProfile.name||(_sbUser?(_sbUser.email||'').split('@')[0]:'');
+}
+function selectAvatar(idx,seed){
+  playerProfile.avatarIdx=idx;
+  playerProfile.avatarSeed=seed;
+  document.querySelectorAll('.av-opt').forEach((el,i)=>el.classList.toggle('selected',i===idx));
+}
+function saveProfile(){
+  const nm=($('profileNameInput').value||'').trim();
+  if(!nm){$('profileNameInput').style.borderColor='#d94f3d';return;}
+  playerProfile.name=nm;
+  if(!playerProfile.avatarSeed) playerProfile.avatarSeed=AVATAR_SEEDS[0];
+  saveProfileData();
+  updateLoginUI();
+  goHome();
+}
+function skipProfile(){
+  if(!playerProfile.name) playerProfile.name=_sbUser?(_sbUser.email||'ผู้เล่น').split('@')[0]:'ผู้เล่น';
+  if(!playerProfile.avatarSeed) playerProfile.avatarSeed=AVATAR_SEEDS[rnd(AVATAR_SEEDS.length)];
+  saveProfileData();
+  updateLoginUI();
+  goHome();
+}
+
+function updateLoginUI(){
+  /* login bar in intro */
+  const nameEl=$('introName');
+  const subEl=$('introSub');
+  const imgEl=$('introAvatarImg');
+  const loginBtn=$('loginBtn');
+  const logoutBtn=$('introLogout');
+  const avatarEl=$('introAvatar');
+  if(!nameEl) return;
+
+  loadProfile();
+
+  if(_sbUser){
+    const displayName=playerProfile.name||(_sbUser.email||'').split('@')[0];
+    const avatarSeed=playerProfile.avatarSeed||'coach1';
+    nameEl.textContent=displayName;
+    subEl.textContent='☁️ เซฟ Cloud เปิดใช้งานแล้ว';
+    subEl.style.color='#7fd9a0';
+    imgEl.src=getAvatarURL(avatarSeed);
+    imgEl.style.display='block';
+    avatarEl.classList.add('logged');
+    if(loginBtn){loginBtn.textContent='✏️ แก้ไขโปรไฟล์';loginBtn.onclick=openProfileSetup;}
+    if(logoutBtn) logoutBtn.style.display='inline-block';
+  } else {
+    nameEl.textContent='ยังไม่ได้เข้าสู่ระบบ';
+    subEl.textContent='เซฟจะเก็บไว้ที่เครื่องนี้เท่านั้น';
+    subEl.style.color='#7fa78d';
+    imgEl.style.display='none';
+    avatarEl.classList.remove('logged');
+    if(loginBtn){loginBtn.textContent='☁️ เข้าสู่ระบบ';loginBtn.onclick=cloudLogin;}
+    if(logoutBtn) logoutBtn.style.display='none';
+  }
+  /* update home header if open */
+  updateHomeProfile();
+}
+function updateHomeProfile(){
+  const el=$('homeUserBadge');
+  if(!el) return;
+  if(_sbUser||playerProfile.name){
+    const nm=playerProfile.name||(_sbUser?(_sbUser.email||'').split('@')[0]:'ผู้เล่น');
+    const seed=playerProfile.avatarSeed||'coach1';
+    el.innerHTML=`<img src="${getAvatarURL(seed)}" style="width:28px;height:28px;border-radius:50%;border:1.5px solid var(--gold);vertical-align:middle;margin-right:6px" loading="lazy"><span style="font-family:Kanit;font-weight:700;color:var(--gold)">${nm}</span>`;
+    el.style.display='flex';
+  } else {
+    el.style.display='none';
+  }
+}
+loadProfile();
 /* check session on load */
 (async()=>{
   try{
@@ -1615,6 +1750,11 @@ function updateLoginUI(){
         if(cloud&&!localStorage.getItem(SAVE_KEY)){
           localStorage.setItem(SAVE_KEY,JSON.stringify(cloud));
           loadGame();
+        }
+        /* prompt profile setup if new user */
+        loadProfile();
+        if(!playerProfile.name){
+          setTimeout(()=>openProfileSetup(),800);
         }
       }
     }
