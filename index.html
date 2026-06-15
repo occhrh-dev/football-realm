@@ -178,6 +178,27 @@ h1,h2,h3,.kanit{font-family:'Kanit',sans-serif}
 .inv-card .ic-equipped{font-size:.6rem;color:#3d7bd9;margin-bottom:3px;min-height:14px}
 .inv-card select{font-family:'Sarabun';background:#0a1f13;color:var(--flood);border:1px solid #2a5238;border-radius:5px;padding:3px 4px;width:100%;font-size:.65rem;cursor:pointer}
 .inv-empty{color:#7fa78d;font-size:.85rem;text-align:center;padding:20px}
+/* craft / dismantle / enchant */
+.craft-recipe{background:#05130b;border:1.5px solid #1e3a29;border-radius:10px;padding:12px;margin-bottom:8px;width:100%;max-width:480px}
+.craft-recipe .cr-title{font-family:'Kanit';font-size:.85rem;color:var(--flood);margin-bottom:6px}
+.craft-recipe .cr-row{display:flex;align-items:center;gap:8px;font-size:.78rem;color:#a8c9b4;flex-wrap:wrap}
+.craft-recipe .cr-btn{font-family:'Kanit';font-size:.75rem;background:var(--gold);color:#1a1408;border:none;border-radius:6px;padding:5px 14px;cursor:pointer;margin-top:6px}
+.craft-recipe .cr-btn:disabled{opacity:.4;cursor:not-allowed;background:#2a5238;color:#7fa78d}
+.dismantle-card{background:#05130b;border:1.5px solid #1e3a29;border-radius:9px;padding:8px 10px;display:flex;align-items:center;gap:8px;margin-bottom:6px;width:100%;max-width:480px}
+.dismantle-card .dc-info{flex:1;min-width:0}
+.dismantle-card .dc-nm{font-family:'Kanit';font-size:.78rem;color:var(--flood)}
+.dismantle-card .dc-sub{font-size:.65rem;color:#7fa78d}
+.dismantle-card .dc-btn{font-family:'Kanit';font-size:.68rem;background:transparent;border:1px solid #d94f3d;color:#f0907f;border-radius:6px;padding:4px 10px;cursor:pointer;flex-shrink:0}
+.enchant-card{background:#05130b;border:1.5px solid #1e3a29;border-radius:10px;padding:10px 12px;margin-bottom:8px;width:100%;max-width:480px}
+.enchant-card .enc-title{font-family:'Kanit';font-size:.8rem;color:var(--flood);margin-bottom:4px}
+.enchant-level{display:flex;gap:4px;margin-bottom:6px}
+.enc-star{font-size:1rem;color:#1e3a29}
+.enc-star.lit{color:var(--gold);text-shadow:0 0 6px rgba(232,181,58,.5)}
+.enc-star.legend-lit{color:var(--legend);text-shadow:0 0 6px rgba(255,122,217,.5)}
+.enc-cost{font-size:.7rem;color:#7fa78d;margin-bottom:6px}
+.enc-btn{font-family:'Kanit';font-size:.75rem;background:linear-gradient(135deg,#3d1060,#1e0a40);color:var(--legend);border:1px solid var(--legend);border-radius:6px;padding:5px 14px;cursor:pointer}
+.enc-btn:disabled{opacity:.4;cursor:not-allowed}
+.enc-badge{display:inline-block;font-family:'Kanit';font-size:.6rem;padding:1px 5px;border-radius:3px;margin-left:4px}
 
 /* ===== SUPPORT BAR ===== */
 .support-bar{width:100%;max-width:620px;display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;align-items:flex-start}
@@ -697,6 +718,9 @@ button:focus-visible{outline:2px solid var(--flood);outline-offset:2px}
     <button class="inv-tab" onclick="switchInvTab('shoe',this)">👟 รองเท้า</button>
     <button class="inv-tab" onclick="switchInvTab('pants',this)">👖 กางเกง</button>
     <button class="inv-tab" onclick="switchInvTab('consumable',this)">⚗️ ของใช้</button>
+    <button class="inv-tab" onclick="switchInvTab('dismantle',this)">🔄 ย่อย</button>
+    <button class="inv-tab" onclick="switchInvTab('craft',this)">⚗️ Craft</button>
+    <button class="inv-tab" onclick="switchInvTab('enchant',this)">✨ Enchant</button>
   </div>
   <div class="inv-grid" id="invGrid"></div>
   <button class="ghost" onclick="goHome()" style="margin-top:8px">กลับสโมสร</button>
@@ -1943,7 +1967,10 @@ function switchInvTab(tab,btn){
   invTab=tab;
   document.querySelectorAll('.inv-tab').forEach(b=>b.classList.remove('active'));
   if(btn) btn.classList.add('active');
-  renderInvGrid();
+  if(tab==='dismantle') renderDismantle();
+  else if(tab==='craft') renderCraft();
+  else if(tab==='enchant') renderEnchant();
+  else renderInvGrid();
 }
 function renderInvGrid(){
   const grid=$('invGrid');
@@ -2033,6 +2060,173 @@ function useXpPotion(type){
   saveGame();renderInvGrid();updateShopCoins();
   sfxLvUp();showMomPop(`⚗️ ${player.name} +${xpAmt} XP!`);
 }
+/* ===== DISMANTLE (ย่อยการ์ด) ===== */
+const DISMANTLE_YIELD={legend:{dust_l:3,dust_r:1},rare:{dust_r:2,dust_c:1},common:{dust_c:2}};
+function dustLabel(type){return type==='dust_l'?'✨ Legend Dust':type==='dust_r'?'💎 Rare Dust':'🔮 Common Dust';}
+
+function renderDismantle(){
+  const grid=$('invGrid');
+  const notInDeck=collection.filter(p=>!deck.includes(p.id));
+  if(!notInDeck.length){grid.innerHTML='<div class="inv-empty">ไม่มีการ์ดนอกเด็คให้ย่อย</div>';return;}
+  grid.innerHTML='<div style="width:100%;max-width:480px"><p style="font-size:.75rem;color:#7fa78d;margin-bottom:8px">ย่อยการ์ดที่ไม่ได้ใช้ → Dust สำหรับ Craft/Enchant<br>⚠️ การ์ดในเด็คจะไม่แสดง</p>'+
+    notInDeck.map((p,i)=>{
+      const tier=p.legend?'legend':p.rare?'rare':'common';
+      const yield_=DISMANTLE_YIELD[tier];
+      const yieldTxt=Object.entries(yield_).map(([k,v])=>`${dustLabel(k)} ×${v}`).join(' + ');
+      const tc=p.legend?'var(--legend)':p.rare?'var(--gold)':'#a8c9b4';
+      return `<div class="dismantle-card">
+        <img src="${portraitURL(p)}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;border:1.5px solid ${tc}" loading="lazy">
+        <div class="dc-info">
+          <div class="dc-nm" style="color:${tc}">${p.name} <span style="font-size:.6rem">${p.pos} Lv${p.lv}</span></div>
+          <div class="dc-sub">→ ${yieldTxt}</div>
+        </div>
+        <button class="dc-btn" onclick="dismantleCard('${p.id}')">ย่อย</button>
+      </div>`;
+    }).join('')+'</div>';
+}
+
+function dismantleCard(pid){
+  const p=collection.find(x=>x.id===pid);
+  if(!p) return;
+  if(deck.includes(pid)){showMomPop('การ์ดอยู่ในเด็ค ถอดออกก่อน!');return;}
+  if(!confirm(`ย่อย "${p.name}" ? การ์ดจะหายถาวร`)) return;
+  const tier=p.legend?'legend':p.rare?'rare':'common';
+  const yield_=DISMANTLE_YIELD[tier];
+  Object.entries(yield_).forEach(([k,v])=>consumables[k]=(consumables[k]||0)+v);
+  collection=collection.filter(x=>x.id!==pid);
+  saveGame(); updateShopCoins(); sfxCard();
+  showMomPop('🔮 ย่อยสำเร็จ! ได้ Dust แล้ว');
+  renderDismantle();
+}
+
+/* ===== CRAFT ===== */
+const CRAFT_RECIPES=[
+  {id:'c2r_shirt', name:'เสื้อแรร์',  ico:'🎽', result:{...ITEMS_DB.find(i=>i.slot==='shirt'&&i.tier==='rare')},
+   cost:{dust_c:0,dust_r:2}, desc:'Common Dust ×0 + Rare Dust ×2 → เสื้อแรร์ random'},
+  {id:'c2r_shoe',  name:'รองเท้าแรร์',ico:'👟', result:{...ITEMS_DB.find(i=>i.slot==='shoe'&&i.tier==='rare')},
+   cost:{dust_c:0,dust_r:2}, desc:'Rare Dust ×2 → รองเท้าแรร์ random'},
+  {id:'c2r_pants', name:'กางเกงแรร์', ico:'👖', result:{...ITEMS_DB.find(i=>i.slot==='pants'&&i.tier==='rare')},
+   cost:{dust_c:0,dust_r:2}, desc:'Rare Dust ×2 → กางเกงแรร์ random'},
+  {id:'r2l_shirt', name:'เสื้อตำนาน',  ico:'🎽', result:null,
+   cost:{dust_r:0,dust_l:3}, desc:'Legend Dust ×3 → เสื้อตำนาน random', isLegend:true, slot:'shirt'},
+  {id:'r2l_shoe',  name:'รองเท้าตำนาน',ico:'👟', result:null,
+   cost:{dust_r:0,dust_l:3}, desc:'Legend Dust ×3 → รองเท้าตำนาน random', isLegend:true, slot:'shoe'},
+  {id:'r2l_pants', name:'กางเกงตำนาน', ico:'👖', result:null,
+   cost:{dust_r:0,dust_l:3}, desc:'Legend Dust ×3 → กางเกงตำนาน random', isLegend:true, slot:'pants'},
+  {id:'sup_card',  name:'Support Card', ico:'⚡', result:null,
+   cost:{dust_c:3,dust_r:1}, desc:'Common Dust ×3 + Rare Dust ×1 → Support Card random', isSupport:true},
+  {id:'cap_card',  name:'Captain Card', ico:'👑', result:null,
+   cost:{dust_r:3,dust_l:1}, desc:'Rare Dust ×3 + Legend Dust ×1 → Captain Card (Rare+)', isCaptain:true},
+];
+
+function canCraft(recipe){
+  return Object.entries(recipe.cost).every(([k,v])=>(consumables[k]||0)>=v);
+}
+function renderCraft(){
+  const grid=$('invGrid');
+  /* dust summary */
+  const dustSummary=`<div style="background:#05130b;border:1px solid #1e3a29;border-radius:8px;padding:8px 12px;margin-bottom:10px;width:100%;max-width:480px;font-size:.78rem;display:flex;gap:12px;flex-wrap:wrap">
+    <span>🔮 Common: <b style="color:#a8c9b4">${consumables.dust_c||0}</b></span>
+    <span>💎 Rare: <b style="color:var(--gold)">${consumables.dust_r||0}</b></span>
+    <span>✨ Legend: <b style="color:var(--legend)">${consumables.dust_l||0}</b></span>
+  </div>`;
+  grid.innerHTML=dustSummary+CRAFT_RECIPES.map(r=>{
+    const ok=canCraft(r);
+    const costTxt=Object.entries(r.cost).filter(([,v])=>v>0).map(([k,v])=>`${dustLabel(k)} ×${v}`).join(' + ');
+    const tierColor=r.isLegend?'var(--legend)':r.isCaptain?'var(--legend)':'var(--gold)';
+    return `<div class="craft-recipe">
+      <div class="cr-title">${r.ico} ${r.name} <span style="font-size:.65rem;color:${tierColor}">${r.isLegend||r.isCaptain?'🌟 Legend':'⭐ Rare'}</span></div>
+      <div class="cr-row">ต้องการ: ${costTxt}</div>
+      <div style="font-size:.65rem;color:#7fa78d;margin-top:3px">${r.desc}</div>
+      <div style="font-size:.68rem;color:${ok?'#7fd9a0':'#f0907f'};margin-top:2px">${ok?'✅ วัตถุดิบครบ':'❌ Dust ไม่พอ'}</div>
+      <button class="cr-btn" ${ok?'':' disabled'} onclick="doCraft('${r.id}')">Craft เลย!</button>
+    </div>`;
+  }).join('');
+}
+
+function doCraft(rid){
+  const r=CRAFT_RECIPES.find(x=>x.id===rid);
+  if(!r||!canCraft(r)) return;
+  /* deduct cost */
+  Object.entries(r.cost).forEach(([k,v])=>consumables[k]=(consumables[k]||0)-v);
+  let resultName='';
+  if(r.isSupport){
+    const c=rollSupportCard();supportCollection.push(c);resultName=c.nm;sfxRare();
+  } else if(r.isCaptain){
+    const c=rollCaptainCard(true);captainCollection.push(c);resultName=c.nm||c.id;sfxLegend();
+  } else if(r.isLegend){
+    const pool=ITEMS_DB.filter(i=>i.slot===r.slot&&i.tier==='legend');
+    const item={...pool[rnd(pool.length)],_uid:uid++};
+    itemInventory.push(item);resultName=item.name;sfxLegend();
+  } else {
+    const pool=ITEMS_DB.filter(i=>i.slot===r.result?.slot&&i.tier==='rare');
+    const item={...pool[rnd(pool.length)],_uid:uid++};
+    itemInventory.push(item);resultName=item.name;sfxRare();
+  }
+  saveGame();updateShopCoins();
+  showMomPop(`✅ Craft สำเร็จ! ได้ ${resultName}`);
+  renderCraft();
+}
+
+/* ===== ENCHANT ===== */
+const ENCHANT_COST=[
+  {dust_c:3},          // +1
+  {dust_c:3,dust_r:1}, // +2
+  {dust_r:2,dust_l:1}, // +3
+  {dust_r:3,dust_l:2}, // +4
+  {dust_l:4},          // +5
+];
+const ENCHANT_BONUS=[0,5,10,16,22,30]; // ATK+DEF ที่ได้เพิ่ม
+
+function renderEnchant(){
+  const grid=$('invGrid');
+  const cards=collection.filter(p=>p.enchant===undefined||p.enchant<5);
+  if(!cards.length){grid.innerHTML='<div class="inv-empty">การ์ดทุกใบ Enchant +5 หมดแล้ว! 🌟</div>';return;}
+  grid.innerHTML='<p style="font-size:.72rem;color:#7fa78d;margin-bottom:8px;width:100%;max-width:480px">ใช้ Dust ตีบวกการ์ด → ATK+DEF เพิ่ม · +5 สูงสุด</p>'+
+    sortCollection(cards).map(p=>{
+      const lv=p.enchant||0;
+      const nextLv=lv+1;
+      const cost=ENCHANT_COST[lv];
+      const canEnch=cost&&Object.entries(cost).every(([k,v])=>(consumables[k]||0)>=v);
+      const stars=Array.from({length:5},(_,i)=>`<span class="enc-star ${i<lv?(lv>=5?'legend-lit':'lit'):''}">★</span>`).join('');
+      const costTxt=cost?Object.entries(cost).map(([k,v])=>`${dustLabel(k)} ×${v}`).join(' + '):'MAX';
+      const tierColor=p.legend?'var(--legend)':p.rare?'var(--gold)':'#a8c9b4';
+      const bonus=ENCHANT_BONUS[lv];
+      return `<div class="enchant-card">
+        <div class="enc-title" style="color:${tierColor}">${p.name} <span style="font-size:.6rem">${p.pos} ${p.nat}</span>
+          ${lv>0?`<span class="enc-badge" style="background:rgba(232,181,58,.15);color:var(--gold)">+${lv} ✨</span>`:''}
+        </div>
+        <div class="enchant-level">${stars}</div>
+        <div style="font-size:.68rem;color:#a8c9b4;margin-bottom:4px">⚔${p.atk} 🛡${p.def}${bonus>0?` <span style="color:var(--gold)">(+${bonus} จาก enchant)</span>`:''}</div>
+        ${lv<5?`<div class="enc-cost">${lv+1 === 5?'🌟':'⬆️'} +${nextLv}: ${costTxt}</div>
+        <button class="enc-btn" ${canEnch?'':' disabled'} onclick="doEnchant('${p.id}')">
+          Enchant +${nextLv} ${canEnch?'✨':'(Dust ไม่พอ)'}
+        </button>`:`<div style="font-size:.8rem;color:var(--legend);font-family:Kanit">👑 MAX ENCHANT!</div>`}
+      </div>`;
+    }).join('');
+}
+
+function doEnchant(pid){
+  const p=collection.find(x=>x.id===pid);
+  if(!p) return;
+  const lv=p.enchant||0;
+  if(lv>=5){showMomPop('MAX แล้ว!');return;}
+  const cost=ENCHANT_COST[lv];
+  if(!Object.entries(cost).every(([k,v])=>(consumables[k]||0)>=v)){
+    showMomPop('Dust ไม่พอ!');return;
+  }
+  Object.entries(cost).forEach(([k,v])=>consumables[k]-=v);
+  p.enchant=(p.enchant||0)+1;
+  /* apply stat bonus */
+  const addedBonus=ENCHANT_BONUS[p.enchant]-ENCHANT_BONUS[p.enchant-1];
+  p.atk+=Math.ceil(addedBonus/2);
+  p.def+=Math.floor(addedBonus/2);
+  saveGame();updateShopCoins();
+  if(p.enchant===5) sfxLegend(); else sfxRare();
+  showMomPop(`✨ Enchant +${p.enchant} สำเร็จ! ATK/DEF +${addedBonus}`);
+  renderEnchant();
+}
+
 function openInv_old(){
   hideAll();$('invScr').classList.remove('hidden');
   const list=$('invList');
@@ -2107,7 +2301,7 @@ function cardHTML(p,clickable,advantage=false,miniMode=false){
     </div>
     <div class="portrait-wrap"><img class="portrait" src="${portraitURL(p)}" alt="" loading="lazy" onerror="this.style.display='none'"></div>
     <div class="card-body">
-      <div class="nm" title="${p.name}">${p.name}</div>
+      <div class="nm" title="${p.name}">${p.name}${p.enchant>0?`<span style="font-size:.52rem;color:var(--gold);margin-left:2px">+${p.enchant}✨</span>`:''}</div>
       <div class="elem-row">${elemChip(p.elem)}${afBonusTxt}</div>
       <div class="stat-row"><span>⚔<b>${e.atk}</b></span><span>🛡<b>${e.def}</b></span><span style="color:#7fa78d">${p.stamina}%</span></div>
       <div class="stam"><i style="width:${p.stamina}%"></i></div>
@@ -2159,7 +2353,7 @@ function cardMatch(p,clickable,advantage=false){
     </div>
     <div class="m-info">
       <div class="m-top">
-        <span class="m-nm" title="${p.name}">${p.name}</span>
+        <span class="m-nm" title="${p.name}">${p.name}${p.enchant>0?`<span style="font-size:.5rem;color:var(--gold)"> +${p.enchant}✨</span>`:''}</span>
         <span class="m-nat">${p.nat}</span>
         <span class="m-lv">Lv${p.lv}</span>
         ${arrowHtml}
