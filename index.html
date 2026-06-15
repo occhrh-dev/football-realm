@@ -194,6 +194,66 @@ button:focus-visible{outline:2px solid var(--flood);outline-offset:2px}
 .rpbar{width:240px;height:10px;background:#0a1f13;border-radius:5px;overflow:hidden;margin:4px auto}
 .rpbar i{display:block;height:100%;background:linear-gradient(90deg,var(--purple),var(--legend));transition:width .4s}
 @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+
+/* ===== GACHA ANIMATION ===== */
+.gacha-overlay{position:fixed;inset:0;background:rgba(3,10,6,.97);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:50;animation:fadeInO .25s ease}
+@keyframes fadeInO{from{opacity:0}to{opacity:1}}
+.gacha-beam{position:absolute;width:3px;background:linear-gradient(to top,transparent,rgba(255,255,255,.85),transparent);border-radius:2px;animation:beam 1s ease-in-out infinite alternate}
+@keyframes beam{from{opacity:.3;height:60%}to{opacity:.9;height:90%}}
+.gacha-card-reveal{animation:cardReveal .5s cubic-bezier(.17,.67,.35,1.35) forwards}
+@keyframes cardReveal{0%{transform:scale(.1) rotate(-15deg);opacity:0}60%{transform:scale(1.12) rotate(3deg)}100%{transform:scale(1) rotate(0deg);opacity:1}}
+.gacha-glow-common{box-shadow:0 0 30px rgba(168,201,180,.6)}
+.gacha-glow-rare{box-shadow:0 0 50px rgba(232,181,58,.9),0 0 100px rgba(232,181,58,.4)}
+.gacha-glow-legend{box-shadow:0 0 60px rgba(255,122,217,1),0 0 120px rgba(255,122,217,.5),0 0 200px rgba(255,122,217,.2)}
+.gacha-sparkle{position:absolute;border-radius:50%;animation:sparkle var(--sd,.6s) ease-in-out var(--ss,0s) infinite alternate}
+@keyframes sparkle{from{opacity:0;transform:scale(.5)}to{opacity:1;transform:scale(1.4)}}
+.gacha-tier-txt{font-family:'Kanit';font-weight:800;font-size:1.6rem;animation:tierPop .4s cubic-bezier(.17,.67,.35,1.35) .3s both}
+@keyframes tierPop{from{transform:scale(0);opacity:0}to{transform:scale(1);opacity:1}}
+.pity-bar-wrap{width:100%;max-width:300px;background:#0a1f13;border-radius:5px;overflow:hidden;height:8px;margin:4px auto 0}
+.pity-bar-fill{height:100%;background:linear-gradient(90deg,var(--purple),var(--legend));transition:width .4s}
+.pity-txt{font-size:.7rem;color:#7fa78d;text-align:center;margin-top:2px}
+
+/* ===== MOMENTUM BAR ===== */
+.momentum-wrap{width:100%;max-width:620px;display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.momentum-label{font-family:'Kanit';font-size:.72rem;color:#7fa78d;min-width:32px}
+.momentum-track{flex:1;height:12px;background:#0a1f13;border-radius:6px;overflow:hidden;border:1px solid #1e3a29;position:relative}
+.momentum-fill{height:100%;border-radius:6px;transition:width .4s,background .4s}
+.momentum-center{position:absolute;left:50%;top:0;width:2px;height:100%;background:#2a5238}
+.momentum-hot{background:linear-gradient(90deg,#d94f3d,#ff9d7a);animation:hotPulse 1s ease-in-out infinite alternate}
+.momentum-cold{background:linear-gradient(90deg,#3d7bd9,#7ad9ff)}
+.momentum-neutral{background:linear-gradient(90deg,#2a5238,#7fd9a0)}
+@keyframes hotPulse{from{filter:brightness(1)}to{filter:brightness(1.25)}}
+.momentum-bonus-pop{position:fixed;top:38%;left:50%;transform:translate(-50%,-50%);font-family:'Kanit';font-weight:800;font-size:1.3rem;color:var(--gold);text-shadow:0 0 12px rgba(232,181,58,.8);pointer-events:none;z-index:40;animation:mBonusPop .9s ease forwards}
+@keyframes mBonusPop{0%{opacity:1;transform:translate(-50%,-50%) scale(.8)}40%{transform:translate(-50%,-80%) scale(1.1)}100%{opacity:0;transform:translate(-50%,-130%) scale(.9)}}
+
+/* ===== DAILY QUEST & ACHIEVEMENT ===== */
+.quest-list{width:100%;max-width:480px}
+.quest-item{display:flex;align-items:center;gap:10px;background:rgba(5,19,11,.85);border:1px solid #1e3a29;border-radius:8px;padding:9px 12px;margin-bottom:7px}
+.quest-item.done{border-color:#7fd9a0;opacity:.7}
+.quest-ico{font-size:1.2rem;min-width:24px}
+.quest-info{flex:1}
+.quest-nm{font-family:'Kanit';font-weight:600;font-size:.85rem}
+.quest-prog{font-size:.72rem;color:#7fa78d;margin-top:1px}
+.quest-prog-bar{height:4px;background:#0a1f13;border-radius:2px;overflow:hidden;margin-top:4px}
+.quest-prog-fill{height:100%;background:linear-gradient(90deg,var(--purple),#d3a7ff);transition:width .4s}
+.quest-reward{font-family:'Kanit';font-size:.8rem;color:var(--gold);text-align:right;min-width:52px}
+.quest-claim{font-family:'Kanit';font-size:.75rem;background:var(--gold);color:#1a1408;border:none;border-radius:6px;padding:4px 10px;cursor:pointer}
+.ach-wrap{width:100%;max-width:480px;display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.ach-badge{width:90px;border-radius:10px;background:rgba(20,12,40,.85);border:1.5px solid #3a2a60;padding:8px;text-align:center;font-size:.68rem;color:#c9b8e8}
+.ach-badge.unlocked{border-color:var(--gold);background:linear-gradient(160deg,#2e2410,#15110a)}
+.ach-badge .ach-ico{font-size:1.5rem}
+.ach-badge .ach-nm{font-family:'Kanit';font-weight:600;font-size:.7rem;margin:3px 0 0;color:var(--gold)}
+.ach-badge.locked{opacity:.4;filter:grayscale(.8)}
+.ach-notif{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:linear-gradient(160deg,#2e2410,#15110a);border:2px solid var(--gold);border-radius:12px;padding:10px 20px;z-index:45;font-family:'Kanit';font-weight:700;color:var(--gold);font-size:.95rem;text-align:center;animation:achSlide .4s ease,achFade 2s ease 2.5s forwards;pointer-events:none}
+@keyframes achSlide{from{transform:translateX(-50%) translateY(40px);opacity:0}to{transform:translateX(-50%) translateY(0);opacity:1}}
+@keyframes achFade{to{opacity:0}}
+
+/* ===== DECK FILTER ===== */
+.deck-filter{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin:6px 0;width:100%;max-width:620px}
+.fbtn{font-family:'Kanit';font-size:.75rem;background:transparent;color:#7fa78d;border:1px solid #2a5238;border-radius:6px;padding:4px 10px;cursor:pointer;transition:background .12s,color .12s}
+.fbtn.active{background:var(--gold);color:#1a1408;border-color:var(--gold)}
+.deck-search{font-family:'Sarabun';font-size:.85rem;background:#05130b;color:var(--flood);border:1px solid #2a5238;border-radius:8px;padding:6px 12px;width:100%;max-width:300px;outline:none}
+.deck-search:focus{border-color:var(--gold)}
 @media (max-width:480px){.cardp{width:90px}.cardp .nm{font-size:.72rem}.tcard{width:108px}}
 </style>
 </head>
@@ -225,6 +285,7 @@ button:focus-visible{outline:2px solid var(--flood);outline-offset:2px}
     <button onclick="openShop()">🎰 กาชา</button>
     <button class="ghost" onclick="openDeck()">📋 จัดเด็ค</button>
     <button class="ghost" onclick="openInv()">🎒 ไอเทม</button>
+    <button class="ghost" onclick="openQuest()">🗒️ ภารกิจ</button>
   </div>
 </div>
 
@@ -286,6 +347,20 @@ button:focus-visible{outline:2px solid var(--flood);outline-offset:2px}
   <h1>📋 จัดเด็ค</h1>
   <div class="deckstat" id="deckStat"></div>
   <div class="synergy" id="deckSyn"></div>
+  <input class="deck-search" type="text" id="deckSearch" placeholder="🔍 ค้นหาชื่อนักเตะ..." oninput="renderDeck()" style="margin:4px 0">
+  <div class="deck-filter">
+    <button class="fbtn active" onclick="setFilter('all',this)">ทั้งหมด</button>
+    <button class="fbtn" onclick="setFilter('ST',this)">ST</button>
+    <button class="fbtn" onclick="setFilter('WG',this)">WG</button>
+    <button class="fbtn" onclick="setFilter('MF',this)">MF</button>
+    <button class="fbtn" onclick="setFilter('DF',this)">DF</button>
+    <button class="fbtn" onclick="setFilter('fire',this)">🔥</button>
+    <button class="fbtn" onclick="setFilter('wind',this)">💨</button>
+    <button class="fbtn" onclick="setFilter('tech',this)">🎯</button>
+    <button class="fbtn" onclick="setFilter('rare',this)">⭐ แรร์</button>
+    <button class="fbtn" onclick="setFilter('legend',this)">🌟 ตำนาน</button>
+    <button class="fbtn" onclick="setFilter('indeck',this)">📌 ในเด็ค</button>
+  </div>
   <p style="font-size:.82rem">แตะการ์ดเพื่อเลือกเข้า/ออกเด็ค (ขอบฟ้า = อยู่ในเด็ค)</p>
   <div class="hand" id="collection"></div>
   <div class="actions"><button id="deckOk" onclick="goHome()">บันทึกเด็ค ✔</button></div>
@@ -301,7 +376,17 @@ button:focus-visible{outline:2px solid var(--flood);outline-offset:2px}
   <button onclick="goHome()">กลับสโมสร</button>
 </div>
 
-<div class="lvup hidden" id="lvupPop"></div>
+<!-- ============ DAILY QUEST ============ -->
+<div class="overlay hidden" id="questScr">
+  <h1>📋 ภารกิจประจำวัน</h1>
+  <p style="font-size:.82rem;color:#7fa78d" id="questReset"></p>
+  <div class="quest-list" id="questList"></div>
+  <h2 class="kanit" style="margin-top:10px;font-size:1rem">🏅 ความสำเร็จ</h2>
+  <div class="ach-wrap" id="achWrap"></div>
+  <button class="ghost" onclick="goHome()">กลับสโมสร</button>
+</div>
+
+
 
 <!-- ============ MATCH UI ============ -->
 <div id="matchUI" class="hidden" style="width:100%;display:flex;flex-direction:column;align-items:center">
@@ -309,6 +394,14 @@ button:focus-visible{outline:2px solid var(--flood);outline-offset:2px}
   <span class="lv">👑 Lv.<span id="capLv">1</span></span>
   <div class="xpbar"><i id="capXp" style="width:0%"></i></div>
   <span class="coin">🪙 <span id="coins">150</span></span>
+</div>
+<div class="momentum-wrap" id="momentumWrap">
+  <span class="momentum-label" id="momLabelL" style="font-size:.65rem">🔵</span>
+  <div class="momentum-track">
+    <div class="momentum-center"></div>
+    <div class="momentum-fill momentum-neutral" id="momFill" style="width:50%;margin-left:25%"></div>
+  </div>
+  <span class="momentum-label" style="text-align:right;font-size:.65rem" id="momLabelR">🔴</span>
 </div>
 <div class="scoreboard">
   <div class="team you">⚡ ราชันสายฟ้า</div>
@@ -902,7 +995,376 @@ function resetSave(){
     location.reload();
   }
 }
-// load on start: skip intro if a save exists
+
+/* ============ WEB AUDIO ============ */
+let _ac=null;
+function ac(){if(!_ac)_ac=new(window.AudioContext||window.webkitAudioContext)();return _ac;}
+function playTone(freq,dur,type='sine',vol=0.18){
+  try{
+    const c=ac(),o=c.createOscillator(),g=c.createGain();
+    o.connect(g);g.connect(c.destination);
+    o.type=type;o.frequency.setValueAtTime(freq,c.currentTime);
+    g.gain.setValueAtTime(vol,c.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001,c.currentTime+dur);
+    o.start();o.stop(c.currentTime+dur);
+  }catch(e){}
+}
+function sfxGoal(){playTone(523,.12,'square',.22);setTimeout(()=>playTone(659,.12,'square',.22),120);setTimeout(()=>playTone(784,.25,'square',.25),240);}
+function sfxSave(){playTone(392,.15,'sawtooth',.15);setTimeout(()=>playTone(330,.2,'sawtooth',.12),150);}
+function sfxCard(){playTone(660,.08,'sine',.15);}
+function sfxRare(){playTone(440,.1,'sine',.2);setTimeout(()=>playTone(554,.1,'sine',.2),100);setTimeout(()=>playTone(659,.25,'sine',.25),200);}
+function sfxLegend(){[440,554,659,880].forEach((f,i)=>setTimeout(()=>playTone(f,.15,'sine',.28),i*90));}
+function sfxLvUp(){[523,659,784,1046].forEach((f,i)=>setTimeout(()=>playTone(f,.12,'square',.2),i*80));}
+function sfxClick(){playTone(440,.06,'sine',.08);}
+
+/* ============ MOMENTUM ============ */
+let momentum=50; // 0=AI dominates, 100=you dominate, 50=even
+function updateMomentum(delta){
+  momentum=Math.max(5,Math.min(95,momentum+delta));
+  const pct=momentum;
+  const fill=document.getElementById('momFill');
+  if(!fill)return;
+  fill.className='momentum-fill '+(pct>=65?'momentum-hot':pct<=35?'momentum-cold':'momentum-neutral');
+  if(pct>=50){
+    fill.style.width=(pct-50)*2+'%';
+    fill.style.marginLeft='50%';
+  }else{
+    fill.style.width=(50-pct)*2+'%';
+    fill.style.marginLeft=pct+'%';
+  }
+  document.getElementById('momLabelL').textContent=pct>=65?'⚡🔥':'🔵';
+  document.getElementById('momLabelR').textContent=pct<=35?'🔴🔥':'🔴';
+}
+function momentumBonus(){
+  // momentum bonus: if player is hot (>=70), get +atk bonus this duel
+  if(momentum>=70) return Math.floor((momentum-60)/5);
+  if(momentum<=30) return -Math.floor((40-momentum)/5);
+  return 0;
+}
+function showMomPop(txt){
+  const el=document.createElement('div');
+  el.className='momentum-bonus-pop';el.textContent=txt;
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(),1100);
+}
+
+/* ============ GACHA ANIMATION ============ */
+let _pity=0;
+function pull(cost,premium){
+  if(coins<cost){$('gachaOut').innerHTML=`<p style="color:#f0907f">เหรียญไม่พอ!</p>`;return;}
+  coins-=cost;$('coins').textContent=coins;$('shopCoins').textContent=coins;
+  _pity++;
+  // pity system: guarantee rare at 10, legend at 30
+  let c;
+  if(_pity>=30){c=rollCard(true,true);_pity=0;}
+  else if(_pity>=10&&!premium){c=rollCard(false,false,true);} // force rare min
+  else c=rollCard(premium);
+  collection.push(c);
+  saveGame();
+  showGachaReveal(c);
+  // quest progress
+  questProgress('gacha',1);
+}
+function showGachaReveal(c){
+  const tier=c.legend?'legend':c.rare?'rare':'common';
+  const tierTxt=c.legend?'🌟 ตำนาน!':c.rare?'⭐ แรร์!':'ธรรมดา';
+  const tierColor=c.legend?'var(--legend)':c.rare?'var(--gold)':'#a8c9b4';
+
+  // build overlay
+  const ov=document.createElement('div');
+  ov.className='gacha-overlay';
+  ov.id='gachaOv';
+
+  // beams (legend/rare only)
+  if(tier!=='common'){
+    const beamColors=tier==='legend'?['#ff7ad9','#d3a7ff','#ff7ad9']:['#e8b53a','#fff5cc','#e8b53a'];
+    for(let i=0;i<6;i++){
+      const b=document.createElement('div');
+      b.className='gacha-beam';
+      b.style.cssText=`left:${15+i*14}%;top:5%;height:70%;background:linear-gradient(to top,transparent,${beamColors[i%3]},transparent);opacity:${.4+i*.08};animation-delay:${i*.15}s`;
+      ov.appendChild(b);
+    }
+  }
+
+  // sparkles
+  if(tier!=='common'){
+    for(let i=0;i<12;i++){
+      const sp=document.createElement('div');
+      const sz=4+Math.random()*8;
+      sp.className='gacha-sparkle';
+      sp.style.cssText=`width:${sz}px;height:${sz}px;background:${tier==='legend'?'#ff7ad9':'#e8b53a'};left:${Math.random()*90}%;top:${Math.random()*90}%;--sd:${.4+Math.random()*.6}s;--ss:${Math.random()*.5}s`;
+      ov.appendChild(sp);
+    }
+  }
+
+  // tier text
+  const tt=document.createElement('div');
+  tt.className='gacha-tier-txt';
+  tt.style.color=tierColor;tt.textContent=tierTxt;
+  ov.appendChild(tt);
+
+  // card wrapper
+  const cw=document.createElement('div');
+  cw.style.cssText='margin-top:16px;position:relative';
+  cw.innerHTML=cardHTML(c,false);
+  cw.firstElementChild.className+=` gacha-card-reveal gacha-glow-${tier}`;
+  ov.appendChild(cw);
+
+  // pity info
+  const pi=document.createElement('div');
+  pi.innerHTML=`<div class="pity-bar-wrap"><div class="pity-bar-fill" style="width:${Math.min(100,(_pity/30)*100)}%"></div></div><div class="pity-txt">Pity ${_pity}/30 — ทุก 10 ดึง: การันตีแรร์</div>`;
+  ov.appendChild(pi);
+
+  // tap to close
+  const closeBtn=document.createElement('button');
+  closeBtn.style.cssText='margin-top:16px';
+  closeBtn.textContent='รับการ์ด ✔';
+  closeBtn.onclick=()=>{ov.remove();$('gachaOut').innerHTML='';$('shopCoins').textContent=coins;};
+  ov.appendChild(closeBtn);
+
+  document.body.appendChild(ov);
+
+  // SFX
+  if(tier==='legend') sfxLegend();
+  else if(tier==='rare') sfxRare();
+  else sfxCard();
+}
+// override rollCard to support forced rare
+const _origRollCard=rollCard;
+function rollCard(premium,forceLegend=false,forceRare=false){
+  const r=Math.random();
+  let tier;
+  if(forceLegend) tier='legend';
+  else if(forceRare) tier=r<.08?'legend':'rare';
+  else tier=premium?(r<.12?'legend':r<.6?'rare':'common'):(r<.03?'legend':r<.25?'rare':'common');
+  const pos=['ST','WG','MF','DF'][rnd(4)];
+  const isAtk=pos==='ST'||pos==='WG';
+  let base=(tier==='legend'?88:tier==='rare'?76:62)+rnd(8);
+  const atk=isAtk?base:(pos==='MF'?base-6:Math.round(base*.45));
+  const def=isAtk?Math.round(base*.45):(pos==='MF'?base-6:base);
+  const sk=tier!=='common'?SKILLS[rnd(SKILLS.length)]:{};
+  return P(FIRST[rnd(FIRST.length)]+' '+LAST[rnd(LAST.length)],pos,atk,def,
+    NATIONS[rnd(NATIONS.length)],ELEMKEYS[rnd(3)],{r:tier==='common'?null:tier,...sk});
+}
+
+/* ============ DECK FILTER ============ */
+let deckFilter='all';
+function setFilter(f,btn){
+  deckFilter=f;
+  document.querySelectorAll('.fbtn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  sfxClick();
+  renderDeck();
+}
+function filteredCollection(){
+  const q=($('deckSearch')?.value||'').toLowerCase();
+  return collection.filter(p=>{
+    if(q&&!p.name.toLowerCase().includes(q)) return false;
+    if(deckFilter==='all') return true;
+    if(deckFilter==='rare') return p.rare&&!p.legend;
+    if(deckFilter==='legend') return p.legend;
+    if(deckFilter==='indeck') return deck.includes(p.id);
+    if(['ST','WG','MF','DF'].includes(deckFilter)) return p.pos===deckFilter;
+    if(['fire','wind','tech'].includes(deckFilter)) return p.elem===deckFilter;
+    return true;
+  });
+}
+
+/* ============ DAILY QUEST ============ */
+const QUESTS_DEF=[
+  {id:'play3',ico:'⚽',nm:'เตะให้ครบ 3 แมตช์',max:3,reward:80,type:'match'},
+  {id:'win2',ico:'🏆',nm:'ชนะ 2 แมตช์',max:2,reward:60,type:'win'},
+  {id:'gacha',ico:'🎰',nm:'ดึงกาชา 3 ครั้ง',max:3,reward:50,type:'gacha'},
+  {id:'goal5',ico:'🥅',nm:'ยิงประตูรวม 5 ลูก',max:5,reward:70,type:'goal'},
+];
+let questState={},questDate='';
+
+function questInit(){
+  const today=new Date().toDateString();
+  if(questDate===today) return;
+  questDate=today;
+  questState={};
+  QUESTS_DEF.forEach(q=>{questState[q.id]={prog:0,claimed:false};});
+}
+function questProgress(type,n=1){
+  questInit();
+  QUESTS_DEF.forEach(q=>{
+    if(q.type!==type) return;
+    const s=questState[q.id];
+    if(s.claimed) return;
+    s.prog=Math.min(q.max,s.prog+n);
+    if(s.prog>=q.max) showAchNotif('✅ ภารกิจสำเร็จ: '+q.nm);
+  });
+  checkAchievements();
+}
+function questClaim(id){
+  const q=QUESTS_DEF.find(x=>x.id===id);
+  const s=questState[id];
+  if(!s||s.claimed||s.prog<q.max) return;
+  s.claimed=true;
+  coins+=q.reward;$('coins').textContent=coins;
+  sfxLvUp();
+  saveGame();
+  renderQuestScreen();
+}
+function openQuest(){
+  questInit();hideAll();$('questScr').classList.remove('hidden');
+  renderQuestScreen();
+}
+function renderQuestScreen(){
+  const tmr=new Date();tmr.setHours(24,0,0,0);
+  const diff=tmr-Date.now();
+  const h=Math.floor(diff/3600000),m=Math.floor((diff%3600000)/60000);
+  $('questReset').textContent=`รีเซตใน ${h} ชม. ${m} น.`;
+  $('questList').innerHTML=QUESTS_DEF.map(q=>{
+    const s=questState[q.id]||{prog:0,claimed:false};
+    const pct=Math.min(100,s.prog/q.max*100);
+    const done=s.prog>=q.max;
+    return `<div class="quest-item ${done?'done':''}">
+      <span class="quest-ico">${q.ico}</span>
+      <div class="quest-info">
+        <div class="quest-nm">${q.nm}</div>
+        <div class="quest-prog">${s.prog}/${q.max}</div>
+        <div class="quest-prog-bar"><div class="quest-prog-fill" style="width:${pct}%"></div></div>
+      </div>
+      <div class="quest-reward">
+        ${s.claimed?'<span style="color:#7fd9a0">✔ รับแล้ว</span>':done?`<button class="quest-claim" onclick="questClaim('${q.id}')">รับ 🪙${q.reward}</button>`:`🪙 ${q.reward}`}
+      </div>
+    </div>`;
+  }).join('');
+  renderAch();
+}
+
+/* ============ ACHIEVEMENTS ============ */
+const ACHS=[
+  {id:'first_win',ico:'🏆',nm:'ชนะครั้งแรก',desc:'ชนะ 1 แมตช์',check:()=>_achStats.wins>=1},
+  {id:'ten_wins',ico:'🥇',nm:'ราชันสนาม',desc:'ชนะ 10 แมตช์',check:()=>_achStats.wins>=10},
+  {id:'legend_card',ico:'🌟',nm:'พบตำนาน',desc:'ได้การ์ดตำนาน',check:()=>collection.some(p=>p.legend)},
+  {id:'full_deck',ico:'📋',nm:'เด็คสมบูรณ์',desc:'จัดเด็คครบ 6 ใบ',check:()=>deck.length===6},
+  {id:'tower10',ico:'🗼',nm:'นักปีนป่าย',desc:'ไต่หอคอยชั้น 10',check:()=>twFloor>=10},
+  {id:'adv_clear',ico:'🗺️',nm:'นักผจญภัย',desc:'พิชิตผจญภัยครบ',check:()=>advProgress>=ADV_NODES.length},
+  {id:'rich',ico:'💰',nm:'นักสะสมเหรียญ',desc:'มีเหรียญ 1000+',check:()=>coins>=1000},
+  {id:'pvp_gold',ico:'🏅',nm:'นักดวลแกร่ง',desc:'ขึ้น Gold rank',check:()=>rp>=220},
+];
+let _achStats={wins:0};
+let _unlocked=new Set();
+function checkAchievements(){
+  ACHS.forEach(a=>{
+    if(_unlocked.has(a.id)) return;
+    if(a.check()){_unlocked.add(a.id);showAchNotif('🏅 Achievement: '+a.nm);}
+  });
+}
+function showAchNotif(txt){
+  const el=document.createElement('div');
+  el.className='ach-notif';el.textContent=txt;
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(),3500);
+}
+function renderAch(){
+  $('achWrap').innerHTML=ACHS.map(a=>{
+    const ok=_unlocked.has(a.id);
+    return `<div class="ach-badge ${ok?'unlocked':'locked'}">
+      <div class="ach-ico">${a.ico}</div>
+      <div class="ach-nm">${a.nm}</div>
+      <div style="font-size:.62rem;margin-top:2px;color:#7fa78d">${a.desc}</div>
+    </div>`;
+  }).join('');
+}
+
+/* ============ PATCH: momentum in duel ============ */
+const _origFinishDuel=finishDuel;
+function finishDuel(attacker,defender,goal,youAtk){
+  if(goal){
+    if(youAtk){
+      updateMomentum(+15);
+      if(momentum>=70) showMomPop('🔥 Momentum ลุกโชน! +bonus');
+      questProgress('goal',1);
+      sfxGoal();
+    } else {
+      updateMomentum(-15);
+      sfxSave();
+    }
+  } else {
+    if(youAtk) updateMomentum(-8);
+    else {updateMomentum(+8);sfxSave();}
+  }
+  _origFinishDuel(attacker,defender,goal,youAtk);
+}
+
+/* ============ PATCH: momentum bonus in duel calc ============ */
+const _origDuel=duel;
+function duel(attacker,defender,youAtk){
+  // inject momentum bonus before calling original
+  const mb=youAtk?momentumBonus():0;
+  if(mb>0) {
+    const orig=attacker.atk;attacker._atkBoost=mb;attacker.atk+=mb;
+    setTimeout(()=>{attacker.atk=orig;delete attacker._atkBoost;},50);
+  }
+  _origDuel(attacker,defender,youAtk);
+}
+
+/* ============ PATCH: quest on match events ============ */
+const _origStartMatch=startMatch;
+function startMatch(opponent,oppName,modeLabel){
+  questProgress('match',1);
+  momentum=50;updateMomentum(0);
+  _origStartMatch(opponent,oppName,modeLabel);
+}
+const _origEndMatch=endMatch;
+function endMatch(){
+  const win=scoreYou>scoreAi;
+  if(win){_achStats.wins++;questProgress('win',1);}
+  checkAchievements();
+  _origEndMatch();
+}
+
+/* ============ PATCH: renderDeck with filter ============ */
+const _origRenderDeck=renderDeck;
+function renderDeck(){
+  const visible=filteredCollection();
+  $('collection').innerHTML=visible.map(p=>{
+    const inD=deck.includes(p.id);
+    return cardHTML(p,false).replace(' disabled ',' ')
+      .replace('class="cardp',`onclick="toggleDeck('${p.id}')" onkeydown="if(event.key==='Enter')toggleDeck('${p.id}')" style="cursor:pointer" class="cardp ${inD?'indeck':''}`);
+  }).join('');
+  if(visible.length===0) $('collection').innerHTML=`<p style="color:#7fa78d;padding:16px">ไม่พบการ์ดที่ตรงเงื่อนไข</p>`;
+  const v=deckValid();
+  $('deckStat').innerHTML=`เด็ค <span class="${v.size===6?'ok':'no'}">${v.size}/6</span> · บุก(⚔≥50) <span class="${v.atk>=2?'ok':'no'}">${v.atk}/2+</span> · รับ(🛡≥50) <span class="${v.def>=2?'ok':'no'}">${v.def}/2+</span>`;
+  $('deckSyn').textContent=synText();
+  $('deckOk').disabled=!v.ok;
+}
+
+/* ============ PATCH: save/load quest & ach ============ */
+const _origSaveGame=saveGame;
+function saveGame(){
+  _origSaveGame();
+  try{
+    localStorage.setItem('frQuest',JSON.stringify({questState,questDate,_achStats:[..._unlocked],wins:_achStats.wins}));
+  }catch(e){}
+}
+const _origLoadGame=loadGame;
+function loadGame(){
+  const r=_origLoadGame();
+  try{
+    const q=JSON.parse(localStorage.getItem('frQuest')||'{}');
+    if(q.questState){questState=q.questState;questDate=q.questDate||'';}
+    if(q._achStats) q._achStats.forEach(id=>_unlocked.add(id));
+    if(q.wins) _achStats.wins=q.wins;
+  }catch(e){}
+  return r;
+}
+
+/* ============ PATCH: add SFX to level up ============ */
+const _origGainCapXp=gainCapXp;
+function gainCapXp(n){
+  const before=capLv;
+  _origGainCapXp(n);
+  if(capLv>before) sfxLvUp();
+}
+
+/* init quest on load */
+questInit();
+
 if(loadGame()){
   document.addEventListener('DOMContentLoaded',()=>{
     $('intro').querySelector('button').textContent='เล่นต่อจากเซฟเดิม ▶';
