@@ -694,7 +694,7 @@ button:focus-visible{outline:2px solid var(--flood);outline-offset:2px}
       <button class="gacha-type-btn" onclick="setGachaType('support',this)" style="font-family:Kanit;font-size:.75rem;padding:5px 12px;border-radius:6px;border:1px solid #2a5238;background:transparent;color:#7fa78d;cursor:pointer">⚡ Support</button>
       <button class="gacha-type-btn" onclick="setGachaType('captain',this)" style="font-family:Kanit;font-size:.75rem;padding:5px 12px;border-radius:6px;border:1px solid #2a5238;background:transparent;color:#7fa78d;cursor:pointer">👑 Captain</button>
     </div>
-    <div class="packbtns">
+    <div class="packbtns" id="packbtns">
       <div class="pack" onclick="pull(50,false)" role="button" tabindex="0"><div class="pnm">📦 ซองธรรมดา</div><div class="prate">ธรรมดา 75% · แรร์ ⭐ 22%<br>ตำนาน 🌟 3%</div><div class="pcost">🪙 50</div></div>
       <div class="pack premium" onclick="pull(120,true)" role="button" tabindex="0"><div class="pnm">💎 ซองพรีเมียม</div><div class="prate">ธรรมดา 40% · แรร์ ⭐ 48%<br>ตำนาน 🌟 12%</div><div class="pcost">🪙 120</div></div>
     </div>
@@ -1733,7 +1733,12 @@ function openShopFull(){
   hideAll();$('shop').classList.remove('hidden');
   updateShopCoins();
   gachaType='player';
-  document.querySelectorAll('.gacha-type-btn').forEach((b,i)=>b.classList.toggle('active',i===0));
+  document.querySelectorAll('.gacha-type-btn').forEach((b,i)=>{
+    b.classList.toggle('active',i===0);
+    b.style.background=i===0?'var(--gold)':'transparent';
+    b.style.color=i===0?'#1a1408':'#7fa78d';
+  });
+  renderGachaPacks();
   $('gachaOut').innerHTML='';
   genDailyDeals();
   switchShopTab('gacha',document.querySelector('.shop-tab'));
@@ -2467,9 +2472,31 @@ function openShopTab(tab){openShopFull();setTimeout(()=>switchShopTab(tab,docume
 let gachaType='player'; // 'player' | 'support' | 'captain'
 function setGachaType(t,btn){
   gachaType=t;
-  document.querySelectorAll('.gacha-type-btn').forEach(b=>b.classList.remove('active'));
-  if(btn) btn.classList.add('active');
+  document.querySelectorAll('.gacha-type-btn').forEach(b=>{
+    b.classList.remove('active');
+    b.style.background='transparent';
+    b.style.color='#7fa78d';
+  });
+  if(btn){
+    btn.classList.add('active');
+    btn.style.background='var(--gold)';
+    btn.style.color='#1a1408';
+  }
   $('gachaOut').innerHTML='';
+  renderGachaPacks();
+}
+function renderGachaPacks(){
+  const el=$('packbtns');
+  if(!el) return;
+  if(gachaType==='support'){
+    el.innerHTML=`<div class="pack" onclick="pull(70,false)" role="button" tabindex="0"><div class="pnm">⚡ ซอง Support Card</div><div class="prate">สุ่ม Support Card 1 ใบ<br>(ทุกใบมีโอกาสเท่ากัน)</div><div class="pcost">🪙 70</div></div>`;
+  } else if(gachaType==='captain'){
+    el.innerHTML=`<div class="pack" onclick="pull(50,false)" role="button" tabindex="0"><div class="pnm">📦 ปลอกแขนธรรมดา</div><div class="prate">ธรรมดา 70% · แรร์ ⭐ 25%<br>ตำนาน 🌟 5%</div><div class="pcost">🪙 50</div></div>
+      <div class="pack premium" onclick="pull(120,true)" role="button" tabindex="0"><div class="pnm">💎 ปลอกแขนพรีเมียม</div><div class="prate">ธรรมดา 45% · แรร์ ⭐ 40%<br>ตำนาน 🌟 15%</div><div class="pcost">🪙 120</div></div>`;
+  } else {
+    el.innerHTML=`<div class="pack" onclick="pull(50,false)" role="button" tabindex="0"><div class="pnm">📦 ซองธรรมดา</div><div class="prate">ธรรมดา 75% · แรร์ ⭐ 22%<br>ตำนาน 🌟 3%</div><div class="pcost">🪙 50</div></div>
+      <div class="pack premium" onclick="pull(120,true)" role="button" tabindex="0"><div class="pnm">💎 ซองพรีเมียม</div><div class="prate">ธรรมดา 40% · แรร์ ⭐ 48%<br>ตำนาน 🌟 12%</div><div class="pcost">🪙 120</div></div>`;
+  }
 }
 
 function deckValid(){
