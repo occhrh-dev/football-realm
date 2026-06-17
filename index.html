@@ -2401,7 +2401,7 @@ async function submitPvpMove(attackerId,defenderId,goal){
   const myRole=_pvpRole;
   const newScoreA=myRole==='a'?(goal?match.score_a+1:match.score_a):match.score_a;
   const newScoreB=myRole==='b'?(goal?match.score_b+1:match.score_b):match.score_b;
-  const newTurn=match.turn+(myRole==='b'?1:0)+（match.whose_turn!==myRole?1:0);
+  const newTurn=match.turn+(myRole==='b'?1:0)+(match.whose_turn!==myRole?1:0);
   const nextTurnPlayer=myRole==='a'?'b':'a';
   const moves=[...(match.moves||[]),{
     turn:match.turn,role:myRole,attackerId,defenderId,goal,ts:Date.now()
