@@ -1,4 +1,4 @@
-const CACHE = 'football-realm-v10';
+const CACHE = 'football-realm-v11';
 const STATIC = ['./manifest.json','./icon-192.png','./icon-512.png'];
 
 self.addEventListener('install', e => {
@@ -16,10 +16,11 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
-  // Network-first: index.html selalu fetch dari network
+  // Network-first: index.html ต้อง bypass HTTP cache ของเบราว์เซอร์ด้วย ไม่ใช่แค่ของ SW
+  // (GitHub Pages ส่ง cache-control แบบมี max-age มา ถ้าไม่บังคับ no-store fetch() อาจได้ของแคชเก่ากลับมาเงียบๆ)
   if (e.request.url.includes('index.html') || e.request.url.endsWith('/')) {
     e.respondWith(
-      fetch(e.request)
+      fetch(e.request, { cache: 'no-store' })
         .then(res => {
           const clone = res.clone();
           caches.open(CACHE).then(c => c.put(e.request, clone));
