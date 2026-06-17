@@ -1703,7 +1703,11 @@ function eff(p,isMine=true){
 function capXpNeed(){return capLv*60}
 function pXpNeed(p){return p.lv*40}
 function log(msg,cls=''){const d=document.createElement('div');if(cls)d.className=cls;d.innerHTML=msg;$('log').prepend(d);}
-function popup(html){const p=$('lvupPop');p.innerHTML=html;p.classList.remove('hidden');setTimeout(()=>p.classList.add('hidden'),1700);}
+function popup(html){
+  let p=$('lvupPop');
+  if(!p){p=document.createElement('div');p.id='lvupPop';p.className='lvup hidden';document.body.appendChild(p);}
+  p.innerHTML=html;p.classList.remove('hidden');setTimeout(()=>p.classList.add('hidden'),1700);
+}
 function gainCapXp(n){
   const before=capLv;
   capXp+=n;
@@ -1859,7 +1863,8 @@ function goHome(){
   $('mAdv').textContent=advEP>EP_DATA.length?'✅ พิชิตทุก EP แล้ว!':`EP${advEP}: ด่าน ${advStage+1}/${currentStages().length}`;
   loadTourState();initTournament();
   const nextTour=getNextMatch();
-  $('mTour').textContent=nextTour?(nextTour.match.a?.isPlayer||nextTour.match.b?.isPlayer?'⚡ ถึงคิวคุณแล้ว!':'กำลังแข่ง...'):'สัปดาห์ใหม่ในอีกไม่นาน';
+  const _mTour=$('mTour');
+  if(_mTour) _mTour.textContent=nextTour?(nextTour.match.a?.isPlayer||nextTour.match.b?.isPlayer?'⚡ ถึงคิวคุณแล้ว!':'กำลังแข่ง...'):'สัปดาห์ใหม่ในอีกไม่นาน';
   $('mLg').textContent=lgRound>=5?`✅ จบฤดูกาล ${lgSeason}`:`S${lgSeason} นัดที่ ${lgRound+1}/5`;
   $('mTw').textContent=`สถิติสูงสุด: ชั้น ${twFloor}`;
   $('mPvp').textContent=rankOf(rp).nm+` (${rp} RP)`;
@@ -2366,8 +2371,8 @@ async function enterPvpMatch(matchId,myRole){
   fx={};momentum=50;updateMomentum(0);
   $('sYou').textContent=scoreYou;
   $('sAi').textContent=scoreAi;
-  $('scoreboard').querySelector('.team.you').textContent='⚡ '+(playerProfile.name||'คุณ');
-  $('scoreboard').querySelector('.team.opp').textContent=oppName;
+  document.querySelector('.team.you').textContent='⚡ '+(playerProfile.name||'คุณ');
+  $('aiName').textContent=oppName;
   renderSupportBar();
   setupTurnDisplay();
   /* subscribe realtime สำหรับ match นี้ */
