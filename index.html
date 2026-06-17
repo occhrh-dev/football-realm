@@ -543,6 +543,13 @@ button:focus-visible{outline:2px solid var(--flood);outline-offset:2px}
   <p style="font-size:.82rem;max-width:460px;color:#a8c9b4;line-height:1.8">
     🗺️ <b>ผจญภัย</b> 3 บท · 🏟️ <b>ลีก</b> 3 ฤดูกาล · 🗼 <b>หอคอย</b> ไร้ที่สิ้นสุด · ⚔️ <b>PvP</b> จัดอันดับ
   </p>
+  <button onclick="goHome()" style="margin-top:6px">เข้าสโมสร 🏟️</button>
+  <button class="ghost" onclick="cloudLogin()" style="font-size:.72rem;margin-top:6px">☁️ เข้าสู่ระบบเพื่อเซฟ Cloud (ไม่บังคับ — ปรับได้ทีหลังในตั้งค่า)</button>
+</div>
+
+<!-- ============ SETTINGS ============ -->
+<div class="overlay center hidden" id="settingsScr">
+  <h1 style="font-size:1.3rem">⚙️ ตั้งค่า</h1>
   <!-- login bar -->
   <div class="login-bar" id="loginBar">
     <div class="login-avatar" id="introAvatar">
@@ -554,9 +561,7 @@ button:focus-visible{outline:2px solid var(--flood);outline-offset:2px}
     </div>
     <button class="login-btn-sm active" id="loginBtn" onclick="cloudLogin()">☁️ เข้าสู่ระบบ</button>
   </div>
-  <button onclick="goHome()" style="margin-top:6px">เข้าสโมสร 🏟️</button>
   <button class="ghost" id="introLogout" onclick="cloudLogout()" style="font-size:.75rem;display:none">ออกจากระบบ</button>
-  <button onclick="resetSave()" style="font-size:.68rem;background:transparent;border:none;color:#3a5240;cursor:pointer;margin-top:8px;text-decoration:underline">🗑️ ลบข้อมูลและเริ่มใหม่</button>
   <div style="display:flex;align-items:center;gap:10px;margin-top:10px;background:#05130b;border:1px solid #1e3a29;border-radius:8px;padding:8px 14px">
     <span style="font-size:.8rem;color:#7fa78d">🔊 เสียง</span>
     <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
@@ -568,7 +573,10 @@ button:focus-visible{outline:2px solid var(--flood);outline-offset:2px}
       style="flex:1;accent-color:var(--gold);cursor:pointer">
     <span id="volumeLabel" style="font-size:.72rem;color:#7fa78d;min-width:30px">70%</span>
   </div>
+  <button onclick="resetSave()" style="font-size:.68rem;background:transparent;border:none;color:#3a5240;cursor:pointer;margin-top:10px;text-decoration:underline">🗑️ ลบข้อมูลและเริ่มใหม่</button>
+  <button class="ghost" onclick="goHome()" style="margin-top:14px">กลับสโมสร</button>
 </div>
+
 
 <!-- ============ PROFILE SETUP ============ -->
 <div class="overlay center hidden" id="profileScr">
@@ -603,6 +611,7 @@ button:focus-visible{outline:2px solid var(--flood);outline-offset:2px}
     <button class="ghost" onclick="openInv()">🎒 กระเป๋า</button>
     <button class="ghost" onclick="openQuest()">🗒️ ภารกิจ</button>
     <button class="ghost" onclick="showTutorial(true)" style="font-size:.75rem">📖 วิธีเล่น</button>
+    <button class="ghost" onclick="openSettings()" style="font-size:.75rem">⚙️ ตั้งค่า</button>
   </div>
 </div>
 
@@ -1725,7 +1734,7 @@ function gainPXp(p,n){
 }
 
 /* ============ NAV ============ */
-const SCREENS=['intro','home','advScr','lgScr','twScr','pvpScr','tourScr','shop','deckScr','matchEnd','invScr','matchUI','questScr','profileScr'];
+const SCREENS=['intro','home','advScr','lgScr','twScr','pvpScr','tourScr','shop','deckScr','matchEnd','invScr','matchUI','questScr','profileScr','settingsScr'];
 /* ===== SHOP JS ===== */
 let shopTab='gacha';
 
@@ -2651,6 +2660,10 @@ function openInv(){
   hideAll();$('invScr').classList.remove('hidden');
   updateShopCoins();
   switchInvTab('shirt',document.querySelector('.inv-tab'));
+}
+function openSettings(){
+  hideAll();$('settingsScr').classList.remove('hidden');
+  updateLoginUI();
 }
 function switchInvTab(tab,btn){
   invTab=tab;
