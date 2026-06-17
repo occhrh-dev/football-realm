@@ -1857,7 +1857,7 @@ function goHome(){
   $('homeInfo').innerHTML=`👑 Lv.${capLv} · 🪙 ${coins} · การ์ด ${collection.length} ใบ · เด็ค ${deck.length}/6<br>${synText()}`;
   const _nodes=currentChapterNodes();
   $('mAdv').textContent=advEP>EP_DATA.length?'✅ พิชิตทุก EP แล้ว!':`EP${advEP}: ด่าน ${advStage+1}/${currentStages().length}`;
-  loadTourState();
+  loadTourState();initTournament();
   const nextTour=getNextMatch();
   $('mTour').textContent=nextTour?(nextTour.match.a?.isPlayer||nextTour.match.b?.isPlayer?'⚡ ถึงคิวคุณแล้ว!':'กำลังแข่ง...'):'สัปดาห์ใหม่ในอีกไม่นาน';
   $('mLg').textContent=lgRound>=5?`✅ จบฤดูกาล ${lgSeason}`:`S${lgSeason} นัดที่ ${lgRound+1}/5`;
@@ -2121,6 +2121,7 @@ function renderTournament(){
 }
 function getNextMatch(){
   const t=tourState;
+  if(!t.bracket) return null;
   for(let ri=0;ri<t.bracket.length;ri++){
     for(let mi=0;mi<t.bracket[ri].length;mi++){
       const m=t.bracket[ri][mi];
