@@ -1209,6 +1209,7 @@ let matchTactics=[],fx={};
 let capLv=1,capXp=0,coins=150,inventory=[];
 let ai=[],scoreYou=0,scoreAi=0,turn=1,youAttacking=true,incomingAttacker=null;
 let mode=null; // 'adv' | 'league' | 'tower' | 'pvp'
+let isQuit=false; // true when player forfeits via confirmQuitMatch - suppresses all match-end rewards
 let pendingCtx={};
 /* ===== ITEM SYSTEM (slot: shirt/shoe/pants) ===== */
 const ITEM_PASSIVES={
@@ -3572,6 +3573,7 @@ function replayTowerMilestone(floor){
 function confirmQuitMatch(){
   if(confirm('ออกจากแมตช์? จะนับว่าแพ้ (ไม่ได้รางวัล)')) {
     /* นับว่าแพ้ */
+    isQuit=true;
     scoreYou=0;scoreAi=1;
     endMatch();
   }
@@ -3777,6 +3779,12 @@ function endMatch(){
     }
   }
 
+  if(isQuit){
+    coinGain=0;xpGain=0;lootChance=0;
+    title='🚪 ออกจากแมตช์';
+    desc='นับว่าแพ้ ไม่ได้รับรางวัลใดๆ';
+    isQuit=false;
+  }
   coins+=coinGain;$('coins').textContent=coins;gainCapXp(xpGain);
   $('meTitle').textContent=title;
   $('meDesc').innerHTML=desc+`<br>ได้รับ 🪙 ${coinGain} + 👑 ${xpGain} XP`;
