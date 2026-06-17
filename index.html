@@ -4294,11 +4294,15 @@ function resetSave(){
   if(!confirm('ยืนยันอีกครั้ง — ข้อมูลจะถูกลบถาวรจาก Cloud ด้วย\nกด OK เพื่อเริ่มใหม่')) return;
   [SAVE_KEY,'frForm','frCards2','frShop2','frQuest','frProfile'].forEach(k=>localStorage.removeItem(k));
   if(_sbUser&&_sb){
-    _sb.from('game_saves').delete().eq('user_id',_sbUser.id)
-      .then(({error})=>{
+    _sb.from('game_saves').delete().eq('user_id',_sbUser.id).select()
+      .then(({data,error})=>{
         if(error){
           console.warn('resetSave cloud delete error:',error.message,error.details,error.hint,error.code);
-          alert('⚠️ ลบข้อมูลบนเครื่องสำเร็จ แต่ลบบน Cloud ไม่สำเร็จ:\n'+error.message+'\n\nถ้า reload ตอนนี้ ข้อมูลเก่าอาจซิงค์กลับมาจาก Cloud — กดดูรายละเอียดใน console แล้วแจ้งทีมพัฒนา');
+          alert('⚠️ ลบข้อมูลบนเครื่องสำเร็จ แต่ลบบน Cloud ไม่สำเร็จ:\n'+error.message+'\n\nถ้า reload ตอนนี้ ข้อมูลเก่าอาจซิงค์กลับมาจาก Cloud');
+          return;
+        }
+        if(!data||data.length===0){
+          alert('⚠️ ลบข้อมูลบนเครื่องสำเร็จ แต่ฝั่ง Cloud ไม่มีสิทธิ์ลบ (0 แถวถูกลบ — RLS policy ไม่อนุญาต DELETE)\nข้อมูลบน Cloud จะยังอยู่ และจะซิงค์กลับมาตอน reload — ต้องแก้ policy บน Supabase ก่อน');
           return;
         }
         alert('ลบข้อมูลเรียบร้อย!');location.reload();
