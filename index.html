@@ -4295,7 +4295,18 @@ function resetSave(){
   [SAVE_KEY,'frForm','frCards2','frShop2','frQuest','frProfile'].forEach(k=>localStorage.removeItem(k));
   if(_sbUser&&_sb){
     _sb.from('game_saves').delete().eq('user_id',_sbUser.id)
-      .then(()=>{alert('ลบข้อมูลเรียบร้อย!');location.reload();});
+      .then(({error})=>{
+        if(error){
+          console.warn('resetSave cloud delete error:',error.message,error.details,error.hint,error.code);
+          alert('⚠️ ลบข้อมูลบนเครื่องสำเร็จ แต่ลบบน Cloud ไม่สำเร็จ:\n'+error.message+'\n\nถ้า reload ตอนนี้ ข้อมูลเก่าอาจซิงค์กลับมาจาก Cloud — กดดูรายละเอียดใน console แล้วแจ้งทีมพัฒนา');
+          return;
+        }
+        alert('ลบข้อมูลเรียบร้อย!');location.reload();
+      })
+      .catch(e=>{
+        console.warn('resetSave error:',e);
+        alert('⚠️ ลบข้อมูลบนเครื่องสำเร็จ แต่เชื่อมต่อ Cloud ไม่ได้: '+e.message);
+      });
   } else {
     alert('ลบข้อมูลเรียบร้อย!');location.reload();
   }
