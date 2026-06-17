@@ -2471,46 +2471,6 @@ function setGachaType(t,btn){
   $('gachaOut').innerHTML='';
 }
 
-function pull(cost,premium){
-  if(coins<cost){$('gachaOut').innerHTML=`<p style="color:#f0907f">เหรียญไม่พอ!</p>`;return;}
-  coins-=cost;$('coins').textContent=coins;$('shopCoins').textContent=coins;
-  _pity++;
-
-  if(gachaType==='support'){
-    const c=rollSupportCard();
-    supportCollection.push(c);saveGame();
-    $('gachaOut').innerHTML=`<div style="text-align:center">
-      <div style="font-size:2rem">${c.ico}</div>
-      <div style="font-family:Kanit;color:#3d7bd9;font-size:1rem;margin:4px 0">${c.nm}</div>
-      <div style="font-size:.8rem;color:#a8c9b4">${c.desc}</div>
-      <div style="font-size:.7rem;color:#7fa78d;margin-top:4px">⚡ Support Card</div>
-    </div>`;
-    sfxRare();return;
-  }
-  if(gachaType==='captain'){
-    const c=rollCaptainCard(premium);
-    captainCollection.push(c);saveGame();
-    const cap=CAPTAIN_CARDS.find(x=>x.id===c.id)||c;
-    const tierColor=c.tier==='legend'?'var(--legend)':c.tier==='rare'?'var(--gold)':'#a8c9b4';
-    $('gachaOut').innerHTML=`<div style="text-align:center">
-      <div style="font-size:2rem">${c.ico||'👑'}</div>
-      <div style="font-family:Kanit;color:${tierColor};font-size:1rem;margin:4px 0">${c.nm||c.id}</div>
-      <div style="font-size:.75rem;color:#a8c9b4">${cap.triggerDesc||''}</div>
-      <div style="font-size:.7rem;margin-top:4px"><span style="color:${tierColor}">${c.tier}</span> Captain Card</div>
-    </div>`;
-    if(c.tier==='legend') sfxLegend(); else if(c.tier==='rare') sfxRare(); else sfxCard();
-    return;
-  }
-
-  /* player card */
-  let c;
-  if(_pity>=30){c=rollCard(true,true);_pity=0;}
-  else if(_pity>=10&&!premium){c=rollCard(false,false,true);}
-  else c=rollCard(premium);
-  collection.push(c);saveGame();
-  showGachaReveal(c);
-  questProgress('gacha',1);
-}
 function deckValid(){
   const ps=deckPlayers();
   const atk=ps.filter(p=>p.atk>=50).length,df=ps.filter(p=>p.def>=50).length;
@@ -4393,6 +4353,33 @@ function pull(cost,premium){
   if(coins<cost){$('gachaOut').innerHTML=`<p style="color:#f0907f">เหรียญไม่พอ!</p>`;return;}
   coins-=cost;$('coins').textContent=coins;$('shopCoins').textContent=coins;
   _pity++;
+
+  if(gachaType==='support'){
+    const c=rollSupportCard();
+    supportCollection.push(c);saveGame();
+    $('gachaOut').innerHTML=`<div style="text-align:center">
+      <div style="font-size:2rem">${c.ico}</div>
+      <div style="font-family:Kanit;color:#3d7bd9;font-size:1rem;margin:4px 0">${c.nm}</div>
+      <div style="font-size:.8rem;color:#a8c9b4">${c.desc}</div>
+      <div style="font-size:.7rem;color:#7fa78d;margin-top:4px">⚡ Support Card</div>
+    </div>`;
+    sfxRare();return;
+  }
+  if(gachaType==='captain'){
+    const c=rollCaptainCard(premium);
+    captainCollection.push(c);saveGame();
+    const cap=CAPTAIN_CARDS.find(x=>x.id===c.id)||c;
+    const tierColor=c.tier==='legend'?'var(--legend)':c.tier==='rare'?'var(--gold)':'#a8c9b4';
+    $('gachaOut').innerHTML=`<div style="text-align:center">
+      <div style="font-size:2rem">${c.ico||'👑'}</div>
+      <div style="font-family:Kanit;color:${tierColor};font-size:1rem;margin:4px 0">${c.nm||c.id}</div>
+      <div style="font-size:.75rem;color:#a8c9b4">${cap.triggerDesc||''}</div>
+      <div style="font-size:.7rem;margin-top:4px"><span style="color:${tierColor}">${c.tier}</span> Captain Card</div>
+    </div>`;
+    if(c.tier==='legend') sfxLegend(); else if(c.tier==='rare') sfxRare(); else sfxCard();
+    return;
+  }
+
   // pity system: guarantee rare at 10, legend at 30
   let c;
   if(_pity>=30){c=rollCard(true,true);_pity=0;}
