@@ -3919,7 +3919,8 @@ async function cloudSave(){
   if(!_sbUser||!_sb) return;
   try{
     const payload=buildSavePayload();
-    await _sb.from('game_saves').upsert(payload,{onConflict:'user_id'});
+    const {error}=await _sb.from('game_saves').upsert(payload,{onConflict:'user_id'});
+    if(error) console.warn('cloudSave error:',error.message,'| details:',error.details,'| hint:',error.hint,'| code:',error.code);
   }catch(e){console.warn('cloudSave error',e);}
 }
 async function cloudLoad(){
