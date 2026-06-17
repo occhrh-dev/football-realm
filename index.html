@@ -765,6 +765,7 @@ button:focus-visible{outline:2px solid var(--flood);outline-offset:2px}
       <button class="fbtn" onclick="setFilter('formation',this)">🗂️ ถนัดแผน</button>
     </div>
     <p style="font-size:.75rem;color:#7fa78d">แตะการ์ดเพื่อเลือกเข้า/ออกเด็ค (6 ใบ)</p>
+    <button class="ghost" onclick="goDismantle()" style="font-size:.72rem;margin-bottom:6px">🔄 ย่อยการ์ดเกิน (แปลงเป็น Dust)</button>
     <div class="hand" id="collection"></div>
   </div>
   <!-- Support deck -->
@@ -2665,6 +2666,11 @@ function openSettings(){
   hideAll();$('settingsScr').classList.remove('hidden');
   updateLoginUI();
 }
+function goDismantle(){
+  openInv();
+  const btn=document.querySelector('.inv-tab[onclick*="dismantle"]');
+  switchInvTab('dismantle',btn);
+}
 function switchInvTab(tab,btn){
   invTab=tab;
   document.querySelectorAll('.inv-tab').forEach(b=>b.classList.remove('active'));
@@ -3830,9 +3836,10 @@ function endMatch(){
   $('meDesc').innerHTML=desc+`<br>ได้รับ 🪙 ${coinGain} + 👑 ${xpGain} XP`;
   $('lootArea').innerHTML='';
   if(Math.random()<lootChance){
-    const it={...ITEMS[rnd(ITEMS.length)]};inventory.push(it);
+    const it={...ITEMS[rnd(ITEMS.length)],_uid:uid++};itemInventory.push(it);
+    const passStr=it.passives?.map(pid=>ITEM_PASSIVES[pid]?.nm||pid).join(', ')||'—';
     $('lootArea').innerHTML=`<div class="lootbox"><div class="ico">📦✨</div>
-      <div class="lnm">${it.ico} ${it.name}</div><div class="ldesc">${it.desc}</div></div>`;
+      <div class="lnm">${it.ico} ${it.name}</div><div class="ldesc">✨ ${passStr}</div></div>`;
   }
   hideAll();$('matchEnd').classList.remove('hidden');
   const _win=scoreYou>scoreAi;if(_win){_achStats.wins++;questProgress('win',1);}
@@ -4582,9 +4589,10 @@ function sortCollection(arr){
   return [...arr].sort((a,b)=>{
     const pa=POS_ORDER[a.pos]??9, pb=POS_ORDER[b.pos]??9;
     if(pa!==pb) return pa-pb;
+    const sa=a.atk+a.def, sb=b.atk+b.def;
+    if(sa!==sb) return sb-sa; // ค่าพลังรวมสูงกว่ามาก่อน
     const ta=a.legend?0:a.rare?1:2, tb=b.legend?0:b.rare?1:2;
-    if(ta!==tb) return ta-tb;
-    return (b.atk+b.def)-(a.atk+a.def); // stat สูงกว่ามาก่อน
+    return ta-tb; // เท่ากันค่อยดูความหายาก
   });
 }
 
