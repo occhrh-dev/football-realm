@@ -1844,7 +1844,7 @@ function buyCons(type,price){
   showMomPop('✅ ซื้อสำเร็จ!');
   setTimeout(()=>switchShopTab(shopTab,null),100);
 }
-function hideAll(){SCREENS.forEach(i=>$(i).classList.add('hidden'));}
+function hideAll(){SCREENS.forEach(i=>{const el=$(i);if(el)el.classList.add('hidden');});}
 function goHome(){
   hideAll();$('home').classList.remove('hidden');
   updateHomeProfile();
@@ -2066,7 +2066,10 @@ function loadTourState(){
 }
 
 function openTournament(){
-  hideAll();$('tourScr').classList.remove('hidden');
+  hideAll();
+  const scr=$('tourScr');
+  if(!scr){console.warn('tourScr element missing from DOM — tournament screen not built yet');return;}
+  scr.classList.remove('hidden');
   loadTourState();initTournament();
   renderTournament();
 }
