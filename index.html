@@ -3933,7 +3933,11 @@ function applyCloudData(d){
     rp=d.rp??0; twFloor=d.tw_floor??1;
     advEP=d.adv_ep??1; advStage=d.adv_stage??0; advProgress=d.adv_progress??0;
     lgRound=d.lg_round??0; lgSeason=d.lg_season??1; lgPts=d.lg_pts??{};
-    collection=(d.collection||[]).map(p=>({...p,stamina:100,item:null,shirt:null,shoe:null,pants:null}));
+    collection=(d.collection||[]).map(p=>{
+      const tier=p.legend?'legend':p.rare?'rare':'common';
+      return {...p,stamina:100,item:null,shirt:null,shoe:null,pants:null,
+        affinity:(p.affinity&&p.affinity.length)?p.affinity:genAffinity(tier)};
+    });
     supportCollection=d.support_collection||[];
     captainCollection=d.captain_collection||[];
     itemInventory=d.item_inventory||[];
@@ -4239,7 +4243,11 @@ function loadGame(){
     advProgress=d.advProgress??0; advEP=d.advEP??1; advStage=d.advStage??0;
     lgRound=d.lgRound??0; lgSeason=d.lgSeason??1; lgPts=d.lgPts??{};
     twFloor=d.twFloor??1; rp=d.rp??0; uid=d.uid??uid;
-    collection=(d.collection||[]).map(p=>({...p,stamina:100,item:null,shirt:null,shoe:null,pants:null}));
+    collection=(d.collection||[]).map(p=>{
+      const tier=p.legend?'legend':p.rare?'rare':'common';
+      return {...p,stamina:100,item:null,shirt:null,shoe:null,pants:null,
+        affinity:(p.affinity&&p.affinity.length)?p.affinity:genAffinity(tier)};
+    });
     deck=(d.deck||[]).filter(id=>collection.some(p=>p.id===id));
     if(deck.length===0&&collection.length) deck=collection.slice(0,6).map(p=>p.id);
     supportCollection=d.supportCollection||[];
