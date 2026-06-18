@@ -48,6 +48,9 @@ h1,h2,h3,.kanit{font-family:'Kanit',sans-serif}
 .phase{font-family:'Kanit';font-weight:600;font-size:.92rem;margin:2px 0 6px;text-align:center;min-height:24px}
 .phase .atk{color:var(--gold)}
 .synergy{font-size:.76rem;color:#7fd9a0;text-align:center;margin-bottom:4px;min-height:16px}
+.stadium-badge{display:block;background:linear-gradient(135deg,#1f3a28,#0d1f17);border:1.5px solid var(--gold);border-radius:12px;padding:7px 14px;font-size:.85rem;color:#f0d896;text-align:center;margin:4px auto 8px;max-width:94%;box-shadow:0 0 14px rgba(232,181,58,.3)}
+.stadium-badge b{color:var(--gold)}
+.capt-row{width:100%;max-width:620px;display:flex;justify-content:center;margin-bottom:6px}
 .incoming{display:none;width:100%;max-width:620px;margin-bottom:6px;background:linear-gradient(90deg,rgba(217,79,61,.18),transparent);border:1px solid #5e2a22;border-radius:10px;padding:8px 12px;font-size:.85rem;text-align:center}
 .incoming.show{display:block;animation:pop .25s ease}
 .incoming b{font-family:'Kanit';color:var(--red)}
@@ -434,13 +437,20 @@ button:focus-visible{outline:2px solid var(--flood);outline-offset:2px}
 /* ===== Mode menu ===== */
 .modes{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:440px}
 .mode{
+  position:relative;overflow:hidden;
   background:linear-gradient(160deg,#0f2a1a,#081b10);border:2px solid #2a5238;border-radius:12px;
-  padding:14px 10px;cursor:pointer;transition:transform .12s,border-color .12s;user-select:none;
+  padding:16px 10px 14px;cursor:pointer;transition:transform .12s,border-color .12s,box-shadow .12s;user-select:none;
 }
-.mode:hover{transform:translateY(-3px);border-color:var(--gold)}
+.mode::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:var(--accent,var(--gold));box-shadow:0 0 10px var(--accent,var(--gold))}
+.mode:hover{transform:translateY(-3px);border-color:var(--accent,var(--gold));box-shadow:0 6px 18px rgba(0,0,0,.45)}
 .mode .mico{font-size:1.7rem}
-.mode .mnm{font-family:'Kanit';font-weight:700;font-size:.95rem;margin:4px 0 2px}
+.mode .mnm{font-family:'Kanit';font-weight:700;font-size:.95rem;margin:6px 0 2px}
 .mode .mdesc{font-size:.72rem;color:#7fa78d;line-height:1.4}
+.mode .mdesc b{color:var(--accent,var(--gold))}
+.floodlight-glow{position:relative;display:flex;flex-direction:column;align-items:center}
+.floodlight-glow::before{content:'';position:absolute;top:-30px;left:50%;transform:translateX(-50%);width:340px;height:160px;background:radial-gradient(ellipse 50% 50% at 50% 0%,rgba(245,247,238,.14),transparent 70%);pointer-events:none;z-index:-1}
+.action-group{width:100%;max-width:440px;margin-top:2px}
+.action-label{font-family:'Kanit';font-size:.66rem;letter-spacing:.1em;color:#4d7a5e;text-transform:uppercase;text-align:left;margin-bottom:5px;padding-left:3px}
 /* ===== Adventure map ===== */
 .advmap{display:flex;flex-direction:column;gap:0;align-items:center;width:100%;max-width:380px}
 .advnode{
@@ -597,25 +607,35 @@ button:focus-visible{outline:2px solid var(--flood);outline-offset:2px}
 
 <!-- ============ HOME ============ -->
 <div class="overlay hidden" id="home" style="justify-content:center">
-  <h1>🏟️ สโมสรราชันสายฟ้า</h1>
-  <div id="homeUserBadge" style="display:none;align-items:center;margin-bottom:4px"></div>
+  <div class="floodlight-glow">
+    <h1>🏟️ สโมสรราชันสายฟ้า</h1>
+    <div id="homeUserBadge" style="display:none;align-items:center;margin-bottom:4px"></div>
+  </div>
   <div id="homeTPBar" style="font-family:Kanit;font-size:.8rem;margin-bottom:4px"></div>
   <p id="homeInfo" style="margin-bottom:4px"></p>
   <div id="freePackBanner" style="display:none"></div>
   <div class="modes">
-    <div class="mode" onclick="openAdv()" role="button" tabindex="0"><div class="mico">🗺️</div><div class="mnm">ผจญภัย</div><div class="mdesc" id="mAdv">เดินแมพ ตามหาตำนาน</div></div>
-    <div class="mode" onclick="openLeague()" role="button" tabindex="0"><div class="mico">🏟️</div><div class="mnm">ลีกฤดูกาล</div><div class="mdesc" id="mLg">5 นัดชิงแชมป์</div></div>
-    <div class="mode" onclick="openTower()" role="button" tabindex="0"><div class="mico">🗼</div><div class="mnm">หอคอย</div><div class="mdesc" id="mTw">ไต่ชั้นไม่จำกัด</div></div>
-    <div class="mode" onclick="openPvp()" role="button" tabindex="0"><div class="mico">⚔️</div><div class="mnm">PvP จัดอันดับ</div><div class="mdesc" id="mPvp">ชิงแรงก์</div></div>
+    <div class="mode" style="--accent:var(--blue)" onclick="openAdv()" role="button" tabindex="0"><div class="mico">🗺️</div><div class="mnm">ผจญภัย</div><div class="mdesc" id="mAdv">เดินแมพ ตามหาตำนาน</div></div>
+    <div class="mode" style="--accent:var(--gold)" onclick="openLeague()" role="button" tabindex="0"><div class="mico">🏟️</div><div class="mnm">ลีกฤดูกาล</div><div class="mdesc" id="mLg">5 นัดชิงแชมป์</div></div>
+    <div class="mode" style="--accent:var(--purple)" onclick="openTower()" role="button" tabindex="0"><div class="mico">🗼</div><div class="mnm">หอคอย</div><div class="mdesc" id="mTw">ไต่ชั้นไม่จำกัด</div></div>
+    <div class="mode" style="--accent:var(--red)" onclick="openPvp()" role="button" tabindex="0"><div class="mico">⚔️</div><div class="mnm">PvP จัดอันดับ</div><div class="mdesc" id="mPvp">ชิงแรงก์</div></div>
   </div>
-  <div class="actions">
-    <button onclick="openShop()">🏪 ร้านค้า</button>
-    <button class="ghost" onclick="openDeck()">📋 จัดเด็ค</button>
-    <button class="ghost" onclick="openInv()">🎒 กระเป๋า</button>
-    <button class="ghost" onclick="openCollection()">📒 สมุดสะสม</button>
-    <button class="ghost" onclick="openQuest()">🗒️ ภารกิจ</button>
-    <button class="ghost" onclick="showTutorial(true)" style="font-size:.75rem">📖 วิธีเล่น</button>
-    <button class="ghost" onclick="openSettings()" style="font-size:.75rem">⚙️ ตั้งค่า</button>
+  <div class="action-group">
+    <div class="action-label">จัดการทีม</div>
+    <div class="actions" style="margin-top:0">
+      <button onclick="openShop()">🏪 ร้านค้า</button>
+      <button class="ghost" onclick="openDeck()">📋 จัดเด็ค</button>
+      <button class="ghost" onclick="openInv()">🎒 กระเป๋า</button>
+      <button class="ghost" onclick="openCollection()">📒 สมุดสะสม</button>
+    </div>
+  </div>
+  <div class="action-group">
+    <div class="action-label">อื่นๆ</div>
+    <div class="actions" style="margin-top:0">
+      <button class="ghost" onclick="openQuest()">🗒️ ภารกิจ</button>
+      <button class="ghost" onclick="showTutorial(true)" style="font-size:.75rem">📖 วิธีเล่น</button>
+      <button class="ghost" onclick="openSettings()" style="font-size:.75rem">⚙️ ตั้งค่า</button>
+    </div>
   </div>
 </div>
 
@@ -775,7 +795,7 @@ button:focus-visible{outline:2px solid var(--flood);outline-offset:2px}
   <!-- Support deck -->
   <div id="deckSupportPanel" style="display:none;width:100%;max-width:620px">
     <p style="font-size:.78rem;color:#7fa78d;margin-bottom:6px">เลือก Support card สูงสุด 3 ใบ — กดใช้ได้ครั้งเดียวต่อแมตช์</p>
-    <p style="font-size:.72rem;color:#7fa78d;margin-bottom:6px">🪤 การ์ดที่มีเงื่อนไข (ไม่ใช่ "ใช้ได้ทุกเมื่อ") ตั้งเป็น <b>"ดัก"</b> ได้ — จะทำงานอัตโนมัติทันทีที่เงื่อนไขเกิด ไม่ต้องกดเอง แต่แลกกับการเลือกจังหวะเองไม่ได้</p>
+    <p style="font-size:.72rem;color:#7fa78d;margin-bottom:6px">🪤 ตอนอยู่ในแมตช์ การ์ดที่มีเงื่อนไขจะเลือกได้ว่าจะ "ใช้เลย" หรือ "ตั้งดัก" ให้ทำงานอัตโนมัติทันทีที่เงื่อนไขเกิด</p>
     <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap" id="supportSlotDisplay"></div>
     <p style="font-size:.75rem;color:#7fa78d;margin-bottom:4px">การ์ดที่มี:</p>
     <div class="hand" id="supportCollection" style="flex-wrap:wrap"></div>
@@ -872,14 +892,16 @@ button:focus-visible{outline:2px solid var(--flood);outline-offset:2px}
   </div>
   <div class="team ai" id="aiName">🔥</div>
 </div>
+<div class="stadium-badge" id="stadiumBadge" style="display:none"></div>
 <div class="synergy" id="matchSyn"></div>
-<div class="synergy" id="stadiumBadge" style="display:none"></div>
 <div class="log" id="log"></div>
 <div class="incoming" id="incoming"></div>
 <div class="phase" id="phase"></div>
 <!-- elem counter hint removed - shown as arrows on cards -->
 <div class="duel" id="duel"></div>
-<div class="form-picker-title" id="supportBarLabel" style="display:none;margin-top:6px">🎴 Support Card ที่เลือกไว้</div>
+<div class="form-picker-title" id="captainBarLabel" style="display:none;margin-top:6px">👑 กัปตันทีม</div>
+<div class="capt-row" id="captainBar"></div>
+<div class="form-picker-title" id="supportBarLabel" style="display:none;margin-top:6px">🎴 Support Card</div>
 <div class="support-bar" id="supportBar"></div>
 <div class="form-picker" id="formPicker">
   <div class="form-picker-title">🗂️ แผนการเล่น</div>
@@ -1113,22 +1135,22 @@ const SKILLS=[
   {skill:'golden',    skillTxt:'✨ ยิงเข้า: +20 เหรียญ'},
   {skill:'vampire',   skillTxt:'🧛 ยิงเข้า: สตามิน่า +25'},
   {skill:'thunderbolt',skillTxt:'⚡ 15% ฟ้าผ่า: DEF ศัตรู /2'},
-  {skill:'pyroclasm', skillTxt:'🔥 🔥ข่มทุกธาตุ: +10 เพิ่ม'},
+  {skill:'pyroclasm', skillTxt:'🔥 ธาตุไฟ: ตอนบุก ATK+10 เสมอ'},
   {skill:'wall',      skillTxt:'🧱 25% บล็อกสนิท'},
   {skill:'tackle',    skillTxt:'🦵 30% แทคเกิล: ATK ศัตรู /2'},
   {skill:'intercept', skillTxt:'✋ 20% อินเตอร์เซ็ป: DEF +8'},
   {skill:'sweeper',   skillTxt:'🧹 สตามิน่า<40 → DEF +15'},
   {skill:'lastman',   skillTxt:'🚨 แพ้อยู่ → DEF ×1.3'},
-  {skill:'aerial',    skillTxt:'🦅 เฮดบอลรับ: DEF +12'},
+  {skill:'aerial',    skillTxt:'🦅 ถ้า DEF เรามากพอ: DEF+12 เพิ่ม'},
   {skill:'ironwall',  skillTxt:'🛡️ DEF ไม่ต่ำกว่า 40'},
-  {skill:'tailwind',  skillTxt:'💨 💨ในเทิร์นรับ: DEF +12'},
+  {skill:'tailwind',  skillTxt:'💨 ธาตุลม: ตอนรับ DEF+12'},
   {skill:'engine',    skillTxt:'⚙️ สตามิน่าลดช้าครึ่งนึง'},
   {skill:'captain',   skillTxt:'🎖️ กัปตัน: ทีม +3 ATK/DEF'},
   {skill:'playmaker', skillTxt:'🎩 เพลย์เมกเกอร์: ทีม +2/เทิร์น'},
   {skill:'energizer', skillTxt:'⚡ หลังดวล: เพื่อน +20 สตามิน่า'},
   {skill:'mentor',    skillTxt:'📚 หลังแมตช์: ทุกคน +5 XP'},
-  {skill:'clutch',    skillTxt:'😤 แพ้อยู่: ATK+DEF +10'},
-  {skill:'algorithm', skillTxt:'🎯 🎯ทุกสถานการณ์: +8 ATK/DEF'},
+  {skill:'clutch',    skillTxt:'😤 แพ้อยู่: ATK/DEF +10 (ตามบทบาท)'},
+  {skill:'algorithm', skillTxt:'🎯 ธาตุเทคนิค: ATK/DEF +8 เสมอ'},
   {skill:'prodigy',   skillTxt:'🌟 XP ที่ได้ ×2'},
   {skill:'hatrick',   skillTxt:'⚽ ยิง 2 ติด: ฟรี 1 เทิร์น'},
   {skill:'penalty',   skillTxt:'🟢 จุดโทษ: +30 ATK (เสี่ยง)'},
@@ -2437,6 +2459,7 @@ async function enterPvpMatch(matchId,myRole){
   document.querySelector('.team.you').textContent='⚡ '+(playerProfile.name||'คุณ');
   $('aiName').textContent=oppName;
   renderSupportBar();
+  renderCaptainBar();
   setupTurnDisplay();
   /* subscribe realtime สำหรับ match นี้ */
   subscribeCurrentMatch(matchId,myRole);
@@ -2596,15 +2619,9 @@ function renderSupportDeck(){
   /* slot display */
   $('supportSlotDisplay').innerHTML=[0,1,2].map(i=>{
     const c=supportDeck[i];
-    if(!c) return `<div class="scard" onclick="removeSupportFromDeck(${i})" style="min-width:80px">
-      <span style="font-size:.7rem;color:#3a5240">ว่าง ${i+1}</span>
-    </div>`;
-    const cond=SUPPORT_CARDS.find(s=>s.id===c.id)?.cond||'any';
-    const canTrap=cond!=='any';
-    return `<div class="scard in-slot" style="min-width:80px">
-      <span class="scard-ico">${c.ico}</span><span class="scard-nm">${c.nm}</span>
-      ${canTrap?`<span onclick="toggleSupportTrap(${i})" style="display:block;font-size:.5rem;color:${c.isTrap?'var(--legend)':'#7fa78d'};cursor:pointer">${c.isTrap?'🪤 ตั้งดักแล้ว':'🎴 ใช้มือ (แตะเปลี่ยน)'}</span>`:''}
-      <span onclick="removeSupportFromDeck(${i})" style="display:block;font-size:.5rem;color:#f0907f;cursor:pointer">✕ ถอด</span>
+    return `<div class="scard ${c?'in-slot':''}" onclick="removeSupportFromDeck(${i})" style="min-width:80px">
+      ${c?`<span class="scard-ico">${c.ico}</span><span class="scard-nm">${c.nm}</span><span style="font-size:.5rem;color:#f0907f">✕ ถอด</span>`
+        :`<span style="font-size:.7rem;color:#3a5240">ว่าง ${i+1}</span>`}
     </div>`;
   }).join('');
   /* available */
@@ -2621,12 +2638,8 @@ function renderSupportDeck(){
 function addSupportToDeck(idx){
   if(supportDeck.filter(Boolean).length>=3) return;
   if(supportDeck.some(s=>s&&s._idx===idx)) return; // กันใส่การ์ดใบเดิมซ้ำหลายช่อง
-  const c={...supportCollection[idx],_idx:idx,isTrap:false};
+  const c={...supportCollection[idx],_idx:idx};
   supportDeck.push(c);saveGame();renderSupportDeck();sfxClick();
-}
-function toggleSupportTrap(i){
-  const c=supportDeck[i];if(!c) return;
-  c.isTrap=!c.isTrap;saveGame();renderSupportDeck();sfxClick();
 }
 function removeSupportFromDeck(slotIdx){
   supportDeck.splice(slotIdx,1);saveGame();renderSupportDeck();sfxClick();
@@ -3407,23 +3420,41 @@ function renderSupportBar(){
   const lbl=$('supportBarLabel');
   if(lbl) lbl.style.display=matchSupport.length?'':'none';
   bar.innerHTML=matchSupport.map((c,i)=>{
-    if(c.isTrap&&!c.used){
-      return `<div class="scard" style="border-color:var(--legend);opacity:.85">
-        <span class="scard-ico">🪤</span>
-        <span class="scard-nm">${c.nm}</span>
-        <span style="font-size:.5rem;color:var(--legend)">ตั้งดักรอ — ทำงานอัตโนมัติ</span>
+    if(c.used){
+      return `<div class="scard scard-used">
+        <span class="scard-ico">${c.ico}</span><span class="scard-nm">${c.nm}</span>
+        <span class="scard-used-label">ใช้แล้ว</span>
       </div>`;
     }
-    return `<div class="scard ${c.used?'scard-used':''}" onclick="${!c.used?`useSupportCard(${i})`:''}">
-      <span class="scard-ico">${c.ico}</span>
-      <span class="scard-nm">${c.nm}</span>
-      ${c.used?'<span class="scard-used-label">ใช้แล้ว</span>':''}
+    if(c.isTrap){
+      return `<div class="scard" style="border-color:var(--legend);cursor:default">
+        <span class="scard-ico">🪤</span><span class="scard-nm">${c.nm}</span>
+        <span style="font-size:.5rem;color:var(--legend)">ตั้งดักรอ — อัตโนมัติ</span>
+      </div>`;
+    }
+    const cond=SUPPORT_CARDS.find(s=>s.id===c.id)?.cond||'any';
+    if(cond==='any'){
+      return `<div class="scard" onclick="useSupportCard(${i})">
+        <span class="scard-ico">${c.ico}</span><span class="scard-nm">${c.nm}</span>
+      </div>`;
+    }
+    return `<div class="scard" style="cursor:default;padding-bottom:4px">
+      <span class="scard-ico">${c.ico}</span><span class="scard-nm">${c.nm}</span>
+      <div style="display:flex;gap:3px;margin-top:3px">
+        <span onclick="useSupportCard(${i})" style="font-size:.52rem;background:#3d7bd9;color:#fff;border-radius:5px;padding:1px 5px;cursor:pointer">ใช้เลย</span>
+        <span onclick="setSupportTrap(${i})" style="font-size:.52rem;background:var(--legend);color:#1a1408;border-radius:5px;padding:1px 5px;cursor:pointer">🪤 ตั้งดัก</span>
+      </div>
     </div>`;
   }).join('');
-  if(matchCaptain){
-    const cap=CAPTAIN_CARDS.find(c=>c.id===matchCaptain.id);
-    bar.innerHTML+=`<div class="capt-badge">👑 <b>${matchCaptain.nm||matchCaptain.id}</b> <span style="font-size:.6rem;color:#7fa78d">${cap?.triggerDesc||''}</span></div>`;
-  }
+}
+function renderCaptainBar(){
+  const bar=$('captainBar');
+  const lbl=$('captainBarLabel');
+  if(!bar) return;
+  if(!matchCaptain){if(lbl)lbl.style.display='none';bar.innerHTML='';return;}
+  if(lbl) lbl.style.display='';
+  const cap=CAPTAIN_CARDS.find(c=>c.id===matchCaptain.id);
+  bar.innerHTML=`<div class="capt-badge">👑 <b>${matchCaptain.nm||matchCaptain.id}</b> <span style="font-size:.6rem;color:#7fa78d">${cap?.triggerDesc||''}</span></div>`;
 }
 function checkTrapSupports(){
   matchSupport.forEach((c,i)=>{
@@ -3441,6 +3472,17 @@ function checkTrapSupports(){
       renderSupportBar();
     }
   });
+}
+function setSupportTrap(i){
+  const c=matchSupport[i];
+  if(!c||c.used||c.isTrap) return;
+  const cond=SUPPORT_CARDS.find(s=>s.id===c.id)?.cond||'any';
+  if(cond==='any') return;
+  c.isTrap=true;
+  log(`🪤 <span class="gold">ตั้งดัก "${c.nm}" ไว้แล้ว — จะทำงานอัตโนมัติทันทีที่เงื่อนไขเกิด</span>`);
+  sfxClick();
+  renderSupportBar();
+  checkTrapSupports(); // เผื่อเงื่อนไขเป็นจริงอยู่แล้ว ณ จังหวะที่ตั้งดัก
 }
 function useSupportCard(i){
   const c=matchSupport[i];
@@ -3479,6 +3521,7 @@ function startMatch(opponent,oppName,modeLabel,isReplay=false){
   capState={lastSaved:false,lastShotSaved:false,lastGoal:false,lastHighDef:false,
     justConceded:false,consecutiveGoals:0,totalConceded:0,capUsed:{}};
   renderSupportBar();
+  renderCaptainBar();
   /* captain: check matchStart trigger */
   setTimeout(()=>checkCaptainTriggers('matchStart'),300);
   /* captain skill: permanent team buff */
@@ -3678,13 +3721,13 @@ function finishDuel(attacker,defender,goal,youAtk){
   }else{
     if(youAtk){
       const xp=5*xpMult; gainPXp(attacker,xp); gainCapXp(xp);
-      log(`🧤 <span class="bad">โดนสกัด... +${xp} XP</span>`); updateMomentum(-8);
+      log(`🧤 <span class="bad">โดนสกัด... +${xp} XP</span>`); updateMomentum(-8); sfxSave();
       capState.lastShotSaved=true;capState.lastHighDef=defender.def>70;
       if(attacker.skill==='penalty'&&!goal){attacker.atk=Math.max(5,attacker.atk-10);log('🟢 <span class="bad">จุดโทษพลาด! ATK -10</span>');}
       setTimeout(()=>{checkCaptainTriggers('afterMissed');checkCaptainTriggers('passive');},100);
     }else{
       const xp=12*xpMult; gainPXp(defender,xp); gainCapXp(xp);
-      log(`🧤 <span class="good">${defender.name} สกัดสำเร็จ! +${xp} XP</span>`); updateMomentum(+8); sfxSave();
+      log(`🧤 <span class="good">${defender.name} สกัดสำเร็จ! +${xp} XP</span>`); updateMomentum(+8); sfxGreatSave();
       capState.lastSaved=true;
       setTimeout(()=>{checkCaptainTriggers('afterSave');checkCaptainTriggers('passive');},100);
       if(defender.skill==='energizer'){
@@ -3777,7 +3820,7 @@ function endMatch(){
         const bossDefs={
           leon:{nm:'ราชัน เลออน',pos:'ST',atk:95,def:45,nat:'🇧🇷',elem:'tech',skill:'crit',skillTxt:'💥 25% ยิงแรง ×1.5',msg:'ราชัน เลออน เข้าร่วมทีม!'},
           euro:{nm:'ฟรานซ์ ไกเซอร์',pos:'MF',atk:88,def:80,nat:'🇩🇪',elem:'wind',skill:'captain',skillTxt:'🎖️ กัปตัน: ทีม +3 ATK/DEF',msg:'ฟรานซ์ ไกเซอร์ กัปตันยุโรปเข้าร่วม!'},
-          asean:{nm:'สิงห์ อาเซียน',pos:'ST',atk:98,def:50,nat:'🇹🇭',elem:'fire',skill:'pyroclasm',skillTxt:'🔥 🔥ข่มทุกธาตุ: +10 เพิ่ม',msg:'สิงห์ อาเซียน นักเตะไทยตำนานเข้าร่วม!'},
+          asean:{nm:'สิงห์ อาเซียน',pos:'ST',atk:98,def:50,nat:'🇹🇭',elem:'fire',skill:'pyroclasm',skillTxt:'🔥 ธาตุไฟ: ตอนบุก ATK+10 เสมอ',msg:'สิงห์ อาเซียน นักเตะไทยตำนานเข้าร่วม!'},
         };
         const bd=bossDefs[pendingCtx.boss]||bossDefs.leon;
         const bossCard=P(bd.nm,bd.pos,bd.atk,bd.def,bd.nat,bd.elem,{r:'legend',skill:bd.skill,skillTxt:bd.skillTxt});
@@ -4481,32 +4524,48 @@ function sfxGoal(){
   setTimeout(()=>playTone(1046,.2,'sine',.2),480);
   /* crowd cheer — noise burst */
   try{
+    const c=ac(),buf=c.createBuffer(1,c.sampleRate*.7,c.sampleRate);
+    const d=buf.getChannelData(0);
+    for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*(1-i/d.length)*.26;
+    const src=c.createBufferSource(),g=c.createGain();
+    const filt=c.createBiquadFilter();filt.type='bandpass';filt.frequency.value=800;filt.Q.value=0.5;
+    src.buffer=buf;src.connect(filt);filt.connect(g);g.connect(c.destination);
+    g.gain.setValueAtTime(.32,c.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001,c.currentTime+.7);
+    src.start(c.currentTime+.3);
+  }catch(e){}
+}
+function sfxGreatSave(){
+  /* การสกัด/เซฟสำเร็จของเรา — เสียงเชิงบวก สั้นกว่าเสียงเข้าประตู ต่างจาก sfxSave (โห่) อย่างชัดเจน */
+  playTone(880,.08,'sine',.22);
+  setTimeout(()=>playTone(1046,.14,'sine',.26),90);
+  try{
+    const c=ac(),buf=c.createBuffer(1,c.sampleRate*.35,c.sampleRate);
+    const d=buf.getChannelData(0);
+    for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*(1-i/d.length)*.2;
+    const src=c.createBufferSource(),g=c.createGain();
+    const filt=c.createBiquadFilter();filt.type='bandpass';filt.frequency.value=1500;filt.Q.value=.6;
+    src.buffer=buf;src.connect(filt);filt.connect(g);g.connect(c.destination);
+    g.gain.setValueAtTime(.22,c.currentTime);
+    g.gain.exponentialRampToValueAtTime(.001,c.currentTime+.35);
+    src.start(c.currentTime+.1);
+  }catch(e){}
+}
+function sfxSave(){
+  /* เสียงโห่ — ใช้ตอนเสียประตู หรือถูกสกัดยิงไม่เข้า (ผลลบฝั่งเรา) */
+  playTone(220,.15,'sawtooth',.2);
+  setTimeout(()=>playTone(196,.2,'sawtooth',.17),150);
+  setTimeout(()=>playTone(185,.25,'sawtooth',.14),300);
+  /* crowd boo */
+  try{
     const c=ac(),buf=c.createBuffer(1,c.sampleRate*.6,c.sampleRate);
     const d=buf.getChannelData(0);
     for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*(1-i/d.length)*.18;
     const src=c.createBufferSource(),g=c.createGain();
-    const filt=c.createBiquadFilter();filt.type='bandpass';filt.frequency.value=800;filt.Q.value=0.5;
-    src.buffer=buf;src.connect(filt);filt.connect(g);g.connect(c.destination);
-    g.gain.setValueAtTime(.25,c.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.001,c.currentTime+.6);
-    src.start(c.currentTime+.3);
-  }catch(e){}
-}
-function sfxSave(){
-  /* เสียงโห่ — ต่ำกว่า + ดิ้น */
-  playTone(220,.15,'sawtooth',.18);
-  setTimeout(()=>playTone(196,.2,'sawtooth',.15),150);
-  setTimeout(()=>playTone(185,.25,'sawtooth',.12),300);
-  /* crowd boo */
-  try{
-    const c=ac(),buf=c.createBuffer(1,c.sampleRate*.5,c.sampleRate);
-    const d=buf.getChannelData(0);
-    for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*(1-i/d.length)*.12;
-    const src=c.createBufferSource(),g=c.createGain();
     const filt=c.createBiquadFilter();filt.type='bandpass';filt.frequency.value=300;filt.Q.value=0.8;
     src.buffer=buf;src.connect(filt);filt.connect(g);g.connect(c.destination);
-    g.gain.setValueAtTime(.15,c.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.001,c.currentTime+.5);
+    g.gain.setValueAtTime(.22,c.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001,c.currentTime+.6);
     src.start(c.currentTime+.1);
   }catch(e){}
 }
