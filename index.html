@@ -787,6 +787,7 @@ button:focus-visible{outline:2px solid var(--flood);outline-offset:2px}
     <button id="deckOk" onclick="goHome()">บันทึกเด็ค ✔</button>
     <button class="ghost" onclick="autoDeck()" style="font-size:.8rem">⚡ จัดเด็คอัตโนมัติ</button>
     <button class="ghost" onclick="clearDeck()" style="font-size:.8rem;color:#f0907f">🗑️ ล้างทั้งหมด</button>
+    <button class="ghost" onclick="goHome()" style="font-size:.8rem">กลับสโมสร</button>
   </div>
 </div>
 
@@ -2516,9 +2517,6 @@ function renderGachaPacks(){
 function pullFree(){
   if(freePacks<=0) return;
   freePacks--;
-  if(_sbUser&&_sb){
-    _sb.from('claimed_starters').upsert({user_id:_sbUser.id},{onConflict:'user_id'}).then(()=>{}).catch(()=>{});
-  }
   let c;
   if(_pity>=30){c=rollCard(true,true);_pity=0;}
   else if(_pity>=10){c=rollCard(false,false,true);}
@@ -4194,11 +4192,6 @@ async function bootGame(){
               if(!hasLocalData) goHome();
             } else if(hasLocalData){
               cloudSave().catch(()=>{});
-            } else {
-              /* ไม่มีทั้ง cloud และ local — เช็คว่าเคยรับแพ็คฟรีไปแล้วหรือยัง กันลบข้อมูลวนรีโรล */
-              _sb.from('claimed_starters').select('user_id').eq('user_id',_sbUser.id).maybeSingle()
-                .then(({data})=>{ if(data){freePacks=0;if(!$('home').classList.contains('hidden'))goHome();} })
-                .catch(()=>{});
             }
           }).catch(()=>{});
           loadProfile();
