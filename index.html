@@ -775,6 +775,7 @@ button:focus-visible{outline:2px solid var(--flood);outline-offset:2px}
   <!-- Support deck -->
   <div id="deckSupportPanel" style="display:none;width:100%;max-width:620px">
     <p style="font-size:.78rem;color:#7fa78d;margin-bottom:6px">เลือก Support card สูงสุด 3 ใบ — กดใช้ได้ครั้งเดียวต่อแมตช์</p>
+    <p style="font-size:.72rem;color:#7fa78d;margin-bottom:6px">🪤 การ์ดที่มีเงื่อนไข (ไม่ใช่ "ใช้ได้ทุกเมื่อ") ตั้งเป็น <b>"ดัก"</b> ได้ — จะทำงานอัตโนมัติทันทีที่เงื่อนไขเกิด ไม่ต้องกดเอง แต่แลกกับการเลือกจังหวะเองไม่ได้</p>
     <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap" id="supportSlotDisplay"></div>
     <p style="font-size:.75rem;color:#7fa78d;margin-bottom:4px">การ์ดที่มี:</p>
     <div class="hand" id="supportCollection" style="flex-wrap:wrap"></div>
@@ -2595,9 +2596,15 @@ function renderSupportDeck(){
   /* slot display */
   $('supportSlotDisplay').innerHTML=[0,1,2].map(i=>{
     const c=supportDeck[i];
-    return `<div class="scard ${c?'in-slot':''}" onclick="removeSupportFromDeck(${i})" style="min-width:80px">
-      ${c?`<span class="scard-ico">${c.ico}</span><span class="scard-nm">${c.nm}</span><span style="font-size:.5rem;color:#f0907f">✕ ถอด</span>`
-        :`<span style="font-size:.7rem;color:#3a5240">ว่าง ${i+1}</span>`}
+    if(!c) return `<div class="scard" onclick="removeSupportFromDeck(${i})" style="min-width:80px">
+      <span style="font-size:.7rem;color:#3a5240">ว่าง ${i+1}</span>
+    </div>`;
+    const cond=SUPPORT_CARDS.find(s=>s.id===c.id)?.cond||'any';
+    const canTrap=cond!=='any';
+    return `<div class="scard in-slot" style="min-width:80px">
+      <span class="scard-ico">${c.ico}</span><span class="scard-nm">${c.nm}</span>
+      ${canTrap?`<span onclick="toggleSupportTrap(${i})" style="display:block;font-size:.5rem;color:${c.isTrap?'var(--legend)':'#7fa78d'};cursor:pointer">${c.isTrap?'🪤 ตั้งดักแล้ว':'🎴 ใช้มือ (แตะเปลี่ยน)'}</span>`:''}
+      <span onclick="removeSupportFromDeck(${i})" style="display:block;font-size:.5rem;color:#f0907f;cursor:pointer">✕ ถอด</span>
     </div>`;
   }).join('');
   /* available */
@@ -2614,8 +2621,12 @@ function renderSupportDeck(){
 function addSupportToDeck(idx){
   if(supportDeck.filter(Boolean).length>=3) return;
   if(supportDeck.some(s=>s&&s._idx===idx)) return; // กันใส่การ์ดใบเดิมซ้ำหลายช่อง
-  const c={...supportCollection[idx],_idx:idx};
+  const c={...supportCollection[idx],_idx:idx,isTrap:false};
   supportDeck.push(c);saveGame();renderSupportDeck();sfxClick();
+}
+function toggleSupportTrap(i){
+  const c=supportDeck[i];if(!c) return;
+  c.isTrap=!c.isTrap;saveGame();renderSupportDeck();sfxClick();
 }
 function removeSupportFromDeck(slotIdx){
   supportDeck.splice(slotIdx,1);saveGame();renderSupportDeck();sfxClick();
@@ -3395,20 +3406,45 @@ function renderSupportBar(){
   if(!bar) return;
   const lbl=$('supportBarLabel');
   if(lbl) lbl.style.display=matchSupport.length?'':'none';
-  bar.innerHTML=matchSupport.map((c,i)=>`
-    <div class="scard ${c.used?'scard-used':''}" onclick="${!c.used?`useSupportCard(${i})`:''}">
+  bar.innerHTML=matchSupport.map((c,i)=>{
+    if(c.isTrap&&!c.used){
+      return `<div class="scard" style="border-color:var(--legend);opacity:.85">
+        <span class="scard-ico">🪤</span>
+        <span class="scard-nm">${c.nm}</span>
+        <span style="font-size:.5rem;color:var(--legend)">ตั้งดักรอ — ทำงานอัตโนมัติ</span>
+      </div>`;
+    }
+    return `<div class="scard ${c.used?'scard-used':''}" onclick="${!c.used?`useSupportCard(${i})`:''}">
       <span class="scard-ico">${c.ico}</span>
       <span class="scard-nm">${c.nm}</span>
       ${c.used?'<span class="scard-used-label">ใช้แล้ว</span>':''}
-    </div>`).join('');
+    </div>`;
+  }).join('');
   if(matchCaptain){
     const cap=CAPTAIN_CARDS.find(c=>c.id===matchCaptain.id);
     bar.innerHTML+=`<div class="capt-badge">👑 <b>${matchCaptain.nm||matchCaptain.id}</b> <span style="font-size:.6rem;color:#7fa78d">${cap?.triggerDesc||''}</span></div>`;
   }
 }
+function checkTrapSupports(){
+  matchSupport.forEach((c,i)=>{
+    if(!c||c.used||!c.isTrap) return;
+    const cond=SUPPORT_CARDS.find(s=>s.id===c.id)?.cond||'any';
+    let trig=false;
+    if(cond==='leading'&&scoreYou>scoreAi) trig=true;
+    else if(cond==='losing'&&scoreYou<scoreAi) trig=true;
+    else if(cond==='afterConcede'&&capState.justConceded) trig=true;
+    else if(cond==='attacking'&&youAttacking) trig=true;
+    else if(cond==='defending'&&!youAttacking) trig=true;
+    if(trig){
+      log(`🪤 <span class="gold">การ์ดดัก "${c.nm}" เปิดทำงานอัตโนมัติ!</span>`);
+      applySupportEffect(c);
+      renderSupportBar();
+    }
+  });
+}
 function useSupportCard(i){
   const c=matchSupport[i];
-  if(!c||c.used) return;
+  if(!c||c.used||c.isTrap) return;
   const cond=SUPPORT_CARDS.find(s=>s.id===c.id)?.cond||'any';
   if(cond==='leading'&&scoreYou<=scoreAi){log('⏱️ <span class="bad">ใช้ได้เฉพาะเมื่อนำอยู่!</span>');return;}
   if(cond==='losing'&&scoreYou>=scoreAi){log('🏟️ <span class="bad">ใช้ได้เฉพาะเมื่อแพ้อยู่!</span>');return;}
@@ -3461,6 +3497,7 @@ function startMatch(opponent,oppName,modeLabel,isReplay=false){
   setupTurn();
 }
 function setupTurn(){
+  checkTrapSupports();
   if(!youAttacking){
     const atks=ai.filter(p=>p.atk>=50);
     incomingAttacker=atks[rnd(atks.length)];
@@ -3626,7 +3663,7 @@ function finishDuel(attacker,defender,goal,youAtk){
       if(hasItemPassive(attacker,'golden_boot')){coins+=15;$('coins').textContent=coins;log('💰 <span class="loot">Golden Boot! +15 เหรียญ!</span>');}
       if(hasItemPassive(attacker,'ball_magnet')&&Math.random()<.2){fx.freeAtk=true;log('🧲 <span class="good">Ball Magnet! บุกซ้ำ!</span>');}
       if(hasItemPassive(attacker,'vampire_kit')){attacker.stamina=Math.min(100,attacker.stamina+20);log('🩸 <span class="good">Vampire Kit! stam+20!</span>');}
-      setTimeout(()=>{checkCaptainTriggers('afterGoal');checkCaptainTriggers('passive');},100);
+      setTimeout(()=>{checkCaptainTriggers('afterGoal');checkCaptainTriggers('passive');checkTrapSupports();},100);
       if(attacker.skill==='golden'){coins+=20;$('coins').textContent=coins;log('✨ <span class="loot">Golden +20 เหรียญ!</span>');}
       if(attacker.skill==='vampire'){attacker.stamina=Math.min(100,attacker.stamina+25);log('🧛 <span class="good">Vampire สตามิน่า +25!</span>');}
       if(attacker.skill==='hatrick'){if(!fx._hatrick)fx._hatrick=0;fx._hatrick++;if(fx._hatrick>=2){fx._hatrick=0;fx.freeAtk=true;log('⚽ <span class="loot">Hat-trick! ได้บุกฟรี!</span>');}}
@@ -3636,7 +3673,7 @@ function finishDuel(attacker,defender,goal,youAtk){
       }
     }else{scoreAi++;log(`⚽ <span class="bad">${attacker.name} ยิงเข้า...</span>`);updateMomentum(-15);sfxSave();
       capState.justConceded=true;capState.totalConceded=(capState.totalConceded||0)+1;capState.consecutiveGoals=0;
-      setTimeout(()=>{checkCaptainTriggers('afterConcede');checkCaptainTriggers('passive');},100);
+      setTimeout(()=>{checkCaptainTriggers('afterConcede');checkCaptainTriggers('passive');checkTrapSupports();},100);
     }
   }else{
     if(youAtk){
@@ -3969,6 +4006,17 @@ async function cloudLogout(){
   location.reload();
 }
 /* ===== SUPABASE FULL SAVE/LOAD ===== */
+function restoreSupportDeck(arr){
+  if(!arr) return [];
+  return arr.map(item=>{
+    if(!item) return null;
+    const id=typeof item==='string'?item:item.id;
+    const isTrap=(item&&typeof item==='object')?!!item.isTrap:false;
+    const idx=supportCollection.findIndex(c=>c.id===id);
+    if(idx===-1) return null;
+    return {...supportCollection[idx],_idx:idx,isTrap};
+  }).filter(Boolean);
+}
 function buildSavePayload(){
   return {
     user_id: _sbUser.id,
@@ -3981,7 +4029,7 @@ function buildSavePayload(){
     item_inventory: itemInventory,
     consumables,
     deck, 
-    support_deck: supportDeck.map(c=>c?c.id:null),
+    support_deck: supportDeck.map(c=>c?{id:c.id,isTrap:!!c.isTrap}:null),
     captain_id: captainCard?.id||null,
     team_formation: teamFormation||'4-4-2',
     player_name: playerProfile.name||'',
@@ -4031,7 +4079,7 @@ function applyCloudData(d){
     consumables={...consumables,...(d.consumables||{})};
     deck=(d.deck||[]).filter(id=>collection.some(p=>p.id===id));
     if(deck.length===0&&collection.length) deck=collection.slice(0,6).map(p=>p.id);
-    if(d.support_deck) supportDeck=d.support_deck.map(id=>id?supportCollection.find(c=>c.id===id)||null:null).filter(Boolean);
+    if(d.support_deck) supportDeck=restoreSupportDeck(d.support_deck);
     captainCard=d.captain_id?captainCollection.find(c=>c.id===d.captain_id)||null:null;
     teamFormation=d.team_formation||'4-4-2';
     if(d.player_name) playerProfile.name=d.player_name;
@@ -4311,7 +4359,7 @@ function buildLocalSnap(){
     deck,
     collection:collection.map(p=>({...p,item:null,shirt:null,shoe:null,pants:null})),
     supportCollection,captainCollection,
-    supportDeckIds:supportDeck.map(c=>c?c.id:null),
+    supportDeckIds:supportDeck.map(c=>c?{id:c.id,isTrap:!!c.isTrap}:null),
     captainId:captainCard?.id||null,
     teamFormation,
     consumables,itemInventory,dailyDeals,dailyDate,
@@ -4340,7 +4388,7 @@ function loadGame(){
     if(deck.length===0&&collection.length) deck=collection.slice(0,6).map(p=>p.id);
     supportCollection=d.supportCollection||[];
     captainCollection=d.captainCollection||[];
-    if(d.supportDeckIds) supportDeck=d.supportDeckIds.map(id=>id?supportCollection.find(c=>c.id===id)||null:null).filter(Boolean);
+    if(d.supportDeckIds) supportDeck=restoreSupportDeck(d.supportDeckIds);
     captainCard=d.captainId?captainCollection.find(c=>c.id===d.captainId)||null:null;
     teamFormation=d.teamFormation||localStorage.getItem('frForm')||'4-4-2';
     consumables={...consumables,...(d.consumables||{})};
