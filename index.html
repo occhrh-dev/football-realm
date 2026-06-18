@@ -13,7 +13,20 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <script>
 if('serviceWorker' in navigator){
-  window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('sw.js').then(reg=>reg.update()).catch(()=>{});
+  });
+  let _swReloadPending=false,_swReloaded=false;
+  navigator.serviceWorker.addEventListener('controllerchange',()=>{
+    if(_swReloaded) return; // กันรีโหลดวนซ้ำถ้า event ยิงมาซ้ำ
+    const mu=document.getElementById('matchUI');
+    const inMatch=mu&&!mu.classList.contains('hidden');
+    if(inMatch){ _swReloadPending=true; } // อยู่กลางแมตช์ - รอจนกลับหน้าโฮมค่อยรีเฟรช ไม่ตัดจังหวะ
+    else { _swReloaded=true; location.reload(); }
+  });
+  window._checkSwReload=()=>{
+    if(_swReloadPending&&!_swReloaded){ _swReloaded=true; location.reload(); }
+  };
 }
 </script>
 <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;600;800&family=Sarabun:wght@400;600&display=swap" rel="stylesheet">
@@ -2003,6 +2016,7 @@ function buyCons(type,price){
 function hideAll(){SCREENS.forEach(i=>{const el=$(i);if(el)el.classList.add('hidden');});}
 function goHome(){
   hideAll();$('home').classList.remove('hidden');
+  if(window._checkSwReload) window._checkSwReload();
   updateHomeProfile();
   const _homeTP=$('homeTPBar');
   if(_homeTP){
