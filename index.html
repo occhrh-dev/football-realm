@@ -522,6 +522,8 @@ button:focus-visible{outline:2px solid var(--flood);outline-offset:2px}
 .ach-badge .ach-ico{font-size:1.5rem}
 .ach-badge .ach-nm{font-family:'Kanit';font-weight:600;font-size:.7rem;margin:3px 0 0;color:var(--gold)}
 .ach-badge.locked{opacity:.4;filter:grayscale(.8)}
+.ach-badge.tier2{border-color:#c9c9d9;background:linear-gradient(160deg,#2a2a35,#15151a)}
+.ach-badge.tier3{border-color:var(--legend);background:linear-gradient(160deg,#3a1e3a,#150a18)}
 .ach-notif{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:linear-gradient(160deg,#2e2410,#15110a);border:2px solid var(--gold);border-radius:12px;padding:10px 20px;z-index:45;font-family:'Kanit';font-weight:700;color:var(--gold);font-size:.95rem;text-align:center;animation:achSlide .4s ease,achFade 2s ease 2.5s forwards;pointer-events:none}
 @keyframes achSlide{from{transform:translateX(-50%) translateY(40px);opacity:0}to{transform:translateX(-50%) translateY(0);opacity:1}}
 @keyframes achFade{to{opacity:0}}
@@ -610,6 +612,7 @@ button:focus-visible{outline:2px solid var(--flood);outline-offset:2px}
     <button onclick="openShop()">🏪 ร้านค้า</button>
     <button class="ghost" onclick="openDeck()">📋 จัดเด็ค</button>
     <button class="ghost" onclick="openInv()">🎒 กระเป๋า</button>
+    <button class="ghost" onclick="openCollection()">📒 สมุดสะสม</button>
     <button class="ghost" onclick="openQuest()">🗒️ ภารกิจ</button>
     <button class="ghost" onclick="showTutorial(true)" style="font-size:.75rem">📖 วิธีเล่น</button>
     <button class="ghost" onclick="openSettings()" style="font-size:.75rem">⚙️ ตั้งค่า</button>
@@ -824,6 +827,20 @@ button:focus-visible{outline:2px solid var(--flood);outline-offset:2px}
   <h2 class="kanit" style="margin-top:10px;font-size:1rem">🏅 ความสำเร็จ</h2>
   <div class="ach-wrap" id="achWrap"></div>
   <button class="ghost" onclick="goHome()">กลับสโมสร</button>
+</div>
+
+<!-- ============ COLLECTION BOOK ============ -->
+<div class="overlay hidden" id="collectionScr">
+  <h1>📒 สมุดสะสม</h1>
+  <p style="font-size:.82rem;color:#7fa78d" id="collectSummary"></p>
+  <h2 class="kanit" style="margin-top:6px;font-size:1rem">🌍 อาร์คีไทป์ตามชาติ</h2>
+  <p style="font-size:.7rem;color:#7fa78d;margin-bottom:6px">มีนักเตะชาติเดียวกัน ≥3 ในเด็ค ปลดล็อกเคมีทีม ⭐ · ≥5 ⭐⭐ · ≥6 ⭐⭐⭐</p>
+  <div class="ach-wrap" id="collectNatGrid"></div>
+  <h2 class="kanit" style="margin-top:14px;font-size:1rem">⚡ สายธาตุ</h2>
+  <div class="ach-wrap" id="collectElemGrid"></div>
+  <h2 class="kanit" style="margin-top:14px;font-size:1rem">💎 ระดับความหายาก</h2>
+  <div class="ach-wrap" id="collectRarityGrid"></div>
+  <button class="ghost" onclick="goHome()" style="margin-top:14px">กลับสโมสร</button>
 </div>
 
 
@@ -1602,11 +1619,17 @@ function deckPlayers(){return deck.map(id=>collection.find(p=>p.id===id));}
 function synergyBonus(){
   const cnt={};deckPlayers().forEach(p=>cnt[p.nat]=(cnt[p.nat]||0)+1);
   const hit=Object.entries(cnt).filter(([k,v])=>v>=3);
-  return hit.length?{bonus:5,nats:hit.map(h=>h[0])}:{bonus:0,nats:[]};
+  if(!hit.length) return {bonus:0,nats:[],tier:0};
+  const maxCount=Math.max(...hit.map(h=>h[1]));
+  const tier=maxCount>=6?3:maxCount>=5?2:1;
+  const bonus=tier===3?18:tier===2?10:5;
+  return {bonus,nats:hit.map(h=>h[0]),tier};
 }
 function synText(){
   const s=synergyBonus();
-  return s.bonus?`🧪 เคมีทีม! ${s.nats.join(' ')} ×3 — ทั้งทีม +${s.bonus}`:`🧪 ยังไม่มีเคมีทีม (ชาติเดียวกัน ≥3)`;
+  if(!s.bonus) return `🧪 ยังไม่มีเคมีทีม (ชาติเดียวกัน ≥3)`;
+  const tierNm=s.tier===3?'⭐⭐⭐ ทัพเอกภาพ':s.tier===2?'⭐⭐ ทัพแข็งแกร่ง':'⭐ เคมีทีม';
+  return `🧪 ${tierNm}! ${s.nats.join(' ')} — ทั้งทีม +${s.bonus}`;
 }
 let teamFormation='4-4-2'; // selected before match
 
@@ -1716,7 +1739,7 @@ function gainPXp(p,n){
 }
 
 /* ============ NAV ============ */
-const SCREENS=['intro','home','advScr','lgScr','twScr','pvpScr','tourScr','shop','deckScr','matchEnd','invScr','matchUI','questScr','profileScr','settingsScr'];
+const SCREENS=['intro','home','advScr','lgScr','twScr','pvpScr','tourScr','shop','deckScr','matchEnd','invScr','matchUI','questScr','profileScr','settingsScr','collectionScr'];
 /* ===== SHOP JS ===== */
 let shopTab='gacha';
 
@@ -4680,6 +4703,46 @@ function openQuest(){
   questInit();hideAll();$('questScr').classList.remove('hidden');
   renderQuestScreen();
 }
+function openCollection(){
+  hideAll();$('collectionScr').classList.remove('hidden');
+  renderCollectionBook();
+}
+function renderCollectionBook(){
+  const allNats=Object.keys(NAT_NAMES);
+  const natCount={};collection.forEach(p=>natCount[p.nat]=(natCount[p.nat]||0)+1);
+  const natsOwned=allNats.filter(n=>natCount[n]>0).length;
+  $('collectSummary').textContent=`มีนักเตะทั้งหมด ${collection.length} ใบ · เก็บได้ ${natsOwned}/${allNats.length} ชาติ`;
+  $('collectNatGrid').innerHTML=allNats.map(n=>{
+    const c=natCount[n]||0;
+    const tier=c>=6?3:c>=5?2:c>=3?1:0;
+    const tierLabel=tier===3?'⭐⭐⭐ เต็มขุม':tier===2?'⭐⭐ แข็งแกร่ง':tier===1?'⭐ เคมีทีม':'';
+    return `<div class="ach-badge ${tier>=3?'unlocked tier3':tier===2?'unlocked tier2':tier>=1?'unlocked':'locked'}">
+      <div class="ach-ico">${n}</div>
+      <div class="ach-nm">${c} ใบ</div>
+      <div style="font-size:.6rem;color:#7fa78d">${tierLabel||'ยังไม่ปลดล็อก'}</div>
+    </div>`;
+  }).join('');
+  const elemCount={};collection.forEach(p=>elemCount[p.elem]=(elemCount[p.elem]||0)+1);
+  $('collectElemGrid').innerHTML=ELEMKEYS.map(e=>{
+    const c=elemCount[e]||0;
+    return `<div class="ach-badge ${c>0?'unlocked':'locked'}">
+      <div class="ach-ico">${ELEMS[e].ico}</div>
+      <div class="ach-nm">สาย${ELEMS[e].nm}</div>
+      <div style="font-size:.6rem;color:#7fa78d">${c} ใบ</div>
+    </div>`;
+  }).join('');
+  const rarityMeta=[{k:'common',ico:'⚪',nm:'ธรรมดา'},{k:'rare',ico:'⭐',nm:'แรร์'},{k:'legend',ico:'🌟',nm:'ตำนาน'}];
+  const rarityCount={common:0,rare:0,legend:0};
+  collection.forEach(p=>{rarityCount[p.legend?'legend':p.rare?'rare':'common']++;});
+  $('collectRarityGrid').innerHTML=rarityMeta.map(r=>{
+    const c=rarityCount[r.k];
+    return `<div class="ach-badge ${c>0?'unlocked':'locked'}">
+      <div class="ach-ico">${r.ico}</div>
+      <div class="ach-nm">${r.nm}</div>
+      <div style="font-size:.6rem;color:#7fa78d">${c} ใบ</div>
+    </div>`;
+  }).join('');
+}
 function renderQuestScreen(){
   const tmr=new Date();tmr.setHours(24,0,0,0);
   const diff=tmr-Date.now();
@@ -4714,6 +4777,8 @@ const ACHS=[
   {id:'adv_clear',ico:'🗺️',nm:'นักผจญภัย',desc:'พิชิตผจญภัยครบ',check:()=>advProgress>=ADV_NODES.length},
   {id:'rich',ico:'💰',nm:'นักสะสมเหรียญ',desc:'มีเหรียญ 1000+',check:()=>coins>=1000},
   {id:'pvp_gold',ico:'🏅',nm:'นักดวลแกร่ง',desc:'ขึ้น Gold rank',check:()=>rp>=220},
+  {id:'all_nats',ico:'🌍',nm:'นักสะสมโลก',desc:'มีนักเตะครบทุกชาติ (12 ชาติ)',check:()=>new Set(collection.map(p=>p.nat)).size>=Object.keys(NAT_NAMES).length},
+  {id:'mono_nat',ico:'🛡️',nm:'ทัพเอกภาพ',desc:'มีนักเตะชาติเดียวกัน 6 ใบในเด็ค',check:()=>{const cnt={};deckPlayers().forEach(p=>cnt[p.nat]=(cnt[p.nat]||0)+1);return Object.values(cnt).some(v=>v>=6);}},
 ];
 let _achStats={wins:0};
 let _unlocked=new Set();
