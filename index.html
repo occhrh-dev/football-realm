@@ -1361,7 +1361,7 @@ const SUPPORT_CARDS=[
 const CAPTAIN_CARDS=[
   /* Common */
   {id:'rage',     ico:'😤',nm:'ไฟแค้น',          tier:'common',
-   triggerDesc:'แพ้อยู่ ≥2 ประตู → ทีม ATK+5',
+   triggerDesc:'แพ้อยู่ ≥2 ประตู → ทีม ATK+5 (มีผลแค่ตอนยังแพ้อยู่)',
    check:(s)=>s.scoreAi-s.scoreYou>=2,
    trigger:'passive', effect:'rage'},
   {id:'gk_instinct',ico:'🥅',nm:'สัญชาตญาณ GK', tier:'common',
@@ -1369,8 +1369,8 @@ const CAPTAIN_CARDS=[
    check:(s)=>s.lastSaved&&Math.random()<.30,
    trigger:'afterSave', effect:'gk_instinct'},
   {id:'fighter',  ico:'💪',nm:'นักสู้ไม่ยอมแพ้', tier:'common',
-   triggerDesc:'stam เฉลี่ยทีม <40% → ทีม DEF+10',
-   check:(s)=>s.avgStam<40,
+   triggerDesc:'stam เฉลี่ยทีม <40% ครั้งแรก → ทีม DEF+10',
+   check:(s)=>s.avgStam<40&&!s.capUsed.fighter,
    trigger:'passive', effect:'fighter'},
   /* Rare */
   {id:'cap_var',  ico:'📺',nm:'กัปตัน VAR',       tier:'rare',
@@ -1795,6 +1795,7 @@ function eff(p,isMine=true){
   }
   if(isMine&&fx.secondHalfAtk) stAtk+=8;
   if(isMine&&fx.secondHalfDef) stDef+=8;
+  if(isMine&&fx.rageActive) stAtk+=5;
   return {atk:Math.max(1,Math.round((p.atk+ia+bonus+stAtk)*f)),
           def:Math.max(1,Math.round((p.def+idf+bonus+bb.def+stDef)*f))};
 }
@@ -1803,10 +1804,10 @@ function eff(p,isMine=true){
 function capXpNeed(){return capLv*60}
 function pXpNeed(p){return p.lv*40}
 function log(msg,cls=''){const d=document.createElement('div');if(cls)d.className=cls;d.innerHTML=msg;$('log').prepend(d);}
-function popup(html){
+function popup(html,dur=1700){
   let p=$('lvupPop');
   if(!p){p=document.createElement('div');p.id='lvupPop';p.className='lvup hidden';document.body.appendChild(p);}
-  p.innerHTML=html;p.classList.remove('hidden');setTimeout(()=>p.classList.add('hidden'),1700);
+  p.innerHTML=html;p.classList.remove('hidden');setTimeout(()=>p.classList.add('hidden'),dur);
 }
 function gainCapXp(n){
   const before=capLv;
@@ -3400,6 +3401,14 @@ function checkCaptainTriggers(when){
   const cap=CAPTAIN_CARDS.find(c=>c.id===matchCaptain.id);
   if(!cap) return;
   const s=buildCapState();
+  if(cap.id==='rage'){
+    /* ไฟแค้น: บัฟแบบมีเงื่อนไขสด ๆ ไม่ใช่บวกถาวร - มีผลเฉพาะตอนแพ้อยู่ ≥2 ประตู หายเองถ้าตีเสมอ/นำ */
+    const active=cap.check(s);
+    if(active&&!fx.rageActive) log('😤 <span class="good">ไฟแค้น! ทีม ATK+5 (จนกว่าจะไล่ตามทัน)</span>');
+    if(!active&&fx.rageActive) log('😤 <span class="bad">ไล่ตามทันแล้ว... ไฟแค้นดับลง</span>');
+    fx.rageActive=active;
+    return;
+  }
   if(cap.trigger!==when&&cap.trigger!=='passive') return;
   if(cap.trigger==='passive'&&when!=='passive') return;
   if(!cap.check(s)) return;
@@ -3408,12 +3417,11 @@ function checkCaptainTriggers(when){
 function applyCaptainEffect(cap,s){
   const e=cap.effect;
   const used=capState.capUsed||{};
-  if(e==='rage'){deckPlayers().forEach(p=>p.atk+=5);log(`😤 <span class="good">ไฟแค้น! ทีม ATK+5</span>`);}
-  else if(e==='gk_instinct'){
+  if(e==='gk_instinct'){
     fx.freekickBonus=10;youAttacking=true;
     log('🥅 <span class="good">สัญชาตญาณ GK! ยิงกลับ ATK+10!</span>');sfxGoal();
   }
-  else if(e==='fighter'){deckPlayers().forEach(p=>p.def+=10);log('💪 <span class="good">นักสู้! ทีม DEF+10</span>');}
+  else if(e==='fighter'){deckPlayers().forEach(p=>p.def+=10);log('💪 <span class="good">นักสู้! ทีม DEF+10</span>');used.fighter=true;}
   else if(e==='cap_var'){
     if(scoreAi>0){scoreAi--;$('sAi').textContent=scoreAi;log('📺 <span class="good">กัปตัน VAR! ยกเลิกประตู!</span>');sfxGoal();}
     used.var=true;
@@ -3564,6 +3572,9 @@ function startMatch(opponent,oppName,modeLabel,isReplay=false){
   }
   if(matchStadium.id==='packed'){momentum=65;updateMomentum(0);}
   renderStadiumBadge();
+  if(matchStadium.id!=='neutral'){
+    setTimeout(()=>popup(`<h2>${matchStadium.ico} ${matchStadium.nm}</h2><p class="kanit" style="font-size:.85rem;margin-top:4px">${matchStadium.desc}</p>`,3200),200);
+  }
   /* init support + captain for this match */
   matchSupport=supportDeck.map(c=>({...c,used:false}));
   matchCaptain=captainCard?{...captainCard}:null;
