@@ -13,20 +13,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <script>
 if('serviceWorker' in navigator){
-  window.addEventListener('load',()=>{
-    navigator.serviceWorker.register('sw.js').then(reg=>reg.update()).catch(()=>{});
-  });
-  let _swReloadPending=false,_swReloaded=false;
-  navigator.serviceWorker.addEventListener('controllerchange',()=>{
-    if(_swReloaded) return; // กันรีโหลดวนซ้ำถ้า event ยิงมาซ้ำ
-    const mu=document.getElementById('matchUI');
-    const inMatch=mu&&!mu.classList.contains('hidden');
-    if(inMatch){ _swReloadPending=true; } // อยู่กลางแมตช์ - รอจนกลับหน้าโฮมค่อยรีเฟรช ไม่ตัดจังหวะ
-    else { _swReloaded=true; location.reload(); }
-  });
-  window._checkSwReload=()=>{
-    if(_swReloadPending&&!_swReloaded){ _swReloaded=true; location.reload(); }
-  };
+  window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
 }
 </script>
 <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;600;800&family=Sarabun:wght@400;600&display=swap" rel="stylesheet">
@@ -775,8 +762,8 @@ button:focus-visible{outline:2px solid var(--flood);outline-offset:2px}
       <button class="gacha-type-btn" onclick="setGachaType('captain',this)" style="font-family:Kanit;font-size:.75rem;padding:5px 12px;border-radius:6px;border:1px solid #2a5238;background:transparent;color:#7fa78d;cursor:pointer">👑 Captain</button>
     </div>
     <div class="packbtns" id="packbtns">
-      <div class="pack" onclick="pull(50,false)" role="button" tabindex="0"><div class="pnm">📦 ซองธรรมดา</div><div class="prate">ธรรมดา 75% · แรร์ ⭐ 22%<br>ตำนาน 🌟 3%</div><div class="pcost">🪙 50</div></div>
-      <div class="pack premium" onclick="pull(120,true)" role="button" tabindex="0"><div class="pnm">💎 ซองพรีเมียม</div><div class="prate">ธรรมดา 40% · แรร์ ⭐ 48%<br>ตำนาน 🌟 12%</div><div class="pcost">🪙 120</div></div>
+      <div class="pack" onclick="pull(50,false)" role="button" tabindex="0"><div class="pnm">📦 ซองธรรมดา</div><div class="prate">ธรรมดา 89% · แรร์ ⭐ 10%<br>ตำนาน 🌟 1%</div><div class="pcost">🪙 50</div></div>
+      <div class="pack premium" onclick="pull(120,true)" role="button" tabindex="0"><div class="pnm">💎 ซองพรีเมียม</div><div class="prate">ธรรมดา 76% · แรร์ ⭐ 20%<br>ตำนาน 🌟 4%</div><div class="pcost">🪙 120</div></div>
     </div>
     <div class="gachareveal" id="gachaOut"></div>
   </div>
@@ -1267,23 +1254,6 @@ function applySkillEffect(p,isAtk,atkR,defR,notes,fx2){
   }
 }
 
-function rollCard(premium,forceLegend=false,forceRare=false){
-  const r=Math.random();
-  let tier;
-  if(forceLegend) tier='legend';
-  else if(forceRare) tier=r<.08?'legend':'rare';
-  else tier=premium?(r<.12?'legend':r<.6?'rare':'common'):(r<.03?'legend':r<.25?'rare':'common');
-  const pos=['ST','WG','MF','DF'][rnd(4)];
-  const isAtk=pos==='ST'||pos==='WG';
-  let base=(tier==='legend'?88:tier==='rare'?76:62)+rnd(8);
-  const atk=isAtk?base:(pos==='MF'?base-6:Math.round(base*.45));
-  const def=isAtk?Math.round(base*.45):(pos==='MF'?base-6:base);
-  const skillChance=tier==='legend'?1:tier==='rare'?.65:.2;
-  const sk=Math.random()<skillChance?SKILLS[rnd(SKILLS.length)]:{};
-  const nat=NATIONS[rnd(NATIONS.length)];
-  const nm=genUniqueName(nat);
-  return P(nm,pos,atk,def,nat,ELEMKEYS[rnd(3)],{r:tier==='common'?null:tier,...sk});
-}
 function genTeam(mult,natBias){
   const mk=(nm,pos,a,d,r)=>P(nm,pos,Math.round(a*mult),Math.round(d*mult),
     natBias||NATIONS[rnd(NATIONS.length)],ELEMKEYS[rnd(3)],r?{r:'rare'}:{});
@@ -2016,7 +1986,6 @@ function buyCons(type,price){
 function hideAll(){SCREENS.forEach(i=>{const el=$(i);if(el)el.classList.add('hidden');});}
 function goHome(){
   hideAll();$('home').classList.remove('hidden');
-  if(window._checkSwReload) window._checkSwReload();
   updateHomeProfile();
   const _homeTP=$('homeTPBar');
   if(_homeTP){
@@ -2664,9 +2633,9 @@ function renderGachaPacks(){
     el.innerHTML=`<div class="pack" onclick="pull(50,false)" role="button" tabindex="0"><div class="pnm">📦 ปลอกแขนธรรมดา</div><div class="prate">ธรรมดา 70% · แรร์ ⭐ 25%<br>ตำนาน 🌟 5%</div><div class="pcost">🪙 50</div></div>
       <div class="pack premium" onclick="pull(120,true)" role="button" tabindex="0"><div class="pnm">💎 ปลอกแขนพรีเมียม</div><div class="prate">ธรรมดา 45% · แรร์ ⭐ 40%<br>ตำนาน 🌟 15%</div><div class="pcost">🪙 120</div></div>`;
   } else {
-    const freeCard=freePacks>0?`<div class="pack" onclick="pullFree()" role="button" tabindex="0" style="border-color:var(--legend)"><div class="pnm">🎁 แพ็คเริ่มต้นฟรี</div><div class="prate">ธรรมดา 75% · แรร์ ⭐ 22%<br>ตำนาน 🌟 3%</div><div class="pcost" style="color:var(--legend)">เหลือ ${freePacks}/6</div></div>`:'';
-    el.innerHTML=freeCard+`<div class="pack" onclick="pull(50,false)" role="button" tabindex="0"><div class="pnm">📦 ซองธรรมดา</div><div class="prate">ธรรมดา 75% · แรร์ ⭐ 22%<br>ตำนาน 🌟 3%</div><div class="pcost">🪙 50</div></div>
-      <div class="pack premium" onclick="pull(120,true)" role="button" tabindex="0"><div class="pnm">💎 ซองพรีเมียม</div><div class="prate">ธรรมดา 40% · แรร์ ⭐ 48%<br>ตำนาน 🌟 12%</div><div class="pcost">🪙 120</div></div>`;
+    const freeCard=freePacks>0?`<div class="pack" onclick="pullFree()" role="button" tabindex="0" style="border-color:var(--legend)"><div class="pnm">🎁 แพ็คเริ่มต้นฟรี</div><div class="prate">ธรรมดา 89% · แรร์ ⭐ 10%<br>ตำนาน 🌟 1%</div><div class="pcost" style="color:var(--legend)">เหลือ ${freePacks}/6</div></div>`:'';
+    el.innerHTML=freeCard+`<div class="pack" onclick="pull(50,false)" role="button" tabindex="0"><div class="pnm">📦 ซองธรรมดา</div><div class="prate">ธรรมดา 89% · แรร์ ⭐ 10%<br>ตำนาน 🌟 1%</div><div class="pcost">🪙 50</div></div>
+      <div class="pack premium" onclick="pull(120,true)" role="button" tabindex="0"><div class="pnm">💎 ซองพรีเมียม</div><div class="prate">ธรรมดา 76% · แรร์ ⭐ 20%<br>ตำนาน 🌟 4%</div><div class="pcost">🪙 120</div></div>`;
   }
 }
 function pullFree(){
@@ -4827,13 +4796,12 @@ function showGachaReveal(c){
   else sfxCard();
 }
 // override rollCard to support forced rare
-const _origRollCard=rollCard;
 function rollCard(premium,forceLegend=false,forceRare=false){
   const r=Math.random();
   let tier;
   if(forceLegend) tier='legend';
   else if(forceRare) tier=r<.08?'legend':'rare';
-  else tier=premium?(r<.12?'legend':r<.6?'rare':'common'):(r<.03?'legend':r<.25?'rare':'common');
+  else tier=premium?(r<.04?'legend':r<.24?'rare':'common'):(r<.01?'legend':r<.11?'rare':'common');
   const pos=['ST','WG','MF','DF'][rnd(4)];
   const isAtk=pos==='ST'||pos==='WG';
   let base=(tier==='legend'?88:tier==='rare'?76:62)+rnd(8);
