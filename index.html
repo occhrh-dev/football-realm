@@ -599,6 +599,7 @@ button:focus-visible{outline:2px solid var(--flood);outline-offset:2px}
   <div id="homeUserBadge" style="display:none;align-items:center;margin-bottom:4px"></div>
   <div id="homeTPBar" style="font-family:Kanit;font-size:.8rem;margin-bottom:4px"></div>
   <p id="homeInfo" style="margin-bottom:4px"></p>
+  <div id="freePackBanner" style="display:none"></div>
   <div class="modes">
     <div class="mode" onclick="openAdv()" role="button" tabindex="0"><div class="mico">🗺️</div><div class="mnm">ผจญภัย</div><div class="mdesc" id="mAdv">เดินแมพ ตามหาตำนาน</div></div>
     <div class="mode" onclick="openLeague()" role="button" tabindex="0"><div class="mico">🏟️</div><div class="mnm">ลีกฤดูกาล</div><div class="mdesc" id="mLg">5 นัดชิงแชมป์</div></div>
@@ -944,15 +945,9 @@ function P(name,pos,atk,def,nat,elem,opts={}){
     shirt:null,shoe:null,pants:null, // 3 item slots
     id:'p'+(uid++)};
 }
-let collection=[
-  P('ธันเดอร์ ชัย','ST',84,30,'🇹🇭','fire',{r:'rare',skill:'crit',skillTxt:'⭐ 25% ยิงแรง x1.5'}),
-  P('ฟ้าผ่า วิน','WG',76,40,'🇹🇭','wind'),
-  P('สายลม ต้น','MF',66,58,'🇹🇭','wind'),
-  P('กำแพง เพชร','DF',34,82,'🇹🇭','fire',{r:'rare',skill:'wall',skillTxt:'⭐ 25% บล็อกสนิท'}),
-  P('หินผา กล้า','DF',30,74,'🇯🇵','tech'),
-  P('เงา ภูมิ','DF',42,66,'🇧🇷','tech'),
-];
-let deck=collection.map(p=>p.id);
+let collection=[];
+let deck=[];
+let freePacks=6; // นักเตะใหม่ได้ซองฟรี 6 ใบ เปิดเองที่ร้านค้า
 let supportCollection=[]; // all support cards player owns
 let captainCollection=[]; // all captain cards player owns
 let supportDeck=[]; // 3 support cards
@@ -1875,6 +1870,15 @@ function goHome(){
     _homeTP.innerHTML=`<span style="color:${c}">⚡ พลังทีม: <b>${tp.toLocaleString()}</b> ${tpLabel(tp)}</span>`;
   }
   $('homeInfo').innerHTML=`👑 Lv.${capLv} · 🪙 ${coins} · การ์ด ${collection.length} ใบ · เด็ค ${deck.length}/6<br>${synText()}`;
+  const _fpb=$('freePackBanner');
+  if(_fpb){
+    if(collection.length===0&&freePacks>0){
+      _fpb.style.display='';
+      _fpb.innerHTML=`<button onclick="openShop()" style="background:var(--legend);color:#1a1408;margin:4px 0">🎁 เปิดแพ็คเริ่มต้นฟรี (${freePacks}/6) เพื่อสร้างทีม!</button>`;
+    } else {
+      _fpb.style.display='none';
+    }
+  }
   const _nodes=currentChapterNodes();
   $('mAdv').textContent=advEP>EP_DATA.length?'✅ พิชิตทุก EP แล้ว!':`EP${advEP}: ด่าน ${advStage+1}/${currentStages().length}`;
   loadTourState();initTournament();
@@ -2504,9 +2508,24 @@ function renderGachaPacks(){
     el.innerHTML=`<div class="pack" onclick="pull(50,false)" role="button" tabindex="0"><div class="pnm">📦 ปลอกแขนธรรมดา</div><div class="prate">ธรรมดา 70% · แรร์ ⭐ 25%<br>ตำนาน 🌟 5%</div><div class="pcost">🪙 50</div></div>
       <div class="pack premium" onclick="pull(120,true)" role="button" tabindex="0"><div class="pnm">💎 ปลอกแขนพรีเมียม</div><div class="prate">ธรรมดา 45% · แรร์ ⭐ 40%<br>ตำนาน 🌟 15%</div><div class="pcost">🪙 120</div></div>`;
   } else {
-    el.innerHTML=`<div class="pack" onclick="pull(50,false)" role="button" tabindex="0"><div class="pnm">📦 ซองธรรมดา</div><div class="prate">ธรรมดา 75% · แรร์ ⭐ 22%<br>ตำนาน 🌟 3%</div><div class="pcost">🪙 50</div></div>
+    const freeCard=freePacks>0?`<div class="pack" onclick="pullFree()" role="button" tabindex="0" style="border-color:var(--legend)"><div class="pnm">🎁 แพ็คเริ่มต้นฟรี</div><div class="prate">ธรรมดา 75% · แรร์ ⭐ 22%<br>ตำนาน 🌟 3%</div><div class="pcost" style="color:var(--legend)">เหลือ ${freePacks}/6</div></div>`:'';
+    el.innerHTML=freeCard+`<div class="pack" onclick="pull(50,false)" role="button" tabindex="0"><div class="pnm">📦 ซองธรรมดา</div><div class="prate">ธรรมดา 75% · แรร์ ⭐ 22%<br>ตำนาน 🌟 3%</div><div class="pcost">🪙 50</div></div>
       <div class="pack premium" onclick="pull(120,true)" role="button" tabindex="0"><div class="pnm">💎 ซองพรีเมียม</div><div class="prate">ธรรมดา 40% · แรร์ ⭐ 48%<br>ตำนาน 🌟 12%</div><div class="pcost">🪙 120</div></div>`;
   }
+}
+function pullFree(){
+  if(freePacks<=0) return;
+  freePacks--;
+  let c;
+  if(_pity>=30){c=rollCard(true,true);_pity=0;}
+  else if(_pity>=10){c=rollCard(false,false,true);}
+  else c=rollCard(false);
+  _pity++;
+  collection.push(c);
+  saveGame();
+  showGachaReveal(c);
+  renderGachaPacks();
+  questProgress('gacha',1);
 }
 
 function deckValid(){
@@ -3927,6 +3946,7 @@ function buildSavePayload(){
     badges: badges,
     special_items: specialItems,
     daily_deals: dailyDeals,
+    free_packs: freePacks,
     updated_at: new Date().toISOString(),
   };
 }
@@ -3976,6 +3996,7 @@ function applyCloudData(d){
     if(d.badges) badges=d.badges;
     if(d.special_items) specialItems={...specialItems,...d.special_items};
     if(d.daily_deals) dailyDeals=d.daily_deals;
+    freePacks=d.free_packs??0;
     /* update UI */
     $('capLv').textContent=capLv;
     $('capXp').style.width=(capXp/capXpNeed()*100)+'%';
@@ -4250,7 +4271,7 @@ function buildLocalSnap(){
     questState,questDate,
     achUnlocked:[..._unlocked],wins:_achStats.wins,
     playerName:playerProfile.name,avatarSeed:playerProfile.avatarSeed,
-    badges,specialItems,dailyDeals,dailyDate,
+    badges,specialItems,dailyDeals,dailyDate,freePacks,
   };
 }
 function loadGame(){
@@ -4283,6 +4304,7 @@ function loadGame(){
     if(d.wins) _achStats.wins=d.wins;
     if(d.playerName) playerProfile.name=d.playerName;
     if(d.avatarSeed) playerProfile.avatarSeed=d.avatarSeed;
+    freePacks=d.freePacks??0;
     $('capLv').textContent=capLv;
     $('capXp').style.width=(capXp/capXpNeed()*100)+'%';
     $('coins').textContent=coins;
