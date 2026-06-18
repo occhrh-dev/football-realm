@@ -423,6 +423,14 @@ button:focus-visible{outline:2px solid var(--flood);outline-offset:2px}
 .invitem select{font-family:'Sarabun';background:#0a1f13;color:var(--flood);border:1px solid #2a5238;border-radius:6px;padding:4px 8px;margin-left:auto;max-width:150px}
 .lvup{position:fixed;top:40%;left:50%;transform:translate(-50%,-50%);background:linear-gradient(160deg,#3d2f10,#1a1408);border:2px solid var(--gold);border-radius:14px;padding:18px 30px;z-index:30;text-align:center;animation:pop .3s ease;box-shadow:0 0 40px rgba(232,181,58,.5)}
 .lvup h2{color:var(--gold);font-size:1.4rem}
+.halftime-modal{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:linear-gradient(160deg,#102a1f,#071a10);border:2px solid var(--gold);border-radius:16px;padding:20px 24px;z-index:35;text-align:center;box-shadow:0 0 50px rgba(232,181,58,.4);max-width:92vw}
+.halftime-modal.hidden{display:none}
+.halftime-modal h2{color:var(--gold);margin-bottom:6px}
+.halftime-modal .ht-score{font-family:'Kanit';font-weight:700;font-size:1.1rem;color:var(--flood);margin-bottom:4px}
+.halftime-modal .ht-hint{font-size:.78rem;color:#a8c9b4;margin-bottom:12px}
+.halftime-modal .ht-btns{display:flex;gap:10px;justify-content:center}
+.halftime-modal .ht-btns button{min-width:110px;display:flex;flex-direction:column;gap:3px}
+.halftime-modal .ht-btns button span{font-size:.65rem;opacity:.85}
 .gachareveal{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;min-height:170px;align-items:center}
 .packbtns{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
 .pack{background:linear-gradient(160deg,#1c1430,#0d0a18);border:2px solid var(--purple);border-radius:12px;padding:14px 18px;width:160px;cursor:pointer;transition:transform .12s}
@@ -910,6 +918,16 @@ button:focus-visible{outline:2px solid var(--flood);outline-offset:2px}
 </div>
 <div class="hand" id="hand"></div>
 <div class="actions" id="actions"></div>
+</div>
+
+<div class="halftime-modal hidden" id="halftimeModal">
+  <h2>⏱️ พักครึ่ง!</h2>
+  <div class="ht-score" id="halftimeScore"></div>
+  <div class="ht-hint">เลือกแผนครึ่งหลัง — มีผลตลอดครึ่งหลัง (เทิร์น 5-8)</div>
+  <div class="ht-btns">
+    <button onclick="pickHalftime('atk')">⚡ เกียร์บุก<span>ทีม ATK +8</span></button>
+    <button onclick="pickHalftime('def')">🛡️ เกียร์รับ<span>ทีม DEF +8</span></button>
+  </div>
 </div>
 
 <script>
@@ -1749,6 +1767,14 @@ function hasItemPassive(p,passiveId){
     return it&&it.passives&&it.passives.includes(passiveId);
   });
 }
+function zoneOf(p){return (p.pos==='ST'||p.pos==='WG')?'atk':(p.pos==='MF')?'mid':'def';}
+function zoneSynergyBonus(p){
+  const zone=zoneOf(p);
+  const zonePlayers=deckPlayers().filter(q=>zoneOf(q)===zone);
+  if(zonePlayers.length<2) return 0;
+  const sameElem=zonePlayers.filter(q=>q.elem===p.elem).length;
+  return sameElem>=2?6:0;
+}
 function eff(p,isMine=true){
   const f=.5+.5*(p.stamina/100);
   const ib=getItemBonus(p);
@@ -1757,6 +1783,7 @@ function eff(p,isMine=true){
   const bb=getBadgeBonus(p);
   let bonus=(isMine&&deck.includes(p.id)?synergyBonus().bonus:0)+bb.atk;
   if(isMine) bonus+=formationAffinityBonus(p);
+  if(isMine&&deck.includes(p.id)) bonus+=zoneSynergyBonus(p);
   if(isMine&&fx.storm>0){if(p.elem==='fire')bonus+=12;if(p.elem==='tech')bonus-=5;}
   if(!isMine&&fx.rumor>0&&(p.rare||p.legend))bonus-=12;
   let stAtk=0,stDef=0;
@@ -1766,6 +1793,8 @@ function eff(p,isMine=true){
     if(matchStadium.id==='cold'){if(p.elem==='tech')stAtk+=8;if(p.elem==='wind')stAtk-=8;}
     if(matchStadium.id==='floodlight'&&_stadiumMotmId&&p.id===_stadiumMotmId){stAtk+=15;stDef+=15;}
   }
+  if(isMine&&fx.secondHalfAtk) stAtk+=8;
+  if(isMine&&fx.secondHalfDef) stDef+=8;
   return {atk:Math.max(1,Math.round((p.atk+ia+bonus+stAtk)*f)),
           def:Math.max(1,Math.round((p.def+idf+bonus+bb.def+stDef)*f))};
 }
@@ -3816,6 +3845,18 @@ function nextTurn(){
   /* free attack from hatrick */
   if(fx.freeAtk){fx.freeAtk=false;youAttacking=true;}
   else youAttacking=!youAttacking;$('turnNow').textContent=turn;
+  if(turn===5&&mode!=='pvp_online'){showHalftime();return;}
+  setupTurn();
+}
+function showHalftime(){
+  $('halftimeScore').textContent=`สกอร์ครึ่งแรก — คุณ ${scoreYou} : ${scoreAi} คู่แข่ง`;
+  $('halftimeModal').classList.remove('hidden');
+}
+function pickHalftime(choice){
+  if(choice==='atk'){fx.secondHalfAtk=true;log('⚡ <span class="good">เกียร์บุก! ทีม ATK+8 ตลอดครึ่งหลัง</span>');}
+  else{fx.secondHalfDef=true;log('🛡️ <span class="good">เกียร์รับ! ทีม DEF+8 ตลอดครึ่งหลัง</span>');}
+  $('halftimeModal').classList.add('hidden');
+  sfxClick();
   setupTurn();
 }
 
