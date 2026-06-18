@@ -1,4 +1,4 @@
-const CACHE = 'football-realm-v11';
+const CACHE = 'football-realm-v12';
 const STATIC = ['./manifest.json','./icon-192.png','./icon-512.png'];
 
 self.addEventListener('install', e => {
@@ -16,6 +16,11 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
+  // ปล่อยผ่านตรงๆ ไม่ยุ่งเลยสำหรับ: request ที่ไม่ใช่ GET (Cache API รองรับแค่ GET เท่านั้น)
+  // หรือ request ข้าม origin (เช่น เรียก Supabase) — ไม่ควร cache คำขอ API ของบุคคลที่สามอยู่แล้ว
+  if (e.request.method !== 'GET' || new URL(e.request.url).origin !== self.location.origin) {
+    return; // ไม่เรียก e.respondWith() = เบราว์เซอร์จัดการ request นี้ตามปกติ ไม่ผ่าน SW
+  }
   // Network-first: index.html ต้อง bypass HTTP cache ของเบราว์เซอร์ด้วย ไม่ใช่แค่ของ SW
   // (GitHub Pages ส่ง cache-control แบบมี max-age มา ถ้าไม่บังคับ no-store fetch() อาจได้ของแคชเก่ากลับมาเงียบๆ)
   if (e.request.url.includes('index.html') || e.request.url.endsWith('/')) {
