@@ -872,6 +872,7 @@ button:focus-visible{outline:2px solid var(--flood);outline-offset:2px}
   <div class="team ai" id="aiName">🔥</div>
 </div>
 <div class="synergy" id="matchSyn"></div>
+<div class="synergy" id="stadiumBadge" style="display:none"></div>
 <div class="log" id="log"></div>
 <div class="incoming" id="incoming"></div>
 <div class="phase" id="phase"></div>
@@ -1212,6 +1213,31 @@ function genTeam(mult,natBias){
 }
 
 let fx={};
+
+/* ============ STADIUMS (สุ่มต่อแมตช์ — เปลี่ยนกฎเฉพาะแมตช์นั้น) ============ */
+const STADIUMS=[
+  {id:'neutral',ico:'🏟️',nm:'สนามมาตรฐาน',desc:'ไม่มีเอฟเฟกต์พิเศษ',w:3},
+  {id:'home_turf',ico:'🏠',nm:'สนามเหย้า',desc:'นักเตะชาติเจ้าภาพในเด็คคุณ ATK/DEF +10',w:1},
+  {id:'rain',ico:'🌧️',nm:'สนามฝนตกหนัก',desc:'ทีมคุณ DEF+5 แต่ ATK-5 (พื้นลื่น)',w:1},
+  {id:'heat',ico:'☀️',nm:'สนามแดดจัด',desc:'ทีมคุณฟื้นสตามิน่าต่อเทิร์นช้าลง',w:1},
+  {id:'cold',ico:'❄️',nm:'สนามหนาวจัด',desc:'สาย🎯เทคนิค ATK+8 / สาย💨เร็ว ATK-8',w:1},
+  {id:'packed',ico:'🎪',nm:'สนามแน่นขนัด',desc:'เริ่มเกมด้วย Momentum 65 แทน 50',w:1},
+  {id:'floodlight',ico:'🌙',nm:'สนามไฟสาด',desc:'สุ่ม 1 นักเตะในเด็คเป็นผู้เล่นแห่งคืนนี้ ATK/DEF +15',w:1},
+];
+let matchStadium=null,_stadiumHomeNat=null,_stadiumMotmId=null;
+function pickStadium(){
+  const totalW=STADIUMS.reduce((s,x)=>s+x.w,0);
+  let r=Math.random()*totalW;
+  for(const s of STADIUMS){r-=s.w;if(r<=0)return s;}
+  return STADIUMS[0];
+}
+function renderStadiumBadge(){
+  const el=$('stadiumBadge');
+  if(!el||!matchStadium) return;
+  if(matchStadium.id==='neutral'){el.style.display='none';return;}
+  el.style.display='';
+  el.innerHTML=`${matchStadium.ico} <b>${matchStadium.nm}</b> — ${matchStadium.desc}`;
+}
 
 /* ============ GLOBAL STATE ============ */
 let capLv=1,capXp=0,coins=150,inventory=[];
@@ -1710,8 +1736,15 @@ function eff(p,isMine=true){
   if(isMine) bonus+=formationAffinityBonus(p);
   if(isMine&&fx.storm>0){if(p.elem==='fire')bonus+=12;if(p.elem==='tech')bonus-=5;}
   if(!isMine&&fx.rumor>0&&(p.rare||p.legend))bonus-=12;
-  return {atk:Math.max(1,Math.round((p.atk+ia+bonus)*f)),
-          def:Math.max(1,Math.round((p.def+idf+bonus+bb.def)*f))};
+  let stAtk=0,stDef=0;
+  if(isMine&&matchStadium){
+    if(matchStadium.id==='home_turf'&&_stadiumHomeNat&&p.nat===_stadiumHomeNat){stAtk+=10;stDef+=10;}
+    if(matchStadium.id==='rain'){stAtk-=5;stDef+=5;}
+    if(matchStadium.id==='cold'){if(p.elem==='tech')stAtk+=8;if(p.elem==='wind')stAtk-=8;}
+    if(matchStadium.id==='floodlight'&&_stadiumMotmId&&p.id===_stadiumMotmId){stAtk+=15;stDef+=15;}
+  }
+  return {atk:Math.max(1,Math.round((p.atk+ia+bonus+stAtk)*f)),
+          def:Math.max(1,Math.round((p.def+idf+bonus+bb.def+stDef)*f))};
 }
 
 /* ============ XP ============ */
@@ -3393,6 +3426,17 @@ function startMatch(opponent,oppName,modeLabel,isReplay=false){
   _isReplayMatch=isReplay;
   momentum=50;updateMomentum(0);
   questProgress('match',1);
+  /* สุ่มสนามแข่งประจำแมตช์นี้ */
+  matchStadium=pickStadium();_stadiumHomeNat=null;_stadiumMotmId=null;
+  if(matchStadium.id==='home_turf'){
+    const nats=[...new Set(deckPlayers().map(p=>p.nat))];
+    _stadiumHomeNat=nats.length?nats[rnd(nats.length)]:null;
+  }
+  if(matchStadium.id==='floodlight'&&deckPlayers().length){
+    _stadiumMotmId=deckPlayers()[rnd(deckPlayers().length)].id;
+  }
+  if(matchStadium.id==='packed'){momentum=65;updateMomentum(0);}
+  renderStadiumBadge();
   /* init support + captain for this match */
   matchSupport=supportDeck.map(c=>({...c,used:false}));
   matchCaptain=captainCard?{...captainCard}:null;
@@ -3413,6 +3457,7 @@ function startMatch(opponent,oppName,modeLabel,isReplay=false){
   $('matchSyn').textContent=synergyBonus().bonus?synText():'';
   $('log').innerHTML='';
   log(`🏟️ <span class="gold">${modeLabel}: พบ ${oppName}</span>`);
+  if(matchStadium.id!=='neutral') log(`${matchStadium.ico} <span class="gold">${matchStadium.nm}</span> — ${matchStadium.desc}`);
   setupTurn();
 }
 function setupTurn(){
@@ -3649,7 +3694,8 @@ function nextTurn(){
   if(fx.storm>0)fx.storm--;
   if(fx.rumor>0)fx.rumor--;
   if(turn>8){endMatch();return;}
-  [...deckPlayers(),...ai].forEach(p=>p.stamina=Math.min(100,p.stamina+5));
+  deckPlayers().forEach(p=>p.stamina=Math.min(100,p.stamina+(matchStadium?.id==='heat'?2:5)));
+  ai.forEach(p=>p.stamina=Math.min(100,p.stamina+5));
   /* stampoison effect */
   if(pendingCtx?.stage?.enemyBuff==='stampoison'){
     deckPlayers().forEach(p=>p.stamina=Math.max(15,p.stamina-8));
