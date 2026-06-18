@@ -44,7 +44,7 @@ h1,h2,h3,.kanit{font-family:'Kanit',sans-serif}
 .score{font-family:'Kanit';font-weight:800;font-size:1.8rem;letter-spacing:4px;color:var(--gold);text-shadow:0 0 12px rgba(232,181,58,.7);text-align:center}
 .turncount{font-size:.72rem;color:#7fa78d;text-align:center}
 .log{width:100%;max-width:620px;height:70px;overflow-y:auto;background:rgba(5,19,11,.85);border:1px solid #1e3a29;border-radius:8px;padding:8px 12px;font-size:.82rem;line-height:1.5;margin-bottom:6px}
-.log .good{color:#7fd9a0}.log .bad{color:#f0907f}.log .gold{color:var(--gold)}.log .loot{color:var(--purple)}
+.log .good{color:#7fd9a0}.log .bad{color:#f0907f}.log .gold{color:var(--gold)}.log .loot{color:var(--purple)}.log .legend{color:var(--legend)}
 .phase{font-family:'Kanit';font-weight:600;font-size:.92rem;margin:2px 0 6px;text-align:center;min-height:24px}
 .phase .atk{color:var(--gold)}
 .synergy{font-size:.76rem;color:#7fd9a0;text-align:center;margin-bottom:4px;min-height:16px}
@@ -1788,10 +1788,30 @@ function gainCapXp(n){
   $('capLv').textContent=capLv;$('capXp').style.width=(capXp/capXpNeed()*100)+'%';
   if(capLv>before) sfxLvUp();
 }
+function evoTier(lv){
+  if(lv>=10) return {tier:2,ico:'👑',label:'ระดับโลก'};
+  if(lv>=5) return {tier:1,ico:'⭐',label:'ทีมชาติ'};
+  return {tier:0,ico:'🌱',label:'ดาวรุ่ง'};
+}
+function evoBadge(p){
+  const t=evoTier(p.lv);
+  return t.tier>0?`${t.ico}`:'';
+}
 function gainPXp(p,n){
   p.xp+=n;
-  while(p.xp>=pXpNeed(p)){p.xp-=pXpNeed(p);p.lv++;p.atk+=3;p.def+=2;
-    log(`📈 <span class="loot">${p.name} Lv.${p.lv}! บุก+3 รับ+2</span>`);}
+  while(p.xp>=pXpNeed(p)){
+    p.xp-=pXpNeed(p);
+    const prevTier=evoTier(p.lv).tier;
+    p.lv++;p.atk+=3;p.def+=2;
+    log(`📈 <span class="loot">${p.name} Lv.${p.lv}! บุก+3 รับ+2</span>`);
+    const t=evoTier(p.lv);
+    if(t.tier>prevTier){
+      p.atk+=5;p.def+=5;
+      log(`✨ <span class="legend">${p.name} อีโวลฟ์เป็น "${t.ico} ${t.label}"! บุก+5 รับ+5 พิเศษ!</span>`);
+      popup(`<h2>${t.ico} EVOLVE!</h2><p class="kanit">${p.name} กลายเป็น<br>"${t.label}"!<br>บุก+5 รับ+5 พิเศษ</p>`);
+      sfxLegend();
+    }
+  }
 }
 
 /* ============ NAV ============ */
@@ -2953,7 +2973,7 @@ function renderDismantle(){
       return `<div class="dismantle-card">
         <img src="${portraitURL(p)}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;border:1.5px solid ${tc}" loading="lazy">
         <div class="dc-info">
-          <div class="dc-nm" style="color:${tc}">${p.name} <span style="font-size:.6rem">${p.pos} Lv${p.lv}</span></div>
+          <div class="dc-nm" style="color:${tc}">${evoBadge(p)}${p.name} <span style="font-size:.6rem">${p.pos} Lv${p.lv}</span></div>
           <div class="dc-sub">→ ${yieldTxt}</div>
         </div>
         <button class="dc-btn" onclick="dismantleCard('${p.id}')">ย่อย</button>
@@ -3178,7 +3198,7 @@ function cardHTML(p,clickable,advantage=false,miniMode=false){
     <div class="card-header">
       <span class="pos-badge">${p.pos}</span>
       <span class="nat-badge">${p.nat}</span>
-      <span class="lv-badge">Lv${p.lv}</span>
+      <span class="lv-badge">${evoBadge(p)}Lv${p.lv}</span>
     </div>
     <div class="portrait-wrap"><img class="portrait" src="${portraitURL(p)}" alt="" loading="lazy" onerror="this.style.display='none'"></div>
     <div class="card-body">
@@ -3236,7 +3256,7 @@ function cardMatch(p,clickable,advantage=false){
       <div class="m-top">
         <span class="m-nm" title="${p.name}">${p.name}${p.enchant>0?`<span style="font-size:.5rem;color:var(--gold)"> +${p.enchant}✨</span>`:''}</span>
         <span class="m-nat">${p.nat}</span>
-        <span class="m-lv">Lv${p.lv}</span>
+        <span class="m-lv">${evoBadge(p)}Lv${p.lv}</span>
         ${arrowHtml}
       </div>
       <div class="m-stats">
