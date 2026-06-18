@@ -868,8 +868,6 @@ button:focus-visible{outline:2px solid var(--flood);outline-offset:2px}
   <div class="form-info" id="formInfo"></div>
 </div>
 <div class="hand" id="hand"></div>
-<div class="form-picker-title" id="tacticBarLabel" style="display:none;margin-top:6px">♟️ ยุทธวิธีประจำแมตช์ (สุ่ม 3 จาก 6 ทุกแมตช์ — คนละระบบกับ Support Card)</div>
-<div class="tactics" id="tacticBar"></div>
 <div class="actions" id="actions"></div>
 </div>
 
@@ -1196,22 +1194,7 @@ function genTeam(mult,natBias){
     mk('แบ็กซ้าย','DF',28,72),mk('แบ็กขวา','DF',38,64)];
 }
 
-/* ============ TACTICS ============ */
-const TACTICS=[
-  {id:'rally',ico:'📣',nm:'ปลุกใจฮาล์ฟไทม์',type:'buff',desc:'ทั้งทีมฟื้นสตามิน่า +35',
-   use(){deckPlayers().forEach(p=>p.stamina=Math.min(100,p.stamina+35));log('📣 <span class="good">ทั้งทีมฟื้นสตามิน่า +35</span>');}},
-  {id:'ice',ico:'🧊',nm:'น้ำแข็งประคบ',type:'buff',desc:'คนที่เหนื่อยสุด ฟื้นสตามิน่าเต็ม',
-   use(){const t=[...deckPlayers()].sort((a,b)=>a.stamina-b.stamina)[0];t.stamina=100;log(`🧊 <span class="good">${t.name} สตามิน่าเต็ม!</span>`);}},
-  {id:'storm',ico:'🌧️',nm:'ฝนกระหน่ำสนาม',type:'buff',desc:'2 เทิร์น: สาย 🔥 +12 / สาย 🎯 -5',
-   use(){fx.storm=2;log('🌧️ <span class="good">ฝนตก! สายพลังได้เปรียบ 2 เทิร์น</span>');}},
-  {id:'press',ico:'🥶',nm:'กดดันจุดโทษ',type:'debuff',desc:'ดวลถัดไป คู่แข่งทอยได้แค่ +20',
-   use(){fx.press=true;log('🥶 <span class="bad">ดวงคู่แข่งหดในดวลถัดไป</span>');}},
-  {id:'rumor',ico:'📰',nm:'ข่าวลือย้ายทีม',type:'debuff',desc:'2 เทิร์น: ⭐/🌟 คู่แข่ง -12',
-   use(){fx.rumor=2;log('📰 <span class="bad">ตัวท็อปคู่แข่งเสียสมาธิ 2 เทิร์น</span>');}},
-  {id:'card',ico:'🟨',nm:'ยั่วให้ใบเหลือง',type:'debuff',desc:'กองหลังเก่งสุดคู่แข่ง รับ -15 ทั้งแมตช์',
-   use(){const t=[...ai].sort((a,b)=>b.def-a.def)[0];t.def=Math.max(10,t.def-15);log(`🟨 <span class="bad">${t.name} โดนใบเหลือง! รับ -15</span>`);}},
-];
-let matchTactics=[],fx={};
+let fx={};
 
 /* ============ GLOBAL STATE ============ */
 let capLv=1,capXp=0,coins=150,inventory=[];
@@ -3401,7 +3384,6 @@ function startMatch(opponent,oppName,modeLabel,isReplay=false){
   /* รีเซ็ต stamina เฉพาะแมตช์ใหม่ — replay ต่อเนื่อง */
   if(!_isReplayMatch) deckPlayers().forEach(p=>p.stamina=100);
   else log('<span style="color:#e8b53a">🔄 Replay — stamina ต่อเนื่องจากแมตช์ก่อน!</span>');
-  matchTactics=[...TACTICS].sort(()=>Math.random()-.5).slice(0,3).map(t=>({...t,used:false}));
   $('sYou').textContent=0;$('sAi').textContent=0;
   $('modeLabel').textContent=modeLabel;$('turnNow').textContent=1;
   $('aiName').textContent=oppName;
@@ -3409,18 +3391,6 @@ function startMatch(opponent,oppName,modeLabel,isReplay=false){
   $('log').innerHTML='';
   log(`🏟️ <span class="gold">${modeLabel}: พบ ${oppName}</span>`);
   setupTurn();
-}
-function renderTactics(){
-  const tlbl=$('tacticBarLabel');
-  if(tlbl) tlbl.style.display=matchTactics.length?'':'none';
-  $('tacticBar').innerHTML=matchTactics.map((t,i)=>`
-    <div class="tcard ${t.type==='debuff'?'debuff':''} ${t.used?'used':''}" onclick="useTactic(${i})" role="button" tabindex="0" onkeydown="if(event.key==='Enter')useTactic(${i})">
-      <div class="tnm">${t.ico} ${t.nm}</div>${t.desc}</div>`).join('');
-}
-function useTactic(i){
-  const t=matchTactics[i];if(t.used)return;
-  t.used=true;TACTICS.find(x=>x.id===t.id).use();
-  renderTactics();setupTurnDisplay();
 }
 function setupTurn(){
   if(!youAttacking){
@@ -3465,7 +3435,7 @@ function setupTurnDisplay(){
     p=>youAttacking?p.atk>=50:p.def>=50,
     p=>!youAttacking&&incomingAttacker&&ELEMS[p.elem]&&ELEMS[p.elem].beats===incomingAttacker.elem
   );
-  renderTactics();$('actions').innerHTML='';
+  $('actions').innerHTML='';
 }
 function pick(id){
   const mine=deckPlayers().find(p=>p.id===id);
