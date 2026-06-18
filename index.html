@@ -860,6 +860,7 @@ button:focus-visible{outline:2px solid var(--flood);outline-offset:2px}
 <div class="phase" id="phase"></div>
 <!-- elem counter hint removed - shown as arrows on cards -->
 <div class="duel" id="duel"></div>
+<div class="form-picker-title" id="supportBarLabel" style="display:none;margin-top:6px">🎴 Support Card ที่เลือกไว้</div>
 <div class="support-bar" id="supportBar"></div>
 <div class="form-picker" id="formPicker">
   <div class="form-picker-title">🗂️ แผนการเล่น</div>
@@ -867,6 +868,7 @@ button:focus-visible{outline:2px solid var(--flood);outline-offset:2px}
   <div class="form-info" id="formInfo"></div>
 </div>
 <div class="hand" id="hand"></div>
+<div class="form-picker-title" id="tacticBarLabel" style="display:none;margin-top:6px">♟️ ยุทธวิธีประจำแมตช์ (สุ่ม 3 จาก 6 ทุกแมตช์ — คนละระบบกับ Support Card)</div>
 <div class="tactics" id="tacticBar"></div>
 <div class="actions" id="actions"></div>
 </div>
@@ -2572,6 +2574,7 @@ function renderSupportDeck(){
 }
 function addSupportToDeck(idx){
   if(supportDeck.filter(Boolean).length>=3) return;
+  if(supportDeck.some(s=>s&&s._idx===idx)) return; // กันใส่การ์ดใบเดิมซ้ำหลายช่อง
   const c={...supportCollection[idx],_idx:idx};
   supportDeck.push(c);saveGame();renderSupportDeck();sfxClick();
 }
@@ -3351,6 +3354,8 @@ function applyCaptainEffect(cap,s){
 function renderSupportBar(){
   const bar=$('supportBar');
   if(!bar) return;
+  const lbl=$('supportBarLabel');
+  if(lbl) lbl.style.display=matchSupport.length?'':'none';
   bar.innerHTML=matchSupport.map((c,i)=>`
     <div class="scard ${c.used?'scard-used':''}" onclick="${!c.used?`useSupportCard(${i})`:''}">
       <span class="scard-ico">${c.ico}</span>
@@ -3406,6 +3411,8 @@ function startMatch(opponent,oppName,modeLabel,isReplay=false){
   setupTurn();
 }
 function renderTactics(){
+  const tlbl=$('tacticBarLabel');
+  if(tlbl) tlbl.style.display=matchTactics.length?'':'none';
   $('tacticBar').innerHTML=matchTactics.map((t,i)=>`
     <div class="tcard ${t.type==='debuff'?'debuff':''} ${t.used?'used':''}" onclick="useTactic(${i})" role="button" tabindex="0" onkeydown="if(event.key==='Enter')useTactic(${i})">
       <div class="tnm">${t.ico} ${t.nm}</div>${t.desc}</div>`).join('');
