@@ -4292,6 +4292,7 @@ function loadGame(){
 function resetSave(){
   if(!confirm('⚠️ ลบข้อมูลทั้งหมด?\nการ์ด เหรียญ เลเวล และแรงก์จะหายหมด')) return;
   if(!confirm('ยืนยันอีกครั้ง — ข้อมูลจะถูกลบถาวรจาก Cloud ด้วย\nกด OK เพื่อเริ่มใหม่')) return;
+  clearTimeout(_saveTimer); // กัน autosave ที่ค้างคิวอยู่ยิง cloudSave() แทรกกลางขั้นตอนลบ แล้วสร้าง row เดิมกลับมา
   [SAVE_KEY,'frForm','frCards2','frShop2','frQuest','frProfile'].forEach(k=>localStorage.removeItem(k));
   if(_sbUser&&_sb){
     (async()=>{
