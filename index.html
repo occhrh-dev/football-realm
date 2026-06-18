@@ -50,9 +50,6 @@ h1,h2,h3,.kanit{font-family:'Kanit',sans-serif}
 .synergy{font-size:.76rem;color:#7fd9a0;text-align:center;margin-bottom:4px;min-height:16px}
 .stadium-badge{display:block;background:linear-gradient(135deg,#1f3a28,#0d1f17);border:1.5px solid var(--gold);border-radius:12px;padding:7px 14px;font-size:.85rem;color:#f0d896;text-align:center;margin:4px auto 8px;max-width:94%;box-shadow:0 0 14px rgba(232,181,58,.3)}
 .stadium-badge b{color:var(--gold)}
-.m-stadium-tag{font-size:.58rem;border-radius:4px;padding:0 4px;margin-left:3px;font-weight:700}
-.m-stadium-tag.good{background:rgba(232,181,58,.25);color:var(--gold)}
-.m-stadium-tag.bad{background:rgba(217,79,61,.25);color:var(--red)}
 .capt-row{width:100%;max-width:620px;display:flex;justify-content:center;margin-bottom:6px}
 .incoming{display:none;width:100%;max-width:620px;margin-bottom:6px;background:linear-gradient(90deg,rgba(217,79,61,.18),transparent);border:1px solid #5e2a22;border-radius:10px;padding:8px 12px;font-size:.85rem;text-align:center}
 .incoming.show{display:block;animation:pop .25s ease}
@@ -144,6 +141,12 @@ h1,h2,h3,.kanit{font-family:'Kanit',sans-serif}
 .shop-tab.active{background:var(--gold);color:#1a1408;border-color:var(--gold);font-weight:700}
 .shop-panel{display:none;width:100%;max-width:560px}
 .shop-panel.active{display:block}
+.guide-entry{background:rgba(5,19,11,.85);border:1px solid #1e3a29;border-radius:8px;padding:8px 12px;margin-bottom:6px;text-align:left}
+.guide-entry .ge-top{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap}
+.guide-entry .ge-nm{font-family:'Kanit';font-weight:700;color:var(--gold);font-size:.85rem}
+.guide-entry .ge-tag{font-size:.6rem;color:#7fa78d;border:1px solid #2a5238;border-radius:4px;padding:0 5px}
+.guide-entry .ge-desc{font-size:.78rem;color:#c9e8d4;margin-top:3px;line-height:1.45}
+.guide-entry .ge-sub{font-size:.7rem;color:#7fa78d;margin-top:2px}
 .shop-section-title{font-family:'Kanit';font-size:.82rem;color:#7fa78d;margin:8px 0 6px}
 .shop-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-bottom:10px}
 .shop-item{background:#05130b;border:1.5px solid #1e3a29;border-radius:10px;padding:10px;text-align:center;transition:border-color .12s,transform .12s;position:relative}
@@ -645,9 +648,29 @@ button:focus-visible{outline:2px solid var(--flood);outline-offset:2px}
     <div class="actions" style="margin-top:0">
       <button class="ghost" onclick="openQuest()">🗒️ ภารกิจ</button>
       <button class="ghost" onclick="showTutorial(true)" style="font-size:.75rem">📖 วิธีเล่น</button>
+      <button class="ghost" onclick="openGuide()" style="font-size:.75rem">📚 ไกด์</button>
       <button class="ghost" onclick="openSettings()" style="font-size:.75rem">⚙️ ตั้งค่า</button>
     </div>
   </div>
+</div>
+
+<!-- ============ GUIDE / ENCYCLOPEDIA ============ -->
+<div class="overlay hidden" id="guideScr">
+  <h1>📚 ไกด์ข้อมูล</h1>
+  <p style="font-size:.78rem">รวมทุกสกิล/เอฟเฟกต์ในเกม เปิดดูได้ตลอดเวลา ไม่ต้องจำ</p>
+  <div class="shop-tabs">
+    <button class="shop-tab active" onclick="switchGuideTab('skill',this)">⚽ สกิลนักเตะ</button>
+    <button class="shop-tab" onclick="switchGuideTab('item',this)">🎽 ไอเทม</button>
+    <button class="shop-tab" onclick="switchGuideTab('support',this)">⚡ Support</button>
+    <button class="shop-tab" onclick="switchGuideTab('captain',this)">👑 กัปตัน</button>
+    <button class="shop-tab" onclick="switchGuideTab('stadium',this)">🏟️ สนาม</button>
+  </div>
+  <div class="shop-panel active" id="guideSkillPanel"></div>
+  <div class="shop-panel" id="guideItemPanel"></div>
+  <div class="shop-panel" id="guideSupportPanel"></div>
+  <div class="shop-panel" id="guideCaptainPanel"></div>
+  <div class="shop-panel" id="guideStadiumPanel"></div>
+  <button class="ghost" onclick="goHome()">กลับสโมสร</button>
 </div>
 
 <!-- ============ ADVENTURE ============ -->
@@ -1282,16 +1305,6 @@ function renderStadiumBadge(){
   el.style.display='';
   el.innerHTML=`${matchStadium.ico} <b>${matchStadium.nm}</b> — ${matchStadium.desc}`;
 }
-function stadiumPlayerTag(p){
-  if(!matchStadium) return '';
-  if(matchStadium.id==='home_turf'&&_stadiumHomeNat&&p.nat===_stadiumHomeNat) return '<span class="m-stadium-tag good" title="โบนัสสนามเหย้า">🏠+10</span>';
-  if(matchStadium.id==='floodlight'&&_stadiumMotmId&&p.id===_stadiumMotmId) return '<span class="m-stadium-tag good" title="ผู้เล่นแห่งคืนนี้">🌙+15</span>';
-  if(matchStadium.id==='cold'){
-    if(p.elem==='tech') return '<span class="m-stadium-tag good" title="ธาตุเทคนิคได้เปรียบสนามหนาว">❄️+8</span>';
-    if(p.elem==='wind') return '<span class="m-stadium-tag bad" title="ธาตุลมเสียเปรียบสนามหนาว">❄️-8</span>';
-  }
-  return '';
-}
 
 /* ============ GLOBAL STATE ============ */
 let capLv=1,capXp=0,coins=150,inventory=[];
@@ -1858,7 +1871,7 @@ function gainPXp(p,n){
 }
 
 /* ============ NAV ============ */
-const SCREENS=['intro','home','advScr','lgScr','twScr','pvpScr','tourScr','shop','deckScr','matchEnd','invScr','matchUI','questScr','profileScr','settingsScr','collectionScr'];
+const SCREENS=['intro','home','advScr','lgScr','twScr','pvpScr','tourScr','shop','deckScr','matchEnd','invScr','matchUI','questScr','profileScr','settingsScr','collectionScr','guideScr'];
 /* ===== SHOP JS ===== */
 let shopTab='gacha';
 
@@ -3300,7 +3313,6 @@ function cardMatch(p,clickable,advantage=false){
         <span class="m-nm" title="${p.name}">${p.name}${p.enchant>0?`<span style="font-size:.5rem;color:var(--gold)"> +${p.enchant}✨</span>`:''}</span>
         <span class="m-nat">${p.nat}</span>
         <span class="m-lv">${evoBadge(p)}Lv${p.lv}</span>
-        ${stadiumPlayerTag(p)}
         ${arrowHtml}
       </div>
       <div class="m-stats">
@@ -4814,8 +4826,9 @@ function rollCard(premium,forceLegend=false,forceRare=false){
   const atk=isAtk?base:(pos==='MF'?base-6:Math.round(base*.45));
   const def=isAtk?Math.round(base*.45):(pos==='MF'?base-6:base);
   const sk=tier!=='common'?SKILLS[rnd(SKILLS.length)]:{};
-  return P(FIRST[rnd(FIRST.length)]+' '+LAST[rnd(LAST.length)],pos,atk,def,
-    NATIONS[rnd(NATIONS.length)],ELEMKEYS[rnd(3)],{r:tier==='common'?null:tier,...sk});
+  const nat=NATIONS[rnd(NATIONS.length)];
+  return P(genUniqueName(nat),pos,atk,def,
+    nat,ELEMKEYS[rnd(3)],{r:tier==='common'?null:tier,...sk});
 }
 
 /* ============ DECK FILTER ============ */
@@ -4945,6 +4958,47 @@ function openQuest(){
 function openCollection(){
   hideAll();$('collectionScr').classList.remove('hidden');
   renderCollectionBook();
+}
+function openGuide(){
+  hideAll();$('guideScr').classList.remove('hidden');
+  renderGuideSkill();renderGuideItem();renderGuideSupport();renderGuideCaptain();renderGuideStadium();
+}
+function switchGuideTab(tab,btn){
+  document.querySelectorAll('#guideScr .shop-tab').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  document.querySelectorAll('#guideScr .shop-panel').forEach(p=>p.classList.remove('active'));
+  $('guide'+tab.charAt(0).toUpperCase()+tab.slice(1)+'Panel').classList.add('active');
+}
+function renderGuideSkill(){
+  $('guideSkillPanel').innerHTML=SKILLS.map(s=>`<div class="guide-entry">
+    <div class="ge-desc" style="margin-top:0;color:var(--flood)">${s.skillTxt}</div>
+  </div>`).join('');
+}
+function renderGuideItem(){
+  const slotIco={shirt:'🎽',shoe:'👟',pants:'👖'};
+  $('guideItemPanel').innerHTML=Object.values(ITEM_PASSIVES).map(p=>`<div class="guide-entry">
+    <div class="ge-top"><span class="ge-nm">${p.nm}</span><span class="ge-tag">${slotIco[p.slot]||''} ${p.slot}</span><span class="ge-tag">${p.tier}</span></div>
+    <div class="ge-desc">${p.desc}</div>
+  </div>`).join('');
+}
+function renderGuideSupport(){
+  const condTxt={any:'ใช้ได้ทุกเมื่อ',leading:'ใช้ได้ตอนนำอยู่',losing:'ใช้ได้ตอนแพ้อยู่',afterConcede:'ใช้ได้หลังโดนยิงเข้า',attacking:'ใช้ได้ตอนเทิร์นบุก',defending:'ใช้ได้ตอนเทิร์นรับ'};
+  $('guideSupportPanel').innerHTML=SUPPORT_CARDS.map(c=>`<div class="guide-entry">
+    <div class="ge-top"><span class="ge-nm">${c.ico} ${c.nm}</span><span class="ge-tag">${condTxt[c.cond]||c.cond}</span></div>
+    <div class="ge-desc">${c.desc}</div>
+  </div>`).join('');
+}
+function renderGuideCaptain(){
+  $('guideCaptainPanel').innerHTML=CAPTAIN_CARDS.map(c=>`<div class="guide-entry">
+    <div class="ge-top"><span class="ge-nm">${c.ico} ${c.nm}</span><span class="ge-tag">${c.tier}</span></div>
+    <div class="ge-desc">${c.triggerDesc}</div>
+  </div>`).join('');
+}
+function renderGuideStadium(){
+  $('guideStadiumPanel').innerHTML=STADIUMS.map(s=>`<div class="guide-entry">
+    <div class="ge-top"><span class="ge-nm">${s.ico} ${s.nm}</span></div>
+    <div class="ge-desc">${s.desc}</div>
+  </div>`).join('');
 }
 function renderCollectionBook(){
   const allNats=Object.keys(NAT_NAMES);
