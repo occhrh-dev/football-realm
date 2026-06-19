@@ -933,8 +933,9 @@ button:focus-visible{outline:2px solid var(--flood);outline-offset:2px}
 
 <!-- ============ MATCH UI ============ -->
 <div id="matchUI" class="hidden" style="width:100%;display:flex;flex-direction:column;align-items:center">
-<div style="width:100%;max-width:620px;display:flex;justify-content:flex-start;margin-bottom:2px">
+<div style="width:100%;max-width:620px;display:flex;justify-content:space-between;margin-bottom:2px">
   <button onclick="confirmQuitMatch()" style="font-size:.72rem;padding:4px 10px;background:transparent;border:1px solid #2a5238;border-radius:6px;color:#7fa78d;cursor:pointer">← ออกจากแมตช์</button>
+  <button onclick="recoverStuckTurn()" style="font-size:.72rem;padding:4px 10px;background:transparent;border:1px solid #3d7bd9;border-radius:6px;color:#9cc8f0;cursor:pointer">🔄 ติดขัด? กดนี่</button>
 </div>
 <div class="hud">
   <span class="lv">👑 Lv.<span id="capLv">1</span></span>
@@ -3614,6 +3615,7 @@ let _isReplayMatch=false;
 function startMatch(opponent,oppName,modeLabel,isReplay=false){
   if(!deckValid().ok){openDeck();return;}
   hideAll();$('matchUI').classList.remove('hidden');
+  window._matchEnding=false;
   ai=opponent;scoreYou=0;scoreAi=0;turn=1;fx={};
   youAttacking=Math.random()<0.5;
   matchEnergy=2;
@@ -3809,6 +3811,7 @@ function duel(attacker,defender,youAtk,opts={}){
   /* กันค้าง: ถ้า animation chain ไม่จบใน 9 วิ (เช่น เบราว์เซอร์พักแท็บตอนสลับแอป/แคปหน้าจอ
      ทำให้ setTimeout ถูก throttle) บังคับจบดวลทันทีแทนที่จะค้างให้ผู้เล่นไปต่อไม่ได้ */
   fx._duelResolved=false;
+  window._currentDuelCtx={attacker,defender,goal,youAtk};
   clearTimeout(window._duelWatchdog);
   window._duelWatchdog=setTimeout(()=>{
     if(!fx._duelResolved) finishDuel(attacker,defender,goal,youAtk);
@@ -3895,6 +3898,7 @@ function throwConfetti(){
 function finishDuel(attacker,defender,goal,youAtk){
   if(fx._duelResolved) return; // กันเรียกซ้ำ ถ้า watchdog กับ flow ปกติชนกัน
   fx._duelResolved=true;
+  window._currentDuelCtx=null;
   clearTimeout(window._duelWatchdog);
   const xpMult=attacker.skill==='prodigy'||defender.skill==='prodigy'?2:1;
   if(goal){
@@ -3969,14 +3973,36 @@ function replayTowerMilestone(floor){
 function confirmQuitMatch(){
   if(confirm('ออกจากแมตช์? จะนับว่าแพ้ (ไม่ได้รางวัล)')) {
     clearTimeout(window._duelWatchdog);
+    window._currentDuelCtx=null;
     /* นับว่าแพ้ */
     isQuit=true;
     scoreYou=0;scoreAi=1;
     endMatch();
   }
 }
+function recoverStuckTurn(){
+  if(!confirm('รีเฟรชเทิร์นปัจจุบัน? ใช้เฉพาะตอนติดขัดจริงๆ (ไม่นับว่าออกจากแมตช์)')) return;
+  clearTimeout(window._duelWatchdog);
+  if(window._currentDuelCtx&&!fx._duelResolved){
+    /* กำลังติดอยู่กลางดวล - บังคับจบดวลทันที */
+    const c=window._currentDuelCtx;
+    finishDuel(c.attacker,c.defender,c.goal,c.youAtk);
+    showMomPop('🔄 บังคับจบดวลให้แล้ว');
+    return;
+  }
+  if(_duelPrep){
+    /* ติดอยู่หน้าต่างเลือกก่อนยิง/รับ - ยกเลิกแล้วให้เลือกใหม่ */
+    _duelPrep=null;
+    const dpEl=$('duelPrep');if(dpEl){dpEl.style.display='none';dpEl.innerHTML='';}
+    const bdEl=$('duelPrepBackdrop');if(bdEl) bdEl.classList.remove('show');
+  }
+  const htEl=$('halftimeModal');if(htEl) htEl.classList.add('hidden');
+  setupTurn();
+  showMomPop('🔄 รีเฟรชเทิร์นแล้ว ลองเลือกนักเตะใหม่');
+}
 function nextTurn(){
   clearTimeout(window._duelWatchdog);
+  window._currentDuelCtx=null;
   $('duel').className='duel';turn++;
   if(fx.storm>0)fx.storm--;
   if(fx.rumor>0)fx.rumor--;
@@ -4050,6 +4076,9 @@ function pickHalftime(choice){
 
 /* ============ MATCH END — per mode ============ */
 function endMatch(){
+  if(window._matchEnding) return; // กันเรียกซ้ำเร็วๆ (เช่น watchdog ชนกับการกดออกจากแมตช์)
+  window._matchEnding=true;
+  setTimeout(()=>{window._matchEnding=false;},1500); // ปลดล็อกอัตโนมัติ กันค้างตลอดไปถ้ารอบแรกพลาด
   const win=scoreYou>scoreAi,draw=scoreYou===scoreAi;
   let title=win?`🏆 ชนะ ${scoreYou}:${scoreAi}`:draw?`🤝 เสมอ ${scoreYou}:${scoreAi}`:`💔 แพ้ ${scoreYou}:${scoreAi}`;
   let desc='',lootChance=win?.6:draw?.35:.15,coinGain=0,xpGain=win?50:draw?25:15;
