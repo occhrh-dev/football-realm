@@ -3714,6 +3714,14 @@ function duel(attacker,defender,youAtk){
   if(!defender._noStam) defender.stamina=Math.max(15,defender.stamina-(defender.skill==='engine'?15:30));
   attacker._noStam=false; defender._noStam=false;
 
+  /* กันค้าง: ถ้า animation chain ไม่จบใน 9 วิ (เช่น เบราว์เซอร์พักแท็บตอนสลับแอป/แคปหน้าจอ
+     ทำให้ setTimeout ถูก throttle) บังคับจบดวลทันทีแทนที่จะค้างให้ผู้เล่นไปต่อไม่ได้ */
+  fx._duelResolved=false;
+  clearTimeout(window._duelWatchdog);
+  window._duelWatchdog=setTimeout(()=>{
+    if(!fx._duelResolved) finishDuel(attacker,defender,goal,youAtk);
+  },9000);
+
   const d=$('duel');d.className='duel show';
   const EA=ELEMS[attacker.elem],ED=ELEMS[defender.elem];
   d.innerHTML=`<div class="clash">
@@ -3788,6 +3796,9 @@ function throwConfetti(){
   }
 }
 function finishDuel(attacker,defender,goal,youAtk){
+  if(fx._duelResolved) return; // กันเรียกซ้ำ ถ้า watchdog กับ flow ปกติชนกัน
+  fx._duelResolved=true;
+  clearTimeout(window._duelWatchdog);
   const xpMult=attacker.skill==='prodigy'||defender.skill==='prodigy'?2:1;
   if(goal){
     if(youAtk){
@@ -3860,6 +3871,7 @@ function replayTowerMilestone(floor){
 }
 function confirmQuitMatch(){
   if(confirm('ออกจากแมตช์? จะนับว่าแพ้ (ไม่ได้รางวัล)')) {
+    clearTimeout(window._duelWatchdog);
     /* นับว่าแพ้ */
     isQuit=true;
     scoreYou=0;scoreAi=1;
@@ -3867,6 +3879,7 @@ function confirmQuitMatch(){
   }
 }
 function nextTurn(){
+  clearTimeout(window._duelWatchdog);
   $('duel').className='duel';turn++;
   if(fx.storm>0)fx.storm--;
   if(fx.rumor>0)fx.rumor--;
