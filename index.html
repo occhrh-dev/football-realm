@@ -13,7 +13,20 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <script>
 if('serviceWorker' in navigator){
-  window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('sw.js').then(reg=>reg.update()).catch(()=>{});
+  });
+  let _swReloadPending=false,_swReloaded=false;
+  navigator.serviceWorker.addEventListener('controllerchange',()=>{
+    if(_swReloaded) return; // กันรีโหลดวนซ้ำถ้า event ยิงมาซ้ำ
+    const mu=document.getElementById('matchUI');
+    const inMatch=mu&&!mu.classList.contains('hidden');
+    if(inMatch){ _swReloadPending=true; } // อยู่กลางแมตช์ - รอจนกลับหน้าโฮมค่อยรีเฟรช ไม่ตัดจังหวะ
+    else { _swReloaded=true; location.reload(); }
+  });
+  window._checkSwReload=()=>{
+    if(_swReloadPending&&!_swReloaded){ _swReloaded=true; location.reload(); }
+  };
 }
 </script>
 <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;600;800&family=Sarabun:wght@400;600&display=swap" rel="stylesheet">
@@ -50,6 +63,9 @@ h1,h2,h3,.kanit{font-family:'Kanit',sans-serif}
 .synergy{font-size:.76rem;color:#7fd9a0;text-align:center;margin-bottom:4px;min-height:16px}
 .stadium-badge{display:block;background:linear-gradient(135deg,#1f3a28,#0d1f17);border:1.5px solid var(--gold);border-radius:12px;padding:7px 14px;font-size:.85rem;color:#f0d896;text-align:center;margin:4px auto 8px;max-width:94%;box-shadow:0 0 14px rgba(232,181,58,.3)}
 .stadium-badge b{color:var(--gold)}
+.m-stadium-tag{font-size:.58rem;border-radius:4px;padding:0 4px;margin-left:3px;font-weight:700}
+.m-stadium-tag.good{background:rgba(232,181,58,.25);color:var(--gold)}
+.m-stadium-tag.bad{background:rgba(217,79,61,.25);color:var(--red)}
 .capt-row{width:100%;max-width:620px;display:flex;justify-content:center;margin-bottom:6px}
 .incoming{display:none;width:100%;max-width:620px;margin-bottom:6px;background:linear-gradient(90deg,rgba(217,79,61,.18),transparent);border:1px solid #5e2a22;border-radius:10px;padding:8px 12px;font-size:.85rem;text-align:center}
 .incoming.show{display:block;animation:pop .25s ease}
@@ -1288,6 +1304,16 @@ function renderStadiumBadge(){
   el.style.display='';
   el.innerHTML=`${matchStadium.ico} <b>${matchStadium.nm}</b> — ${matchStadium.desc}`;
 }
+function stadiumPlayerTag(p){
+  if(!matchStadium) return '';
+  if(matchStadium.id==='home_turf'&&_stadiumHomeNat&&p.nat===_stadiumHomeNat) return '<span class="m-stadium-tag good" title="โบนัสสนามเหย้า">🏠+10</span>';
+  if(matchStadium.id==='floodlight'&&_stadiumMotmId&&p.id===_stadiumMotmId) return '<span class="m-stadium-tag good" title="ผู้เล่นแห่งคืนนี้">🌙+15</span>';
+  if(matchStadium.id==='cold'){
+    if(p.elem==='tech') return '<span class="m-stadium-tag good" title="ธาตุเทคนิคได้เปรียบสนามหนาว">❄️+8</span>';
+    if(p.elem==='wind') return '<span class="m-stadium-tag bad" title="ธาตุลมเสียเปรียบสนามหนาว">❄️-8</span>';
+  }
+  return '';
+}
 
 /* ============ GLOBAL STATE ============ */
 let capLv=1,capXp=0,coins=150,inventory=[];
@@ -1986,6 +2012,7 @@ function buyCons(type,price){
 function hideAll(){SCREENS.forEach(i=>{const el=$(i);if(el)el.classList.add('hidden');});}
 function goHome(){
   hideAll();$('home').classList.remove('hidden');
+  if(window._checkSwReload) window._checkSwReload();
   updateHomeProfile();
   const _homeTP=$('homeTPBar');
   if(_homeTP){
@@ -3296,6 +3323,7 @@ function cardMatch(p,clickable,advantage=false){
         <span class="m-nm" title="${p.name}">${p.name}${p.enchant>0?`<span style="font-size:.5rem;color:var(--gold)"> +${p.enchant}✨</span>`:''}</span>
         <span class="m-nat">${p.nat}</span>
         <span class="m-lv">${evoBadge(p)}Lv${p.lv}</span>
+        ${stadiumPlayerTag(p)}
         ${arrowHtml}
       </div>
       <div class="m-stats">
