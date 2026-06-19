@@ -3821,6 +3821,7 @@ function startMatch(opponent,oppName,modeLabel,isReplay=false){
   if(!deckValid().ok){openDeck();return;}
   hideAll();$('matchUI').classList.remove('hidden');
   window._matchEnding=false;
+  window._lastResolvedTurn=-1;window._currentDuelCtx=null;
   ai=opponent;scoreYou=0;scoreAi=0;turn=1;fx={};
   youAttacking=Math.random()<0.5;
   matchEnergy=2;
@@ -3916,6 +3917,7 @@ function setupTurnDisplay(){
 }
 let _duelPrep=null;
 function pick(id){
+  if(window._lastResolvedTurn===turn){showMomPop('เทิร์นนี้จบไปแล้ว กดปุ่ม "เทิร์นถัดไป" ก่อนครับ');return;}
   const mine=deckPlayers().find(p=>p.id===id);
   if(youAttacking){
     const defs0=ai.filter(p=>p.def>=50);
@@ -4104,6 +4106,7 @@ function finishDuel(attacker,defender,goal,youAtk){
   if(fx._duelResolved) return; // กันเรียกซ้ำ ถ้า watchdog กับ flow ปกติชนกัน
   fx._duelResolved=true;
   window._currentDuelCtx=null;
+  window._lastResolvedTurn=turn; // กันช่องโหว่: รู้ว่าเทิร์นนี้ดวลจบไปแล้วหรือยัง
   clearTimeout(window._duelWatchdog);
   const xpMult=attacker.skill==='prodigy'||defender.skill==='prodigy'?2:1;
   if(goal){
@@ -4192,14 +4195,22 @@ function recoverStuckTurn(){
     /* กำลังติดอยู่กลางดวล - บังคับจบดวลทันที */
     const c=window._currentDuelCtx;
     finishDuel(c.attacker,c.defender,c.goal,c.youAtk);
-    showMomPop('🔄 บังคับจบดวลให้แล้ว');
+    showMomPop('🔄 บังคับจบดวลให้แล้ว กดปุ่ม "เทิร์นถัดไป" เพื่อไปต่อ');
     return;
   }
   if(_duelPrep){
-    /* ติดอยู่หน้าต่างเลือกก่อนยิง/รับ - ยกเลิกแล้วให้เลือกใหม่ */
+    /* ติดอยู่หน้าต่างเลือกก่อนยิง/รับ - ยกเลิกแล้วให้เลือกใหม่ (ดวลเทิร์นนี้ยังไม่เกิดขึ้นจริง ปลอดภัย) */
     _duelPrep=null;
     const dpEl=$('duelPrep');if(dpEl){dpEl.style.display='none';dpEl.innerHTML='';}
     const bdEl=$('duelPrepBackdrop');if(bdEl) bdEl.classList.remove('show');
+    showMomPop('🔄 ยกเลิกการเลือกแล้ว ลองแตะนักเตะใหม่');
+    return;
+  }
+  /* สำคัญ: ถ้าเทิร์นนี้ดวลจบไปแล้ว ห้าม setupTurn() ซ้ำเด็ดขาด เพราะจะเปิดให้เลือกนักเตะดวลใหม่ได้อีกฟรีๆ
+     ทั้งที่เทิร์นยังไม่ขยับ (ช่องโหว่ให้สแปมยิงซ้ำได้ไม่จำกัด) */
+  if(window._lastResolvedTurn===turn){
+    showMomPop('เทิร์นนี้จบไปแล้วครับ กดปุ่ม "เทิร์นถัดไป" เพื่อไปต่อ (ถ้าไม่เห็นปุ่ม ลองเลื่อนจอ)');
+    return;
   }
   const htEl=$('halftimeModal');if(htEl) htEl.classList.add('hidden');
   setupTurn();
