@@ -453,7 +453,9 @@ button:focus-visible{outline:2px solid var(--flood);outline-offset:2px}
 .halftime-modal .ht-btns{display:flex;gap:10px;justify-content:center}
 .halftime-modal .ht-btns button{min-width:110px;display:flex;flex-direction:column;gap:3px}
 .halftime-modal .ht-btns button span{font-size:.65rem;opacity:.85}
-.duel-prep{width:100%;max-width:620px;background:rgba(5,19,11,.92);border:1.5px solid #2a5238;border-radius:12px;padding:10px 12px;margin:6px 0;text-align:center}
+.duel-prep-backdrop{display:none;position:fixed;inset:0;background:rgba(2,8,5,.78);z-index:34}
+.duel-prep-backdrop.show{display:block}
+.duel-prep{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:92%;max-width:480px;max-height:84vh;overflow-y:auto;background:rgba(8,24,15,.98);border:1.5px solid var(--gold);border-radius:14px;padding:14px 14px 16px;margin:0;text-align:center;z-index:35;box-shadow:0 0 40px rgba(0,0,0,.55)}
 .duel-prep h4{font-family:'Kanit';font-size:.8rem;color:var(--gold);margin-bottom:7px}
 .dp-targets{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:9px}
 .dp-target{flex-shrink:0;min-width:88px;background:#0f2a1a;border:2px solid #2a5238;border-radius:8px;padding:6px 8px;text-align:center;cursor:pointer;font-size:.68rem;color:#c9e8d4}
@@ -973,6 +975,7 @@ button:focus-visible{outline:2px solid var(--flood);outline-offset:2px}
   <div class="form-info" id="formInfo"></div>
 </div>
 <div class="hand" id="hand"></div>
+<div class="duel-prep-backdrop" id="duelPrepBackdrop"></div>
 <div class="duel-prep" id="duelPrep" style="display:none"></div>
 <div class="actions" id="actions"></div>
 </div>
@@ -3710,9 +3713,10 @@ function pick(id){
   if(youAttacking){
     const defs0=ai.filter(p=>p.def>=50);
     const defsUnlocked=defs0.filter(p=>!p._locked);
-    const defs=(defsUnlocked.length?defsUnlocked:defs0).sort((a,b)=>b.def-a.def);
-    const targets=defs.length?defs:ai; // กันกรณีไม่มีใครเข้าเงื่อนไขเลย
-    _duelPrep={mine,targets,target:targets[rnd(Math.min(2,targets.length))],style:'safe',energyUsed:false};
+    const pool=defsUnlocked.length?defsUnlocked:(defs0.length?defs0:ai);
+    const shuffled=[...pool].sort(()=>Math.random()-0.5);
+    const targets=shuffled.slice(0,Math.min(3,shuffled.length));
+    _duelPrep={mine,targets,target:targets[rnd(targets.length)],style:'safe',energyUsed:false};
   }else{
     _duelPrep={mine,targets:null,target:incomingAttacker,style:'careful',energyUsed:false};
   }
@@ -3725,6 +3729,7 @@ function renderDuelPrep(){
   if(!dp) return;
   const el=$('duelPrep');
   el.style.display='';
+  $('duelPrepBackdrop').classList.add('show');
   let h='';
   if(youAttacking){
     h+=`<h4>🎯 เลือกเป้าหมาย</h4><div class="dp-targets">`;
@@ -3767,6 +3772,7 @@ function confirmDuel(){
   if(!_duelPrep) return;
   const dp=_duelPrep;
   $('duelPrep').style.display='none';$('duelPrep').innerHTML='';
+  $('duelPrepBackdrop').classList.remove('show');
   const opts={style:dp.style,energy:dp.energyUsed};
   _duelPrep=null;
   if(youAttacking) duel(dp.mine,dp.target,true,opts);
