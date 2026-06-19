@@ -453,6 +453,19 @@ button:focus-visible{outline:2px solid var(--flood);outline-offset:2px}
 .halftime-modal .ht-btns{display:flex;gap:10px;justify-content:center}
 .halftime-modal .ht-btns button{min-width:110px;display:flex;flex-direction:column;gap:3px}
 .halftime-modal .ht-btns button span{font-size:.65rem;opacity:.85}
+.duel-prep{width:100%;max-width:620px;background:rgba(5,19,11,.92);border:1.5px solid #2a5238;border-radius:12px;padding:10px 12px;margin:6px 0;text-align:center}
+.duel-prep h4{font-family:'Kanit';font-size:.8rem;color:var(--gold);margin-bottom:7px}
+.dp-targets{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:9px}
+.dp-target{flex-shrink:0;min-width:88px;background:#0f2a1a;border:2px solid #2a5238;border-radius:8px;padding:6px 8px;text-align:center;cursor:pointer;font-size:.68rem;color:#c9e8d4}
+.dp-target.sel{border-color:var(--gold);background:#23391d}
+.dp-target .dp-def{color:#7fd9a0;font-weight:700;font-size:.74rem}
+.dp-styles{display:flex;gap:8px;margin-bottom:9px}
+.dp-style{flex:1;background:#0f2a1a;border:2px solid #2a5238;border-radius:8px;padding:8px 6px;text-align:center;cursor:pointer;font-size:.72rem;color:#c9e8d4}
+.dp-style.sel{border-color:var(--gold);background:#23391d;color:var(--gold)}
+.dp-style small{display:block;font-size:.6rem;color:#7fa78d;margin-top:2px}
+.dp-energy{width:100%;background:#16263a;border:2px solid #3d7bd9;border-radius:8px;padding:7px;text-align:center;font-size:.72rem;color:#9cc8f0;cursor:pointer;margin-bottom:9px}
+.dp-energy.used,.dp-energy.disabled{opacity:.4;cursor:default;border-color:#2a5238;color:#7fa78d}
+.dp-confirm{width:100%;background:var(--gold);color:#1a1408;font-family:'Kanit';font-weight:700;font-size:.88rem;border:none;border-radius:8px;padding:11px;cursor:pointer}
 .gachareveal{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;min-height:170px;align-items:center}
 .packbtns{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
 .pack{background:linear-gradient(160deg,#1c1430,#0d0a18);border:2px solid var(--purple);border-radius:12px;padding:14px 18px;width:160px;cursor:pointer;transition:transform .12s}
@@ -934,6 +947,7 @@ button:focus-visible{outline:2px solid var(--flood);outline-offset:2px}
   </div>
   <span class="momentum-label" style="text-align:right;font-size:.65rem" id="momLabelR">🔴</span>
 </div>
+<div class="energy-wrap" id="energyWrap" style="text-align:center;font-size:.72rem;color:#7fa78d;margin:-4px 0 4px">⚡ พลัง: <span id="energyVal">2</span></div>
 <div class="scoreboard">
   <div class="team you">⚡ ราชันสายฟ้า</div>
   <div>
@@ -959,6 +973,7 @@ button:focus-visible{outline:2px solid var(--flood);outline-offset:2px}
   <div class="form-info" id="formInfo"></div>
 </div>
 <div class="hand" id="hand"></div>
+<div class="duel-prep" id="duelPrep" style="display:none"></div>
 <div class="actions" id="actions"></div>
 </div>
 
@@ -1279,6 +1294,7 @@ function genTeam(mult,natBias){
 }
 
 let fx={};
+let matchEnergy=0; // ทรัพยากรต่อแมตช์ - สะสมจากการยิงเข้า ใช้อัดพลังดวลได้
 
 /* ============ STADIUMS (สุ่มต่อแมตช์ — เปลี่ยนกฎเฉพาะแมตช์นั้น) ============ */
 const STADIUMS=[
@@ -3595,7 +3611,9 @@ let _isReplayMatch=false;
 function startMatch(opponent,oppName,modeLabel,isReplay=false){
   if(!deckValid().ok){openDeck();return;}
   hideAll();$('matchUI').classList.remove('hidden');
-  ai=opponent;scoreYou=0;scoreAi=0;turn=1;youAttacking=true;fx={};
+  ai=opponent;scoreYou=0;scoreAi=0;turn=1;fx={};
+  youAttacking=Math.random()<0.5;
+  matchEnergy=2;
   _isReplayMatch=isReplay;
   momentum=50;updateMomentum(0);
   questProgress('match',1);
@@ -3635,6 +3653,7 @@ function startMatch(opponent,oppName,modeLabel,isReplay=false){
   $('log').innerHTML='';
   log(`🏟️ <span class="gold">${modeLabel}: พบ ${oppName}</span>`);
   if(matchStadium.id!=='neutral') log(`${matchStadium.ico} <span class="gold">${matchStadium.nm}</span> — ${matchStadium.desc}`);
+  log(youAttacking?'🪙 <span class="good">เสี่ยงหัวก้อยชนะ! คุณบุกก่อน!</span>':'🪙 <span class="bad">เสี่ยงหัวก้อยแพ้... คู่แข่งบุกก่อน!</span>');
   setupTurn();
 }
 function setupTurn(){
@@ -3685,26 +3704,87 @@ function setupTurnDisplay(){
   );
   $('actions').innerHTML='';
 }
+let _duelPrep=null;
 function pick(id){
   const mine=deckPlayers().find(p=>p.id===id);
   if(youAttacking){
     const defs0=ai.filter(p=>p.def>=50);
     const defsUnlocked=defs0.filter(p=>!p._locked);
     const defs=(defsUnlocked.length?defsUnlocked:defs0).sort((a,b)=>b.def-a.def);
-    duel(mine,defs[rnd(Math.min(2,defs.length))],true);
+    const targets=defs.length?defs:ai; // กันกรณีไม่มีใครเข้าเงื่อนไขเลย
+    _duelPrep={mine,targets,target:targets[rnd(Math.min(2,targets.length))],style:'safe',energyUsed:false};
   }else{
-    duel(incomingAttacker,mine,false);
+    _duelPrep={mine,targets:null,target:incomingAttacker,style:'careful',energyUsed:false};
   }
+  $('hand').innerHTML=renderPitch(deckPlayers(),()=>false,()=>false);
+  $('actions').innerHTML='';
+  renderDuelPrep();
 }
-function duel(attacker,defender,youAtk){
+function renderDuelPrep(){
+  const dp=_duelPrep;
+  if(!dp) return;
+  const el=$('duelPrep');
+  el.style.display='';
+  let h='';
+  if(youAttacking){
+    h+=`<h4>🎯 เลือกเป้าหมาย</h4><div class="dp-targets">`;
+    h+=dp.targets.map(p=>`<div class="dp-target ${dp.target&&dp.target.id===p.id?'sel':''}" onclick="selectDuelTarget('${p.id}')">${p.name}<br><span class="dp-def">🛡️${p.def}</span></div>`).join('');
+    h+=`</div>`;
+    h+=`<h4>⚽ สไตล์ยิง</h4><div class="dp-styles">
+      <div class="dp-style ${dp.style==='safe'?'sel':''}" onclick="selectDuelStyle('safe')">🎯 ยิงชัวร์<small>แกว่งน้อย</small></div>
+      <div class="dp-style ${dp.style==='risky'?'sel':''}" onclick="selectDuelStyle('risky')">🔥 ยิงเสี่ยง<small>แกว่งมาก</small></div>
+    </div>`;
+  }else{
+    h+=`<h4>🧤 สไตล์รับ</h4><div class="dp-styles">
+      <div class="dp-style ${dp.style==='careful'?'sel':''}" onclick="selectDuelStyle('careful')">🛡️ ระมัดระวัง<small>ประหยัด stam</small></div>
+      <div class="dp-style ${dp.style==='aggressive'?'sel':''}" onclick="selectDuelStyle('aggressive')">💥 สกัดดุดัน<small>DEF+12 เปลือง stam×2</small></div>
+    </div>`;
+  }
+  const canEnergy=matchEnergy>=1&&!dp.energyUsed;
+  h+=`<div class="dp-energy ${dp.energyUsed?'used':(canEnergy?'':'disabled')}" onclick="${canEnergy?'useDuelEnergy()':''}">
+    ${dp.energyUsed?'⚡ ใช้พลังแล้ว (+12)':`⚡ อัดพลัง +12 (เหลือ ${matchEnergy})`}
+  </div>`;
+  h+=`<button class="dp-confirm" onclick="confirmDuel()">${youAttacking?'ยิง! ⚽':'สกัด! 🧤'}</button>`;
+  el.innerHTML=h;
+}
+function selectDuelTarget(id){
+  if(!_duelPrep) return;
+  _duelPrep.target=_duelPrep.targets.find(p=>p.id===id)||_duelPrep.target;
+  renderDuelPrep();sfxClick();
+}
+function selectDuelStyle(s){
+  if(!_duelPrep) return;
+  _duelPrep.style=s;
+  renderDuelPrep();sfxClick();
+}
+function useDuelEnergy(){
+  if(!_duelPrep||matchEnergy<1||_duelPrep.energyUsed) return;
+  matchEnergy--;$('energyVal').textContent=matchEnergy;
+  _duelPrep.energyUsed=true;
+  renderDuelPrep();sfxClick();
+}
+function confirmDuel(){
+  if(!_duelPrep) return;
+  const dp=_duelPrep;
+  $('duelPrep').style.display='none';$('duelPrep').innerHTML='';
+  const opts={style:dp.style,energy:dp.energyUsed};
+  _duelPrep=null;
+  if(youAttacking) duel(dp.mine,dp.target,true,opts);
+  else duel(dp.target,dp.mine,false,opts);
+}
+function duel(attacker,defender,youAtk,opts={}){
   const ea=eff(attacker,youAtk),ed=eff(defender,!youAtk);
   let atkBonus=0,defBonus=0,notes=[];
   if(ELEMS[attacker.elem].beats===defender.elem){atkBonus=15;notes.push(`${ELEMS[attacker.elem].ico}ข่ม${ELEMS[defender.elem].ico} บุก+15`);}
   if(ELEMS[defender.elem].beats===attacker.elem){defBonus=15;notes.push(`${ELEMS[defender.elem].ico}ข่ม${ELEMS[attacker.elem].ico} รับ+15`);}
   const enemyRollMax=fx.press?20:40;
   const mb=youAtk?momentumBonus():0;
-  let atkRoll=ea.atk+atkBonus+mb+(youAtk?rnd(40):rnd(enemyRollMax));
+  const myStyle=opts.style;
+  let atkRoll=ea.atk+atkBonus+mb+(youAtk?(myStyle==='risky'?Math.max(0,rnd(90)-25):rnd(40)):rnd(enemyRollMax));
   let defRoll=ed.def+defBonus+(youAtk?rnd(enemyRollMax):rnd(40));
+  if(youAtk&&myStyle==='risky') notes.push('🔥 ยิงเสี่ยง!');
+  if(!youAtk&&myStyle==='aggressive'){defRoll+=12;notes.push('💥 สกัดดุดัน DEF+12!');}
+  if(opts.energy){ if(youAtk) atkRoll+=12; else defRoll+=12; notes.push('⚡ อัดพลัง +12!'); }
   if(fx.press){notes.push('🥶 กดดัน!');fx.press=false;}
   const fx2={};
   const atkR={v:atkRoll},defR={v:defRoll};
@@ -3715,8 +3795,9 @@ function duel(attacker,defender,youAtk){
   if(fx2.highPress){/* force weaker ai attacker next turn */fx.nextWeakForce=true;}
   atkRoll=atkR.v; defRoll=defR.v;
   const goal=atkRoll>defRoll;
+  const defStaminaMult=(!youAtk&&myStyle==='aggressive')?2:(!youAtk&&myStyle==='careful')?0.5:1;
   if(!attacker._noStam) attacker.stamina=Math.max(15,attacker.stamina-(attacker.skill==='engine'?19:38));
-  if(!defender._noStam) defender.stamina=Math.max(15,defender.stamina-(defender.skill==='engine'?15:30));
+  if(!defender._noStam) defender.stamina=Math.max(15,defender.stamina-Math.round((defender.skill==='engine'?15:30)*defStaminaMult));
   attacker._noStam=false; defender._noStam=false;
 
   /* กันค้าง: ถ้า animation chain ไม่จบใน 9 วิ (เช่น เบราว์เซอร์พักแท็บตอนสลับแอป/แคปหน้าจอ
@@ -3808,6 +3889,8 @@ function finishDuel(attacker,defender,goal,youAtk){
   if(goal){
     if(youAtk){
       scoreYou++;
+      matchEnergy=Math.min(5,matchEnergy+1);
+      const ev=$('energyVal');if(ev) ev.textContent=matchEnergy;
       const xp=15*xpMult; gainPXp(attacker,xp); gainCapXp(xp);
       log(`⚽ <span class="good">${attacker.name} ยิงเข้า! +${xp} XP</span>`);
       updateMomentum(+15);if(momentum>=70)showMomPop('🔥 Momentum ลุกโชน!');questProgress('goal',1);sfxGoal();
