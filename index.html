@@ -404,7 +404,7 @@ button:focus-visible{outline:2px solid var(--flood);outline-offset:2px}
 @keyframes flash{50%{opacity:.4}}
 .clash{display:flex;align-items:flex-start;justify-content:center;gap:6px;min-height:140px;position:relative}
 .fcol{display:flex;flex-direction:column;align-items:center;gap:4px}
-.frll{font-family:'Kanit';font-weight:800;font-size:1.1rem;color:var(--gold);min-height:26px}
+.frll{font-family:'Kanit';font-weight:800;font-size:.92rem;color:var(--gold);min-height:26px;line-height:1.25}
 .ballanim{position:absolute;top:30%;left:14%;font-size:1.5rem;opacity:0;pointer-events:none;z-index:5}
 .fly-goal{animation:flyGoal 1s ease-in forwards}
 @keyframes flyGoal{0%{opacity:1;left:14%;transform:rotate(0)}70%{opacity:1;left:72%;transform:rotate(540deg)}100%{left:84%;transform:rotate(720deg) scale(1.8);opacity:0}}
@@ -863,14 +863,14 @@ button:focus-visible{outline:2px solid var(--flood);outline-offset:2px}
     <p style="font-size:.72rem;color:#7fa78d;margin-bottom:6px">🪤 ตอนอยู่ในแมตช์ การ์ดที่มีเงื่อนไขจะเลือกได้ว่าจะ "ใช้เลย" หรือ "ตั้งดัก" ให้ทำงานอัตโนมัติทันทีที่เงื่อนไขเกิด</p>
     <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap" id="supportSlotDisplay"></div>
     <p style="font-size:.75rem;color:#7fa78d;margin-bottom:4px">การ์ดที่มี:</p>
-    <div class="hand" id="supportCollection" style="flex-wrap:wrap"></div>
+    <div class="hand" id="supportCollection" style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center"></div>
   </div>
   <!-- Captain card -->
   <div id="deckCaptainPanel" style="display:none;width:100%;max-width:620px">
     <p style="font-size:.78rem;color:#7fa78d;margin-bottom:6px">เลือก Captain card 1 ใบ — passive trigger อัตโนมัติ</p>
     <div id="captainSlotDisplay" style="margin-bottom:10px"></div>
     <p style="font-size:.75rem;color:#7fa78d;margin-bottom:4px">การ์ดที่มี:</p>
-    <div class="hand" id="captainCollection" style="flex-wrap:wrap"></div>
+    <div class="hand" id="captainCollection" style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center"></div>
   </div>
   <div class="actions" style="flex-wrap:wrap;gap:8px">
     <button class="ghost" onclick="goHome()">← กลับ</button>
@@ -3715,7 +3715,7 @@ function pick(id){
     const defsUnlocked=defs0.filter(p=>!p._locked);
     const pool=defsUnlocked.length?defsUnlocked:(defs0.length?defs0:ai);
     const shuffled=[...pool].sort(()=>Math.random()-0.5);
-    const targets=shuffled.slice(0,Math.min(3,shuffled.length));
+    const targets=shuffled.slice(0,Math.min(2,shuffled.length));
     _duelPrep={mine,targets,target:targets[rnd(targets.length)],style:'safe',energyUsed:false};
   }else{
     _duelPrep={mine,targets:null,target:incomingAttacker,style:'careful',energyUsed:false};
@@ -3837,9 +3837,14 @@ function duel(attacker,defender,youAtk,opts={}){
   const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
   const t1=reduced?0:600,t2=reduced?0:2400,t3=reduced?0:3300;
   const fA=atkRoll>999?'∞':atkRoll,fD=defRoll>999?'🧱':defRoll;
+  /* โชว์ที่มาของทอย: ค่าสกิล(ATK/DEF) + โบนัส/ทอยลูกเต๋า = ผลสุดท้าย ให้เห็นว่าค่าสเตตัสมีผลตรงไหน */
+  const exA=atkRoll>999?null:atkRoll-ea.atk;
+  const exD=defRoll>999?null:defRoll-ed.def;
+  const rollTxtA=exA===null?`ทอย ${fA}`:`⚔${ea.atk} ${exA>=0?'+':''}${exA} = <b>${fA}</b>`;
+  const rollTxtD=exD===null?`ทอย ${fD}`:`🛡${ed.def} ${exD>=0?'+':''}${exD} = <b>${fD}</b>`;
   setTimeout(()=>{
     if(reduced){
-      $('rollA').innerHTML=`ทอย ${fA}`;$('rollD').innerHTML=`ทอย ${fD}`;
+      $('rollA').innerHTML=rollTxtA;$('rollD').innerHTML=rollTxtD;
       $('duelNotes').innerHTML=notes.join(' · ');
     }else{
       let i=0;const iv=setInterval(()=>{
@@ -3847,7 +3852,7 @@ function duel(attacker,defender,youAtk,opts={}){
         $('rollA').textContent='ทอย '+(atkRoll>999?'∞':rnd(atkRoll+1));
         $('rollD').textContent='ทอย '+(defRoll>999?'🧱':rnd(defRoll+1));
         if(i>=14){clearInterval(iv);
-          $('rollA').textContent='ทอย '+fA;$('rollD').textContent='ทอย '+fD;
+          $('rollA').innerHTML=rollTxtA;$('rollD').innerHTML=rollTxtD;
           $('duelNotes').innerHTML=notes.join(' · ');}
       },115);
     }
@@ -3895,8 +3900,6 @@ function finishDuel(attacker,defender,goal,youAtk){
   if(goal){
     if(youAtk){
       scoreYou++;
-      matchEnergy=Math.min(5,matchEnergy+1);
-      const ev=$('energyVal');if(ev) ev.textContent=matchEnergy;
       const xp=15*xpMult; gainPXp(attacker,xp); gainCapXp(xp);
       log(`⚽ <span class="good">${attacker.name} ยิงเข้า! +${xp} XP</span>`);
       updateMomentum(+15);if(momentum>=70)showMomPop('🔥 Momentum ลุกโชน!');questProgress('goal',1);sfxGoal();
