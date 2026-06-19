@@ -468,6 +468,38 @@ button:focus-visible{outline:2px solid var(--flood);outline-offset:2px}
 .dp-energy{width:100%;background:#16263a;border:2px solid #3d7bd9;border-radius:8px;padding:7px;text-align:center;font-size:.72rem;color:#9cc8f0;cursor:pointer;margin-bottom:9px}
 .dp-energy.used,.dp-energy.disabled{opacity:.4;cursor:default;border-color:#2a5238;color:#7fa78d}
 .dp-confirm{width:100%;background:var(--gold);color:#1a1408;font-family:'Kanit';font-weight:700;font-size:.88rem;border:none;border-radius:8px;padding:11px;cursor:pointer}
+.slot-icons{display:flex;gap:4px;margin-top:2px}
+.slot-ico{font-size:.78rem;padding:1px 3px;border-radius:4px;background:rgba(0,0,0,.25)}
+.slot-ico.on{opacity:1;filter:none;background:rgba(232,181,58,.18)}
+.slot-ico.off{opacity:.45;filter:grayscale(1)}
+.slot-ico.locked{opacity:.2;filter:grayscale(1)}
+.pcm-backdrop{display:none;position:fixed;inset:0;background:rgba(2,8,5,.82);z-index:36}
+.pcm-backdrop.show{display:block}
+.pcm-modal{display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:92%;max-width:460px;max-height:88vh;overflow-y:auto;background:rgba(8,24,15,.98);border:1.5px solid var(--gold);border-radius:14px;padding:14px;z-index:37;text-align:center;box-shadow:0 0 40px rgba(0,0,0,.55)}
+.pcm-modal.show{display:block}
+.pcm-close{position:absolute;top:8px;right:10px;background:none;border:none;color:#7fa78d;font-size:1.1rem;cursor:pointer}
+.pcm-head{display:flex;flex-direction:column;align-items:center;margin-bottom:8px}
+.pcm-head img{width:56px;height:56px;border-radius:50%;object-fit:cover;border:2px solid var(--gold);margin-bottom:4px}
+.pcm-head .pcm-nm{font-family:'Kanit';font-weight:700;font-size:.95rem;color:var(--gold)}
+.pcm-section{background:rgba(5,19,11,.7);border:1px solid #1e3a29;border-radius:10px;padding:9px;margin-bottom:8px;text-align:left}
+.pcm-section h5{font-family:'Kanit';font-size:.76rem;color:var(--flood);margin-bottom:6px;text-align:center}
+.pcm-slots{display:flex;gap:8px;justify-content:center}
+.pcm-slot{flex:1;background:#0f2a1a;border:2px solid #2a5238;border-radius:9px;padding:8px 4px;text-align:center;cursor:pointer;font-size:.66rem;color:#c9e8d4}
+.pcm-slot.equipped{border-color:var(--gold);background:#23391d}
+.pcm-slot.locked{opacity:.4;cursor:default;border-style:dashed}
+.pcm-slot .pcm-slot-ico{font-size:1.3rem;display:block;margin-bottom:3px}
+.pcm-item-list{display:flex;flex-direction:column;gap:6px;max-height:220px;overflow-y:auto}
+.pcm-item-row{display:flex;align-items:center;gap:8px;background:#0f2a1a;border:1.5px solid #2a5238;border-radius:8px;padding:6px 8px;cursor:pointer;font-size:.74rem;text-align:left}
+.pcm-item-row:hover{border-color:var(--gold)}
+.pcm-badge-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.pcm-badge-slot select{font-size:.62rem;background:#0a1f13;color:var(--flood);border:1px solid #2a5238;border-radius:5px;padding:3px;max-width:130px}
+.pcm-btn{font-family:'Kanit';font-size:.74rem;border-radius:7px;padding:7px 10px;cursor:pointer;border:1px solid #2a5238;background:transparent;color:#c9e8d4}
+.pcm-btn.gold{background:var(--gold);color:#1a1408;border:none;font-weight:700}
+.pcm-btn.red{color:#f0907f;border-color:#5a2a22}
+.roster-grid{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;width:100%;max-width:560px}
+.roster-card{width:96px;background:#0f2a1a;border:2px solid #2a5238;border-radius:10px;padding:6px;text-align:center;cursor:pointer;font-size:.66rem;color:#c9e8d4}
+.roster-card img{width:48px;height:48px;border-radius:50%;object-fit:cover;margin-bottom:3px}
+.roster-card .rc-nm{font-family:'Kanit';font-size:.66rem;color:var(--flood);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .gachareveal{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;min-height:170px;align-items:center}
 .packbtns{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
 .pack{background:linear-gradient(160deg,#1c1430,#0d0a18);border:2px solid var(--purple);border-radius:12px;padding:14px 18px;width:160px;cursor:pointer;transition:transform .12s}
@@ -892,17 +924,18 @@ button:focus-visible{outline:2px solid var(--flood);outline-offset:2px}
     <span style="font-size:.68rem;color:#7fa78d">🔮 Dust: <span id="invDust">0</span> · ✨ XP Pot: <span id="invPot">0</span></span>
   </div>
   <div class="inv-tabs">
-    <button class="inv-tab active" onclick="switchInvTab('shirt',this)">🎽 เสื้อ</button>
-    <button class="inv-tab" onclick="switchInvTab('shoe',this)">👟 รองเท้า</button>
-    <button class="inv-tab" onclick="switchInvTab('pants',this)">👖 กางเกง</button>
+    <button class="inv-tab active" onclick="switchInvTab('roster',this)">👤 จัดการนักเตะ</button>
     <button class="inv-tab" onclick="switchInvTab('consumable',this)">⚗️ ของใช้</button>
-    <button class="inv-tab" onclick="switchInvTab('badge',this)">🏅 ตรา</button>
-    <button class="inv-tab" onclick="switchInvTab('dismantle',this)">🔄 ย่อย</button>
-    <button class="inv-tab" onclick="switchInvTab('craft',this)">⚗️ Craft</button>
-    <button class="inv-tab" onclick="switchInvTab('enchant',this)">✨ Enchant</button>
+    <button class="inv-tab" onclick="switchInvTab('craft',this)">🔨 Craft</button>
   </div>
   <div class="inv-grid" id="invGrid"></div>
   <button class="ghost" onclick="goHome()" style="margin-top:8px">กลับสโมสร</button>
+</div>
+
+<div class="pcm-backdrop" id="pcmBackdrop" onclick="closePlayerCardMenu()"></div>
+<div class="pcm-modal" id="pcmModal">
+  <button class="pcm-close" onclick="closePlayerCardMenu()">✕</button>
+  <div id="pcmBody"></div>
 </div>
 
 <!-- ============ DAILY QUEST ============ -->
@@ -1882,6 +1915,18 @@ function evoBadge(p){
   const t=evoTier(p.lv);
   return t.tier>0?`${t.ico}`:'';
 }
+function maxItemSlots(p){return p.legend?3:p.rare?2:1;}
+function unlockedSlotTypes(p){return ['shirt','shoe','pants'].slice(0,maxItemSlots(p));}
+function slotStatusIcons(p){
+  const types=[['shirt','🎽'],['shoe','👟'],['pants','👖']];
+  const unlocked=unlockedSlotTypes(p);
+  return `<div class="slot-icons">${types.map(([slot,ico])=>{
+    const isUnlocked=unlocked.includes(slot);
+    const isEquipped=!!p[slot];
+    const cls=!isUnlocked?'locked':(isEquipped?'on':'off');
+    return `<span class="slot-ico ${cls}">${ico}</span>`;
+  }).join('')}</div>`;
+}
 function gainPXp(p,n){
   p.xp+=n;
   while(p.xp>=pXpNeed(p)){
@@ -2852,7 +2897,7 @@ let invTab='shirt';
 function openInv(){
   hideAll();$('invScr').classList.remove('hidden');
   updateShopCoins();
-  switchInvTab('shirt',document.querySelector('.inv-tab'));
+  switchInvTab('roster',document.querySelector('.inv-tab'));
 }
 function openSettings(){
   hideAll();$('settingsScr').classList.remove('hidden');
@@ -2860,23 +2905,173 @@ function openSettings(){
 }
 function goDismantle(){
   openInv();
-  const btn=document.querySelector('.inv-tab[onclick*="dismantle"]');
-  switchInvTab('dismantle',btn);
+  showMomPop('👤 แตะการ์ดที่ไม่ใช้ แล้วเลือก "ย่อย" ในเมนู');
 }
 function switchInvTab(tab,btn){
   invTab=tab;
   document.querySelectorAll('.inv-tab').forEach(b=>b.classList.remove('active'));
   if(btn) btn.classList.add('active');
-  if(tab==='dismantle') renderDismantle();
-  else if(tab==='craft') renderCraft();
-  else if(tab==='enchant') renderEnchant();
-  else if(tab==='badge') renderBadges();
+  if(tab==='craft') renderCraft();
+  else if(tab==='roster') renderRoster();
   else renderInvGrid();
+}
+function renderRoster(){
+  const grid=$('invGrid');
+  if(!collection.length){grid.innerHTML='<div class="inv-empty">ยังไม่มีนักเตะ<br><span style="font-size:.75rem">เปิดซองได้ที่ 🏪 ร้านค้า</span></div>';return;}
+  grid.innerHTML=`<p style="font-size:.72rem;color:#7fa78d;margin-bottom:8px;width:100%;max-width:560px">แตะการ์ดนักเตะเพื่อ ใส่ไอเทม / ติดตรา / Enchant / ย่อย</p>
+  <div class="roster-grid">${sortCollection(collection).map(p=>{
+    const tc=p.legend?'var(--legend)':p.rare?'var(--gold)':'#a8c9b4';
+    return `<div class="roster-card" style="border-color:${tc}" onclick="openPlayerCardMenu('${p.id}')">
+      <img src="${portraitURL(p)}" loading="lazy" onerror="this.style.display='none'">
+      <div class="rc-nm" style="color:${tc}">${evoBadge(p)}${p.name}</div>
+      <div style="font-size:.6rem;color:#7fa78d">${p.pos} Lv${p.lv}</div>
+      ${slotStatusIcons(p)}
+    </div>`;
+  }).join('')}</div>`;
+}
+
+/* ===== PLAYER CARD MENU (equip/badge/enchant/dismantle รวมศูนย์) ===== */
+let _pcmPid=null,_pcmView='main';
+const SLOT_ICO={shirt:'🎽',shoe:'👟',pants:'👖'};
+const SLOT_NM={shirt:'เสื้อ',shoe:'รองเท้า',pants:'กางเกง'};
+function openPlayerCardMenu(pid){
+  _pcmPid=pid;_pcmView='main';
+  $('pcmBackdrop').classList.add('show');
+  $('pcmModal').classList.add('show');
+  renderPlayerCardMenu();
+}
+function closePlayerCardMenu(){
+  $('pcmBackdrop').classList.remove('show');
+  $('pcmModal').classList.remove('show');
+  _pcmPid=null;_pcmView='main';
+}
+function renderPlayerCardMenu(){
+  const p=collection.find(x=>x.id===_pcmPid);
+  if(!p){closePlayerCardMenu();return;}
+  const body=$('pcmBody');
+  if(_pcmView&&_pcmView.type==='picker'){body.innerHTML=pcmPickerHTML(p,_pcmView.slot);return;}
+  if(_pcmView&&_pcmView.type==='detail'){body.innerHTML=pcmDetailHTML(p,_pcmView.slot);return;}
+  const tc=p.legend?'var(--legend)':p.rare?'var(--gold)':'#a8c9b4';
+  const unlocked=unlockedSlotTypes(p);
+  const slotsHtml=['shirt','shoe','pants'].map(slot=>{
+    const isUnlocked=unlocked.includes(slot);
+    const item=p[slot];
+    if(!isUnlocked) return `<div class="pcm-slot locked" title="ปลดล็อกด้วยการ์ดแรร์ขึ้นไป"><span class="pcm-slot-ico">🔒</span>${SLOT_NM[slot]}</div>`;
+    return `<div class="pcm-slot ${item?'equipped':''}" onclick="pcmTapSlot('${slot}')">
+      <span class="pcm-slot-ico">${item?item.ico:SLOT_ICO[slot]}</span>${item?item.name:'ว่าง'}
+    </div>`;
+  }).join('');
+  const lv=p.enchant||0;
+  const cost=ENCHANT_COST[lv];
+  const canEnch=cost&&Object.entries(cost).every(([k,v])=>(consumables[k]||0)>=v);
+  const costTxt=cost?Object.entries(cost).map(([k,v])=>`${dustLabel(k)} ×${v}`).join(' + '):'MAX';
+  const inDeck=deck.includes(p.id);
+  const tier=p.legend?'legend':p.rare?'rare':'common';
+  const dYield=DISMANTLE_YIELD[tier];
+  const dYieldTxt=Object.entries(dYield).map(([k,v])=>`${dustLabel(k)} ×${v}`).join(' + ');
+  body.innerHTML=`
+    <div class="pcm-head">
+      <img src="${portraitURL(p)}" onerror="this.style.display='none'">
+      <div class="pcm-nm" style="color:${tc}">${evoBadge(p)}${p.name}${lv>0?` <span style="font-size:.6rem">+${lv}✨</span>`:''}</div>
+      <div style="font-size:.68rem;color:#7fa78d">${p.pos} · Lv${p.lv} · ⚔${p.atk} 🛡${p.def}</div>
+    </div>
+    <div class="pcm-section">
+      <h5>🎽 อุปกรณ์ (ปลดล็อก ${unlocked.length}/3 ช่อง ตามแรร์การ์ด)</h5>
+      <div class="pcm-slots">${slotsHtml}</div>
+    </div>
+    <div class="pcm-section">
+      <h5>✨ Enchant ${lv}/5</h5>
+      ${lv<5?`<div style="font-size:.68rem;color:#a8c9b4;margin-bottom:6px;text-align:center">ถัดไป: ${costTxt}</div>
+      <button class="pcm-btn gold" style="width:100%" ${canEnch?'':'disabled'} onclick="pcmEnchant()">Enchant +${lv+1} ${canEnch?'':'(Dust ไม่พอ)'}</button>`
+      :`<div style="text-align:center;color:var(--legend);font-family:Kanit">👑 MAX แล้ว!</div>`}
+    </div>
+    <div class="pcm-section">
+      <h5>🔄 ย่อยการ์ด</h5>
+      ${inDeck?`<div style="font-size:.7rem;color:#f0907f;text-align:center">อยู่ในเด็ค ถอดออกก่อนถึงย่อยได้</div>`
+      :`<div style="font-size:.68rem;color:#a8c9b4;margin-bottom:6px;text-align:center">ได้รับ: ${dYieldTxt} · การ์ดจะหายถาวร</div>
+      <button class="pcm-btn red" style="width:100%" onclick="pcmDismantle()">ย่อยการ์ดนี้</button>`}
+    </div>`;
+}
+function pcmTapSlot(slot){
+  const p=collection.find(x=>x.id===_pcmPid);
+  if(!p) return;
+  if(p[slot]) _pcmView={type:'detail',slot};
+  else _pcmView={type:'picker',slot};
+  renderPlayerCardMenu();sfxClick();
+}
+function pcmBack(){_pcmView='main';renderPlayerCardMenu();sfxClick();}
+function pcmPickerHTML(p,slot){
+  const equippedUids=new Set(collection.map(x=>x[slot]?._uid).filter(Boolean));
+  const avail=itemInventory.filter(it=>it.slot===slot&&!equippedUids.has(it._uid));
+  const listHtml=avail.length?`<div class="pcm-item-list">${avail.map(it=>{
+    const tc=tierCls(it.tier||'common');
+    return `<div class="pcm-item-row" onclick="pcmEquip(${it._uid},'${slot}')">
+      <span style="font-size:1.2rem">${it.ico}</span>
+      <div><b style="color:var(--gold)">${it.name}</b> <span class="${tc}" style="font-size:.6rem">${tierLabel(it.tier||'common')}</span><br>
+      <span style="font-size:.65rem;color:#a8c9b4">${it.atk?`⚔+${it.atk} `:''}${it.def?`🛡+${it.def}`:''}</span></div>
+    </div>`;
+  }).join('')}</div>`:`<div class="inv-empty">ไม่มี${SLOT_NM[slot]}ว่างให้ใส่<br><span style="font-size:.75rem">ซื้อที่ร้านค้า หรือ Craft</span></div>`;
+  return `<h5 class="kanit" style="color:var(--gold);margin-bottom:8px">${SLOT_ICO[slot]} เลือก${SLOT_NM[slot]}ให้ ${p.name}</h5>${listHtml}
+    <button class="pcm-btn" style="width:100%;margin-top:8px" onclick="pcmBack()">← กลับ</button>`;
+}
+function pcmDetailHTML(p,slot){
+  const item=p[slot];
+  if(!item){_pcmView='main';return '';}
+  const passStr=item.passives?.map(pid=>ITEM_PASSIVES[pid]?.nm||pid).join(', ')||'—';
+  const nSockets=item.badgeSlots||0;
+  let socketHtml='';
+  if(nSockets>0){
+    if(!item.equippedBadges) item.equippedBadges=[];
+    socketHtml=`<div class="pcm-section" style="margin-top:8px"><h5>🏷️ ช่องติดตรา (${nSockets} ช่อง)</h5>
+      <div class="pcm-badge-row">${Array.from({length:nSockets},(_,i)=>{
+        const curBi=item.equippedBadges[i];
+        return `<div class="pcm-badge-slot"><select onchange="pcmAssignBadge(${item._uid},${i},this.value)">
+          <option value="">— ว่าง —</option>
+          ${badges.map((b,bi)=>`<option value="${bi}" ${curBi===bi?'selected':''}>${b.ico} ${b.nm}</option>`).join('')}
+        </select></div>`;
+      }).join('')}</div>
+      ${!badges.length?'<div style="font-size:.65rem;color:#7fa78d;margin-top:4px">ยังไม่มีตรา - ดรอปจากหอคอยทุกชั้น</div>':''}
+    </div>`;
+  }
+  return `<h5 class="kanit" style="color:var(--gold);margin-bottom:6px">${item.ico} ${item.name}</h5>
+    <div style="font-size:.72rem;color:#a8c9b4;margin-bottom:8px">
+      ${item.atk?`⚔+${item.atk} `:''}${item.def?`🛡+${item.def}`:''}
+      ${item.passives?.length?`<br><span style="color:var(--gold)">✨ ${passStr}</span>`:''}
+      ${nSockets>0?`<br><span style="color:#7fa78d">🕳️ ${nSockets} ช่องติดตรา</span>`:''}
+    </div>
+    ${socketHtml}
+    <button class="pcm-btn red" style="width:100%;margin-top:8px" onclick="pcmUnequip('${slot}')">✕ ถอดออก</button>
+    <button class="pcm-btn" style="width:100%;margin-top:6px" onclick="pcmBack()">← กลับ</button>`;
+}
+function pcmEquip(uid,slot){
+  equipItem(uid,slot,_pcmPid);
+  _pcmView='main';renderPlayerCardMenu();
+}
+function pcmUnequip(slot){
+  const p=collection.find(x=>x.id===_pcmPid);
+  if(p&&p[slot]) unequipItem(p[slot]._uid,slot);
+  _pcmView='main';renderPlayerCardMenu();
+}
+function pcmAssignBadge(uid,slotIdx,badgeIdxStr){
+  equipBadgeToItem(uid,null,slotIdx,badgeIdxStr);
+  renderPlayerCardMenu();
+}
+function pcmEnchant(){
+  doEnchant(_pcmPid);
+  renderPlayerCardMenu();
+}
+function pcmDismantle(){
+  const p=collection.find(x=>x.id===_pcmPid);
+  if(!p) return;
+  dismantleCard(p.id);
+  if(collection.find(x=>x.id===p.id)) renderPlayerCardMenu();
+  else closePlayerCardMenu();
 }
 function renderInvGrid(){
   const grid=$('invGrid');
   if(!grid) return;
   if(invTab==='consumable'){
+
     const items=[
       {ico:'🧪',name:'XP Potion S',   type:'xp_s',  desc:'+50 XP'},
       {ico:'⚗️',name:'XP Potion M',   type:'xp_m',  desc:'+150 XP'},
@@ -2907,51 +3102,23 @@ function renderInvGrid(){
     }).join('')||'<div class="inv-empty">ไม่มีของใช้</div>';
     return;
   }
-  /* equipment tabs */
-  const owned=itemInventory.filter(it=>it.slot===invTab);
-  if(!owned.length){grid.innerHTML='<div class="inv-empty">ยังไม่มีไอเทม slot นี้<br><span style="font-size:.75rem">ซื้อได้ที่ 🏪 ร้านค้า</span></div>';return;}
-  grid.innerHTML=owned.map((item,idx)=>{
-    const tc=tierCls(item.tier||'common');
-    const passStr=item.passives?.map(pid=>ITEM_PASSIVES[pid]?.nm||pid).join(', ')||'—';
-    /* find who has this equipped */
-    const equipped=collection.filter(p=>p[item.slot]&&p[item.slot]._uid===item._uid);
-    const equippedNames=equipped.map(p=>p.name).join(', ');
-    return `<div class="inv-card tier-${item.tier||'common'}">
-      <div class="ic-ico">${item.ico}</div>
-      <div class="si-tier ${tc}" style="font-size:.55rem;padding:1px 4px;border-radius:3px;display:inline-block;margin-bottom:3px">${tierLabel(item.tier||'common')}</div>
-      <div class="ic-name">${item.name}</div>
-      <div class="ic-desc">
-        ${item.atk?`⚔+${item.atk} `:''}${item.def?`🛡+${item.def}`:''}
-        ${item.passives?.length?`<br><span style="color:var(--gold);font-size:.58rem">✨ ${passStr}</span>`:''}
-      </div>
-      <div class="ic-equipped">${equippedNames?`📌 ${equippedNames}`:''}</div>
-      <select onchange="equipItem(${idx},'${invTab}',this.value)" style="margin-bottom:4px;font-size:.65rem;background:#0a1f13;color:var(--flood);border:1px solid #2a5238;border-radius:5px;padding:3px;width:100%">
-        <option value="">— สวมให้นักเตะ —</option>
-        ${collection.map(p=>{
-          const hasThisSlot=p[item.slot]&&p[item.slot]._uid===item._uid;
-          return `<option value="${p.id}" ${hasThisSlot?'selected':''}>${p.name} (${p.pos})</option>`;
-        }).join('')}
-      </select>
-      <button class="si-buy" style="background:#1e3a29;color:#f0907f;font-size:.68rem" onclick="unequipItem(${idx},'${invTab}')">✕ ถอด</button>
-    </div>`;
-  }).join('');
 }
-function equipItem(itemIdx,slot,playerId){
+function equipItem(uid,slot,playerId){
   if(!playerId) return;
-  const item=itemInventory[itemIdx];
+  const item=itemInventory.find(it=>it._uid===uid);
   if(!item) return;
   const player=collection.find(p=>p.id===playerId);
   if(!player) return;
+  if(!unlockedSlotTypes(player).includes(slot)){showMomPop('ช่องนี้ยังไม่ปลดล็อก!');return;}
   /* unequip from previous owner */
   collection.forEach(p=>{if(p[slot]&&p[slot]._uid===item._uid) p[slot]=null;});
   player[slot]=item;
-  saveGame();renderInvGrid();sfxClick();
+  saveGame();sfxClick();
   showMomPop(`✅ สวม ${item.name} ให้ ${player.name}`);
 }
-function unequipItem(itemIdx,slot){
-  const item=itemInventory[itemIdx];
-  collection.forEach(p=>{if(p[slot]&&p[slot]._uid===item._uid) p[slot]=null;});
-  saveGame();renderInvGrid();sfxClick();
+function unequipItem(uid,slot){
+  collection.forEach(p=>{if(p[slot]&&p[slot]._uid===uid) p[slot]=null;});
+  saveGame();sfxClick();
 }
 function useXpPotion(type){
   if(!(consumables[type]>0)) return;
@@ -3011,14 +3178,19 @@ function renderBadges(){
     </div>`;
   }).join('');
 }
-function equipBadgeToItem(itemIdx,slot,slotIdx,badgeIdxStr){
-  const item=itemInventory[itemIdx];
+function equipBadgeToItem(uid,slot,slotIdx,badgeIdxStr){
+  const item=itemInventory.find(it=>it._uid===uid);
   if(!item) return;
   if(!item.equippedBadges) item.equippedBadges=[];
   const bi=badgeIdxStr===''?null:parseInt(badgeIdxStr);
+  /* กันตราเดียวกันถูกติดซ้ำหลายช่อง/หลายไอเทมพร้อมกัน - ถอดจากที่เดิมก่อนเสมอ */
+  if(bi!=null){
+    itemInventory.forEach(it=>{
+      if(it.equippedBadges) it.equippedBadges=it.equippedBadges.map(x=>x===bi?null:x);
+    });
+  }
   item.equippedBadges[slotIdx]=bi;
   saveGame();sfxClick();
-  renderInvGrid();
   showMomPop(bi!=null?`✅ ติดตรา ${badges[bi]?.nm} แล้ว!`:'ถอดตราแล้ว');
 }
 function equipBadge(badgeIdx,playerId){
@@ -3292,6 +3464,7 @@ function cardHTML(p,clickable,advantage=false,miniMode=false){
       <div class="elem-row">${elemChip(p.elem)}${afBonusTxt}</div>
       <div class="stat-row"><span>⚔<b>${e.atk}</b></span><span>🛡<b>${e.def}</b></span><span style="color:#7fa78d">${p.stamina}%</span></div>
       <div class="stam"><i style="width:${p.stamina}%"></i></div>
+      ${slotStatusIcons(p)}
       ${p.skillTxt?`<div class="skill">${p.skillTxt}</div>`:''}
       ${p.item?`<div class="itm">${p.item.ico} ${p.item.name}</div>`:''}
       ${affinityHTML(p)}
