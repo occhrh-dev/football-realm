@@ -3380,7 +3380,7 @@ function applySupportEffect(card){
     const t=[...deckPlayers()].sort((a,b)=>a.stamina-b.stamina)[0];
     t.stamina=100;log(`🚑 <span class="good">${t.name} ฟื้นสตามิน่าเต็ม!</span>`);
   } else if(e==='rally'){
-    deckPlayers().forEach(p=>{p.atk+=8;p.def+=8;});fx.rallyTurns=2;log('📣 <span class="good">ทีม ATK+8 DEF+8 เป็น 2 เทิร์น!</span>');
+    deckPlayers().forEach(p=>{p.atk+=8;p.def+=8;});fx.rallyTurns=2;fx.rallyAtk=8;fx.rallyDef=8;log('📣 <span class="good">ทีม ATK+8 DEF+8 เป็น 2 เทิร์น!</span>');
   } else if(e==='wet'){
     fx.storm=3;log('🌧️ <span class="good">สนามเปียก! 🔥+15 🎯-8 เป็น 3 เทิร์น</span>');
   } else if(e==='yellow'){
@@ -3398,8 +3398,9 @@ function applySupportEffect(card){
     const t=[...ai].sort((a,b)=>b.atk-a.atk)[0];t._locked=2;log(`🔴 <span class="bad">${t.name} โดนใบแดง! ใช้ไม่ได้ 2 เทิร์น</span>`);
   } else if(e==='boost'){
     const t=deckPlayers().sort((a,b)=>b.atk-a.atk)[0];
+    t._origAtk=t.atk;t._origDef=t.def;
     t.atk=Math.round(t.atk*1.5);t.def=Math.round(t.def/2);t._boostTurns=2;
-    log(`💊 <span class="good">${t.name} โดปแล้ว! ATK×1.5 DEF÷2</span>`);
+    log(`💊 <span class="good">${t.name} โดปแล้ว! ATK×1.5 DEF÷2 เป็น 2 เทิร์น</span>`);
   } else if(e==='money'){
     coins+=80;$('coins').textContent=coins;log('🤝 <span class="loot">ได้เหรียญ +80!</span>');sfxLvUp();
   } else if(e==='storm'){
@@ -3408,7 +3409,7 @@ function applySupportEffect(card){
     if(Math.random()<.5){fx.freekickBonus=40;log('🎰 <span class="good">โชคดี! ยิงฟรี ATK+40!</span>');sfxLegend();}
     else{youAttacking=false;log('🎰 <span class="bad">โชคร้าย! เสียเทิร์นบุก...</span>');sfxSave();}
   } else if(e==='crowd'){
-    momentum=95;updateMomentum(0);deckPlayers().forEach(p=>{p.atk+=10;});fx.rallyTurns=2;
+    momentum=95;updateMomentum(0);deckPlayers().forEach(p=>{p.atk+=10;});fx.crowdTurns=2;fx.crowdAtk=10;
     log('🏟️ <span class="good">เสียงเชียร์ก้องสนาม! Momentum พุ่ง + ATK+10!</span>');sfxGoal();
   }
   sfxClick();
@@ -3639,7 +3640,9 @@ function startMatch(opponent,oppName,modeLabel,isReplay=false){
 function setupTurn(){
   checkTrapSupports();
   if(!youAttacking){
-    const atks=ai.filter(p=>p.atk>=50);
+    const atks0=ai.filter(p=>p.atk>=50);
+    const atksUnlocked=atks0.filter(p=>!p._locked);
+    const atks=atksUnlocked.length?atksUnlocked:atks0;
     incomingAttacker=atks[rnd(atks.length)];
     const weak=ELEMKEYS.find(k=>ELEMS[k].beats===incomingAttacker.elem);
     $('incoming').className='incoming show';
@@ -3685,7 +3688,9 @@ function setupTurnDisplay(){
 function pick(id){
   const mine=deckPlayers().find(p=>p.id===id);
   if(youAttacking){
-    const defs=ai.filter(p=>p.def>=50).sort((a,b)=>b.def-a.def);
+    const defs0=ai.filter(p=>p.def>=50);
+    const defsUnlocked=defs0.filter(p=>!p._locked);
+    const defs=(defsUnlocked.length?defsUnlocked:defs0).sort((a,b)=>b.def-a.def);
     duel(mine,defs[rnd(Math.min(2,defs.length))],true);
   }else{
     duel(incomingAttacker,mine,false);
@@ -3883,6 +3888,36 @@ function nextTurn(){
   $('duel').className='duel';turn++;
   if(fx.storm>0)fx.storm--;
   if(fx.rumor>0)fx.rumor--;
+  /* เอฟเฟกต์ชั่วคราวระดับทีม - หมดเวลาแล้วคืนค่าที่บวกไปให้ตรงตามที่ให้มา (กันบวกค้างถาวร) */
+  if(fx.rallyTurns>0){
+    fx.rallyTurns--;
+    if(fx.rallyTurns===0){
+      deckPlayers().forEach(p=>{p.atk-=(fx.rallyAtk||0);p.def-=(fx.rallyDef||0);});
+      log('📣 <span class="bad">เอฟเฟกต์ปลุกใจหมดแล้ว</span>');
+      fx.rallyAtk=0;fx.rallyDef=0;
+    }
+  }
+  if(fx.crowdTurns>0){
+    fx.crowdTurns--;
+    if(fx.crowdTurns===0){
+      deckPlayers().forEach(p=>{p.atk-=(fx.crowdAtk||0);});
+      log('🏟️ <span class="bad">เสียงเชียร์เงียบลง...</span>');
+      fx.crowdAtk=0;
+    }
+  }
+  /* เอฟเฟกต์ชั่วคราวระดับนักเตะ */
+  deckPlayers().forEach(p=>{
+    if(p._boostTurns>0){
+      p._boostTurns--;
+      if(p._boostTurns===0){
+        if(p._origAtk!=null) p.atk=p._origAtk;
+        if(p._origDef!=null) p.def=p._origDef;
+        delete p._origAtk;delete p._origDef;
+        log(`💊 <span class="bad">${p.name} หมดฤทธิ์สารกระตุ้นแล้ว</span>`);
+      }
+    }
+  });
+  ai.forEach(p=>{ if(p._locked>0) p._locked--; });
   if(turn>8){endMatch();return;}
   deckPlayers().forEach(p=>p.stamina=Math.min(100,p.stamina+(matchStadium?.id==='heat'?2:5)));
   ai.forEach(p=>p.stamina=Math.min(100,p.stamina+5));
