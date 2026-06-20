@@ -4523,6 +4523,7 @@ function afterMatch(){
 
 /* ============ SAVE SYSTEM ============ */
 const SAVE_KEY='footballRealmSave_v5';
+let _localSaveTime=0; // ใช้เทียบความใหม่กับ cloud ตอน boot กันข้อมูลเก่าทับของใหม่
 
 /* ===== SUPABASE CLOUD SAVE (optional — needs init) ===== */
 let _sb=null; // supabase client, null = not initialized yet
@@ -4580,7 +4581,8 @@ function buildSavePayload(){
     coins, cap_lv:capLv, cap_xp:capXp, rp, tw_floor:twFloor,
     adv_ep:advEP, adv_stage:advStage, adv_progress:advProgress,
     lg_round:lgRound, lg_season:lgSeason, lg_pts:lgPts,
-    collection: collection.map(p=>({...p,item:null,shirt:null,shoe:null,pants:null})),
+    collection: collection.map(p=>({...p,item:null,
+      shirt:p.shirt?p.shirt._uid:null, shoe:p.shoe?p.shoe._uid:null, pants:p.pants?p.pants._uid:null})),
     support_collection: supportCollection,
     captain_collection: captainCollection,
     item_inventory: itemInventory,
@@ -4633,6 +4635,14 @@ function applyCloudData(d){
     supportCollection=d.support_collection||[];
     captainCollection=d.captain_collection||[];
     itemInventory=d.item_inventory||[];
+    /* เชื่อมไอเทมที่สวมอยู่กลับเข้าตัวนักเตะ จาก uid ที่บันทึกไว้ (กันไอเทมหายตอน sync) */
+    (d.collection||[]).forEach((savedP,i)=>{
+      const p=collection[i];if(!p) return;
+      ['shirt','shoe','pants'].forEach(slot=>{
+        const refUid=savedP[slot];
+        if(refUid!=null) p[slot]=itemInventory.find(it=>it._uid===refUid)||null;
+      });
+    });
     consumables={...consumables,...(d.consumables||{})};
     deck=(d.deck||[]).filter(id=>collection.some(p=>p.id===id));
     if(deck.length===0&&collection.length) deck=collection.slice(0,6).map(p=>p.id);
@@ -4838,9 +4848,16 @@ async function bootGame(){
           /* sync cloud แบบ background ไม่บล็อก UI */
           cloudLoad().then(cloud=>{
             if(cloud){
-              applyCloudData(cloud);
-              localStorage.setItem(SAVE_KEY,JSON.stringify(buildLocalSnap()));
-              if(!hasLocalData) goHome();
+              const cloudTime=cloud.updated_at?new Date(cloud.updated_at).getTime():0;
+              if(!hasLocalData||cloudTime>=_localSaveTime){
+                /* cloud ใหม่กว่าหรือเท่ากัน (หรือไม่มี local) - ใช้ cloud ได้ปลอดภัย */
+                applyCloudData(cloud);
+                localStorage.setItem(SAVE_KEY,JSON.stringify(buildLocalSnap()));
+                if(!hasLocalData) goHome();
+              } else {
+                /* local ใหม่กว่า cloud (เช่น sync รอบก่อนยังไม่ทันจบ) - ห้ามทับของใหม่ด้วยของเก่า อัป cloud ให้ตามทันแทน */
+                cloudSave().catch(()=>{});
+              }
             } else if(hasLocalData){
               cloudSave().catch(()=>{});
             }
@@ -4914,7 +4931,8 @@ function buildLocalSnap(){
     capLv,capXp,coins,advProgress,advEP,advStage,
     lgRound,lgSeason,lgPts,twFloor,rp,uid,
     deck,
-    collection:collection.map(p=>({...p,item:null,shirt:null,shoe:null,pants:null})),
+    collection:collection.map(p=>({...p,item:null,
+      shirt:p.shirt?p.shirt._uid:null, shoe:p.shoe?p.shoe._uid:null, pants:p.pants?p.pants._uid:null})),
     supportCollection,captainCollection,
     supportDeckIds:supportDeck.map(c=>c?{id:c.id,isTrap:!!c.isTrap}:null),
     captainId:captainCard?.id||null,
@@ -4924,6 +4942,7 @@ function buildLocalSnap(){
     achUnlocked:[..._unlocked],wins:_achStats.wins,
     playerName:playerProfile.name,avatarSeed:playerProfile.avatarSeed,
     badges,specialItems,dailyDeals,dailyDate,freePacks,
+    updated_at:new Date().toISOString(),
   };
 }
 function loadGame(){
@@ -4932,6 +4951,7 @@ function loadGame(){
     const raw=localStorage.getItem(SAVE_KEY);
     if(!raw) return false;
     const d=JSON.parse(raw);
+    _localSaveTime=d.updated_at?new Date(d.updated_at).getTime():0;
     capLv=d.capLv??1; capXp=d.capXp??0; coins=d.coins??150;
     advProgress=d.advProgress??0; advEP=d.advEP??1; advStage=d.advStage??0;
     lgRound=d.lgRound??0; lgSeason=d.lgSeason??1; lgPts=d.lgPts??{};
@@ -4950,6 +4970,14 @@ function loadGame(){
     teamFormation=d.teamFormation||localStorage.getItem('frForm')||'4-4-2';
     consumables={...consumables,...(d.consumables||{})};
     itemInventory=d.itemInventory||[];
+    /* เชื่อมไอเทมที่สวมอยู่กลับเข้าตัวนักเตะ จาก uid ที่บันทึกไว้ (กันไอเทมหายตอนโหลด) */
+    (d.collection||[]).forEach((savedP,i)=>{
+      const p=collection[i];if(!p) return;
+      ['shirt','shoe','pants'].forEach(slot=>{
+        const refUid=savedP[slot];
+        if(refUid!=null) p[slot]=itemInventory.find(it=>it._uid===refUid)||null;
+      });
+    });
     dailyDeals=d.dailyDeals||[]; dailyDate=d.dailyDate||'';
     if(d.questState){questState=d.questState;questDate=d.questDate||'';}
     if(d.achUnlocked) d.achUnlocked.forEach(id=>_unlocked.add(id));
