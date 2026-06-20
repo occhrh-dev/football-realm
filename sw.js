@@ -1,4 +1,4 @@
-const CACHE = 'football-realm-v16';
+const CACHE = 'football-realm-v17';
 const STATIC = ['./manifest.json','./icon-192.png','./icon-512.png'];
 
 self.addEventListener('install', e => {
