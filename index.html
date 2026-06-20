@@ -2099,7 +2099,7 @@ function goHome(){
     }
   }
   const _nodes=currentChapterNodes();
-  $('mAdv').textContent=advEP>EP_DATA.length?'✅ พิชิตทุก EP แล้ว!':`EP${advEP}: ด่าน ${advStage+1}/${currentStages().length}`;
+  $('mAdv').textContent=advEP>EP_DATA.length?'✅ พิชิตทุก EP แล้ว!':(advStage>=currentStages().length?`EP${advEP}: ผ่านหมดแล้ว! 🏆`:`EP${advEP}: ด่าน ${advStage+1}/${currentStages().length}`);
   loadTourState();initTournament();
   const nextTour=getNextMatch();
   const _mTour=$('mTour');
@@ -2136,6 +2136,13 @@ function checkStageRules(stage){
 }
 function openAdv(){
   hideAll();$('advScr').classList.remove('hidden');
+  /* self-heal: ถ้าด่านทั้งหมดใน EP ปัจจุบันผ่านครบแล้วแต่ advEP ยังไม่ขยับ (เช่นเจอ sync ผิดพลาดก่อนหน้านี้)
+     เลื่อนให้ถูกต้องอัตโนมัติ กันค้างไม่มีด่านให้กดเล่นต่อ */
+  let _healed=false;
+  while(advStage>=currentStages().length&&advEP<EP_DATA.length){
+    advEP++;advStage=0;_healed=true;
+  }
+  if(_healed){saveGame();showMomPop('🔧 ปรับความก้าวหน้าผจญภัยให้ถูกต้องแล้ว');}
   const ep=currentEP();
   const stages=currentStages();
   const tp=calcTeamTP();
@@ -2172,13 +2179,14 @@ function openAdv(){
       ).join(' ');
       const bonusTxt=n.bonus?`<span style="font-size:.58rem;color:#7fd9a0">🎁 ${n.bonus==='coin2'?'เหรียญ×2':n.bonus==='coin3'?'เหรียญ×3':n.bonus==='drop_legend'?'drop Legend':n.bonus==='xp_l'?'XP Potion L':n.bonus}</span>`:'';
       const bossBadge=n.isBoss?`<span style="font-size:.58rem;background:rgba(255,122,217,.15);color:#ff7ad9;padding:1px 5px;border-radius:3px">⚔️ BOSS</span>`:'';
+      const replayBadge=done?`<span style="font-size:.58rem;background:rgba(61,123,217,.15);color:#9cc8f0;padding:1px 5px;border-radius:3px">🔁 ย้อนเล่น</span>`:'';
       return (i?'<div class="advlink"></div>':'')+
         `<div class="advnode ${done?'done':locked?'locked':''}" 
-          ${current?`onclick="playAdv(${i})" role="button" tabindex="0"`:''}
+          ${current?`onclick="playAdv(${i})" role="button" tabindex="0"`:done?`onclick="replayAdv(${i})" role="button" tabindex="0" style="cursor:pointer"`:''}
           style="${n.isBoss?'border-color:var(--legend)!important;':done?'':''}">
           <span class="aico">${done?'✅':n.ico}</span>
           <span>
-            <div class="anm">${n.nm} ${bossBadge}</div>
+            <div class="anm">${n.nm} ${bossBadge}${replayBadge}</div>
             <div class="adesc">${n.desc}</div>
             <div style="margin-top:2px">${rulesTxt} ${bonusTxt}</div>
             ${current&&failed.length?`<div style="color:#f0907f;font-size:.6rem;margin-top:2px">⚠️ ${failed.join(' · ')}</div>`:''}
@@ -2211,6 +2219,17 @@ function playAdv(i){
   if(n.enemyBuff==='atk13') mult*=1.3;
   if(n.enemyBuff==='atk15') mult*=1.5;
   startMatch(genTeam(mult),n.ico+' '+n.nm,`🗺️ EP${advEP}`);
+}
+function replayAdv(i){
+  const n=currentStages()[i];
+  if(!confirm(`ย้อนเล่นด่าน "${n.nm}" ซ้ำ? (ได้เหรียญ/Dust ตามปกติ แต่ไม่นับความก้าวหน้า และไม่ได้การ์ดบอสซ้ำ)`)) return;
+  const failed=checkStageRules(n);
+  if(failed.length){showMomPop('⚠️ '+failed[0]);return;}
+  mode='adv';pendingCtx={node:i,boss:n.boss||null,stage:n,isReplay:true};
+  let mult=n.mult;
+  if(n.enemyBuff==='atk13') mult*=1.3;
+  if(n.enemyBuff==='atk15') mult*=1.5;
+  startMatch(genTeam(mult),n.ico+' '+n.nm+' (ย้อนเล่น)',`🗺️ EP${advEP}`);
 }
 
 /* ============ LEAGUE ============ */
@@ -4309,7 +4328,7 @@ function endMatch(){
     const _stageBonus=pendingCtx.stage?.bonus;
     if(win&&_stageBonus==='coin2') coinGain*=2;
     if(win&&_stageBonus==='coin3') coinGain*=3;
-    if(win){
+    if(win&&!pendingCtx.isReplay){
       advStage=Math.max(advStage,pendingCtx.node+1);
       advProgress=advStage; // backward compat
       const nodes=currentStages();
@@ -4357,6 +4376,8 @@ function endMatch(){
         }
         if(_stageBonus==='xp_l'){consumables.xp_l=(consumables.xp_l||0)+1;desc+=`<br>⚗️ <b>ได้ XP Potion L!</b>`;}
       } else desc=`ผ่านด่าน ${nodes[pendingCtx.node].nm}! เดินทางต่อได้`;
+    } else if(win&&pendingCtx.isReplay){
+      desc='🔁 ย้อนเล่นสำเร็จ! ได้เหรียญ/ของรางวัลตามปกติ (ไม่นับความก้าวหน้า ไม่ได้การ์ดบอสซ้ำ)';
     } else desc='พ่ายแพ้... พักฟื้นแล้วลองใหม่';
   }
   else if(mode==='league'){
@@ -4951,7 +4972,7 @@ function loadGame(){
     const raw=localStorage.getItem(SAVE_KEY);
     if(!raw) return false;
     const d=JSON.parse(raw);
-    _localSaveTime=d.updated_at?new Date(d.updated_at).getTime():0;
+    _localSaveTime=d.updated_at?new Date(d.updated_at).getTime():Date.now();
     capLv=d.capLv??1; capXp=d.capXp??0; coins=d.coins??150;
     advProgress=d.advProgress??0; advEP=d.advEP??1; advStage=d.advStage??0;
     lgRound=d.lgRound??0; lgSeason=d.lgSeason??1; lgPts=d.lgPts??{};
