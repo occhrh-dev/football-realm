@@ -915,7 +915,10 @@ button:focus-visible{outline:2px solid var(--flood);outline-offset:2px}
 
 <div class="overlay center hidden" id="matchEnd">
   <h1 id="meTitle"></h1><p id="meDesc"></p><div id="lootArea"></div>
-  <button id="meBtn" onclick="afterMatch()">ตกลง</button>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:8px">
+    <button id="meBtn" onclick="afterMatch()">ตกลง</button>
+    <button id="meBtn2" style="display:none" onclick="goHome()">🏠 กลับสโมสรเพื่อจัดเด็ค</button>
+  </div>
 </div>
 
 <div class="overlay hidden" id="invScr">
@@ -4295,6 +4298,7 @@ function endMatch(){
   if(window._matchEnding) return; // กันเรียกซ้ำเร็วๆ (เช่น watchdog ชนกับการกดออกจากแมตช์)
   window._matchEnding=true;
   setTimeout(()=>{window._matchEnding=false;},1500); // ปลดล็อกอัตโนมัติ กันค้างตลอดไปถ้ารอบแรกพลาด
+  let _meBossWin=false;
   const win=scoreYou>scoreAi,draw=scoreYou===scoreAi;
   let title=win?`🏆 ชนะ ${scoreYou}:${scoreAi}`:draw?`🤝 เสมอ ${scoreYou}:${scoreAi}`:`💔 แพ้ ${scoreYou}:${scoreAi}`;
   let desc='',lootChance=win?.6:draw?.35:.15,coinGain=0,xpGain=win?50:draw?25:15;
@@ -4324,6 +4328,7 @@ function endMatch(){
         const bd=bossDefs[pendingCtx.boss]||bossDefs.leon;
         const bossCard=P(bd.nm,bd.pos,bd.atk,bd.def,bd.nat,bd.elem,{r:'legend',skill:bd.skill,skillTxt:bd.skillTxt});
         collection.push(bossCard);
+        _meBossWin=true;
         desc=`🌟 <b style="color:var(--legend)">${bd.msg}</b> เปิดหน้าจัดเด็คเพื่อใส่ลงทีม!`;
         title='🏆 พิชิตบทที่ '+advChapter+'!';
         if(advEP<EP_DATA.length){
@@ -4479,6 +4484,16 @@ function endMatch(){
   coins+=coinGain;$('coins').textContent=coins;gainCapXp(xpGain);
   $('meTitle').textContent=title;
   $('meDesc').innerHTML=desc+`<br>ได้รับ 🪙 ${coinGain} + 👑 ${xpGain} XP`;
+  const meBtn2=$('meBtn2');
+  if(meBtn2){
+    if(_meBossWin){
+      meBtn2.style.display='';
+      $('meBtn').textContent='🗺️ ไปแมพผจญภัยต่อ';
+    }else{
+      meBtn2.style.display='none';
+      $('meBtn').textContent='ตกลง';
+    }
+  }
   $('lootArea').innerHTML='';
   if(Math.random()<lootChance){
     const it={...ITEMS[rnd(ITEMS.length)],_uid:uid++};itemInventory.push(it);
